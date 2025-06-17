@@ -131,6 +131,15 @@
 ### 3.4.3 保持同步
 每次开始新任务之前记得先`git pull`仓库的最新代码，结束后也记得`git push`提交。
 
+## 3.5 大致流程
+- 先`git pull`更新最新仓库
+- 本地编写代码
+- 查看状态：写完一部分代码后，你很好奇 Git 是如何看待这些改动的。`git status`
+- **暂存变更**，提交之前需要保存更改。```# 使用 . 来暂存所有改动（包括新增和修改的）
+git add .```
+- **提交变更**,```git commit -m "feat: add about page and navigation link"```
+- 上传到仓库：`git push`
+
 # 4. 常见问题
 网络问题，git pull或者push失败。
 
