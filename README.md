@@ -131,5 +131,16 @@
 ### 3.4.3 保持同步
 每次开始新任务之前记得先`git pull`仓库的最新代码，结束后也记得`git push`提交。
 
+# 4. 常见问题
+网络问题，git pull或者push失败。
+
+- 原因：浏览器通常能自动使用 VPN 建立的网络通道，但命令行终端（比如你在 VS Code 里用的）默认情况下可能不会，导致 git 命令依然尝试通过你本地的有问题的、不走 VPN 的网络去连接 GitHub，所以依然会失败。
+- 解决：为 Git 设置本地代理 
+- - 找到VPN软件提供的端口。这通常是一个数字，常见的有 7890 (Clash 默认), 10809, 1080, 8889 等。
+- - 在终端中执行命令：```git config --global http.proxy http://127.0.0.1:port_number
+git config --global https.proxy http://127.0.0.1:port_number```
+
+
+
   
 
