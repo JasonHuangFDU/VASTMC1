@@ -1,7 +1,7 @@
 <template>
   <div id="oceanus-weaver">
     <header>
-      <h1>This is MY APP</h1>
+      <h1>oceanus-weaver</h1>
       <SearchBar />
     </header>
     <main>
