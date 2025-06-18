@@ -6,13 +6,13 @@ import { loadData } from '../services/dataService'; // 确保这个路径是正�
 export const useGraphStore = defineStore('graph', {
   // state 定义了应用的核心数据
   state: () => ({
-    nodes:, // 初始化为空数组
-    links:, // 初始化为空数组
+    nodes:[], // 初始化为空数组
+    links:[], // 初始化为空数组
     isLoading: false,
     error: null,
     // 过滤条件
-    selectedTimeRange:, // 初始化为空数组
-    selectedGenres:,    // 初始化为空数组
+    selectedTimeRange:[], // 初始化为空数组
+    selectedGenres:[],    // 初始化为空数组
     // 当前选中的实体
     selectedNodeId: null,  // 初始化为 null
   }),
