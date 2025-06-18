@@ -23,17 +23,13 @@ export const useGraphStore = defineStore('graph', {
     // 目前为了简化，我们先返回所有节点
     filteredNodes: (state) => {
       // TODO: 在这里根据 state.selectedTimeRange 和 state.selectedGenres 过滤节点
-      if (state.nodes.length === 0) {
-        return;
-      }
+      
       return state.nodes;
     },
     // 这个 getter 会返回过滤后的链接
     filteredLinks: (state) => {
       // TODO: 过滤链接
-      if (state.links.length === 0) {
-        return;
-      }
+      
       return state.links;
     },
     // 这个 getter 返回当前选中节点的详细信息
@@ -46,10 +42,12 @@ export const useGraphStore = defineStore('graph', {
   // actions 是更新 state 的方法
   actions: {
     async fetchGraphData() {
+      console.log("fetchGraphData action 被调用");
       this.isLoading = true;
       this.error = null;
       try {
         const graphData = await loadData(); // 从 dataService 加载数据
+        console.log("2.加载的图数据:", graphData);
         this.nodes = graphData.nodes;
         this.links = graphData.links;
       } catch (e) {

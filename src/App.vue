@@ -1,7 +1,7 @@
 <template>
   <div id="oceanus-weaver">
     <header>
-      <h1>Oceanus Influence Weaver</h1>
+      <h1>This is MY APP</h1>
       <SearchBar />
     </header>
     <main>
@@ -35,9 +35,16 @@ import CareerTrajectory from './components/visualizations/CareerTrajectory.vue';
 // 获取 store 实例
 const store = useGraphStore();
 
+onMounted(() => {
+  document.title = 'Oceanus Influence Weaver';
+});
+
 // 在组件挂载后，触发数据加载
 onMounted(() => {
-  store.fetchGraphData();
+  store.fetchGraphData().then(() => {
+    console.log('App.vue: nodes', store.nodes);
+    console.log('App.vue: links', store.links);
+  });
 });
 </script>
 

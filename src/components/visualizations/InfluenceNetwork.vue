@@ -20,6 +20,7 @@ const containerRef = ref(null);
 const svgRef = ref(null);
 const store = useGraphStore();
 
+
 const tooltip = reactive({
   visible: false,
   content: '',
@@ -31,6 +32,7 @@ const graphData = computed(() => ({
   nodes: store.filteredNodes,
   links: store.filteredLinks,
 }));
+console.log('Graph Data:', graphData.value);
 
 let simulation;
 
@@ -45,8 +47,8 @@ const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
 
 // **FIXED**: Properly define the domain and range for the symbol scale [1]
 const symbolScale = d3.scaleOrdinal()
- .domain()
- .range();
+  .domain(['Person', 'Group', 'Organization']) // 这里填你的节点类型
+  .range([d3.symbolCircle, d3.symbolSquare, d3.symbolTriangle]);
 
 const radiusScale = (influenceScore) => 5 + Math.log2(influenceScore || 1) * 2;
 
@@ -171,6 +173,9 @@ watch(graphData, (newData) => {
 
 onMounted(() => {
   // Initial render if data is already available
+  console.log('onMounted: will call fetchGraphData');
+  store.fetchGraphData();
+
   if (store.nodes && store.nodes.length > 0) {
     renderNetwork(graphData.value);
   }
