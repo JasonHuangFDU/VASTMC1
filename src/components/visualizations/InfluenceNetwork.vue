@@ -1,221 +1,149 @@
 <template>
-  <div class="network-container" ref="containerRef">
-    <svg ref="svgRef"></svg>
-    <div v-if="tooltip.visible"
-         class="network-tooltip"
-         :style="{ top: `${tooltip.y}px`, left: `${tooltip.x}px` }"
-         v-html="tooltip.content">
-    </div>
+  <div ref="containerRef" class="influence-network-container">
+    <div v-if="isLoading" class="loading-indicator">正在加载并预计算布局...</div>
+    <div ref="tooltipRef" class="tooltip" style="opacity: 0;"></div>
   </div>
 </template>
 
-
 <script setup>
-import { ref, reactive, onMounted, watch, computed, onUnmounted } from 'vue';
-import { useGraphStore } from '../../stores/graphStore';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import * as d3 from 'd3';
 
-// --- 1. Refs and Store Initialization ---
+// 定义响应式引用
 const containerRef = ref(null);
-const svgRef = ref(null);
-const store = useGraphStore();
-
-
-const tooltip = reactive({
-  visible: false,
-  content: '',
-  x: 0,
-  y: 0,
-});
-
-const graphData = computed(() => ({
-  nodes: store.filteredNodes,
-  links: store.filteredLinks,
-}));
-console.log('Graph Data:', graphData.value);
-
+const tooltipRef = ref(null);
+const isLoading = ref(true);
 let simulation;
+let graphData = null;
 
-// --- 2. Visual Encoding and Helper Functions ---
+// --- D3 可视化设置函数 ---
+const setupVisualization = () => {
+  const container = containerRef.value;
+  if (!container || !graphData) return;
 
-// **FIXED**: Define edge type categories for clarity and reuse [1]
-const INFLUENCE_EDGES = ['InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples', 'MemberOf'];
-const COLLABORATION_EDGES = ['MemberOf', 'PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf'];
-// Business edges are everything else, like 'RecordedBy', 'DistributedBy'
+  d3.select(container).select('svg').remove();
 
-const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
+  const nodes = JSON.parse(JSON.stringify(graphData.nodes));
+  const links = JSON.parse(JSON.stringify(graphData.links));
 
-// **FIXED**: Properly define the domain and range for the symbol scale [1]
-const symbolScale = d3.scaleOrdinal()
-  .domain(['Person', 'Group', 'Organization']) // 这里填你的节点类型huihui
-  .range([d3.symbolCircle, d3.symbolSquare, d3.symbolTriangle]);
+  const width = container.clientWidth;
+  const height = container.clientHeight;
 
-const radiusScale = (influenceScore) => 5 + Math.log2(influenceScore || 1) * 2;
+  const svg = d3.select(container).append('svg')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('viewBox', [-width / 2, -height / 2, width, height])
+      .style('background-color', '#f8f9fa');
 
-// --- 3. Main D3 Rendering Function ---
-function renderNetwork(data) {
-  if (!containerRef.value ||!data ||!data.nodes || data.nodes.length === 0) return;
+  const zoomGroup = svg.append('g');
 
-  const { width, height } = containerRef.value.getBoundingClientRect();
-  const svg = d3.select(svgRef.value)
-   .attr('width', width)
-   .attr('height', height)
-   .attr('viewBox', [-width / 2, -height / 2, width, height]);
+  // --- 视觉编码 ---
+  const colorScale = d3.scaleOrdinal(d3.schemeTableau10).domain([...new Set(nodes.map(d => d.genre).filter(g => g))]);
+  const sizeScale = d3.scaleSqrt().domain([0, d3.max(nodes, d => d.influence_score || 1)]).range([5, 25]);
+  const symbolGenerator = (node) => {
+    const typeMap = { 'Person': d3.symbolCircle, 'MusicalGroup': d3.symbolDiamond, 'Song': d3.symbolTriangle, 'Album': d3.symbolSquare, 'Record Label': d3.symbolWye };
+    return d3.symbol().type(typeMap[node.type] || d3.symbolCircle)();
+  };
+  const getLinkClass = (edgeType) => {
+    const influenceTypes = ['InStyleOf', 'CoverOf', 'DirectlySamples', 'InterpolatesFrom', 'LyricalReferenceTo'];
+    const collaborationTypes = ['MemberOf', 'PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf'];
+    if (influenceTypes.includes(edgeType)) return 'link-influence';
+    if (collaborationTypes.includes(edgeType)) return 'link-collaboration';
+    return 'link-commercial';
+  };
 
-  svg.selectAll('*').remove();
+  // --- 定义箭头 ---
+  const defs = svg.append('defs');
+  const markerConfigs = {
+    'link-influence': { id: 'arrow-influence', color: '#007bff' },
+    'link-collaboration': { id: 'arrow-collaboration', color: '#28a745' },
+    'link-commercial': { id: 'arrow-commercial', color: '#6c757d' },
+  };
+  Object.values(markerConfigs).forEach(config => {
+    defs.append('marker').attr('id', config.id).attr('viewBox', '0 -5 10 10').attr('refX', 10).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', config.color);
+  });
 
-  simulation = d3.forceSimulation(data.nodes)
-   .force('link', d3.forceLink(data.links).id(d => d.id).distance(70))
-   .force('charge', d3.forceManyBody().strength(-200))
-   .force('collide', d3.forceCollide().radius(d => radiusScale(d.influenceScore) + 3))
-   .force('center', d3.forceCenter(0, 0));
+  // --- 力模拟 (优化后) ---
+  simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+      .force('charge', d3.forceManyBody().strength(-100)) // 减弱排斥力
+      .force('collide', d3.forceCollide().radius(d => sizeScale(d.influence_score || 1) + 5))
+      .force('center', d3.forceCenter(0, 0).strength(0.1));
 
-  svg.append('defs').selectAll('marker')
-   .data(['influence', 'collaboration', 'business'])
-   .join('marker')
-     .attr('id', d => `arrow-${d}`)
-     .attr('viewBox', '0 -5 10 10')
-     .attr('refX', 15)
-     .attr('refY', -0.5)
-     .attr('markerWidth', 6)
-     .attr('markerHeight', 6)
-     .attr('orient', 'auto')
-   .append('path')
-     .attr('d', 'M0,-5L10,0L0,5')
-     .attr('fill', d => ({ influence: '#66f', collaboration: '#3c6', business: '#999' }[d]));
+  // --- 模拟“预热”以获得初始稳定布局 ---
+  const numTicks = Math.ceil(Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay()));
+  for (let i = 0; i < numTicks * 1.5; ++i) {
+      simulation.tick();
+  }
+  isLoading.value = false; // 预热完成，隐藏加载提示
 
-  const link = svg.append('g')
-   .attr('stroke-opacity', 0.6)
-   .selectAll('path')
-   .data(data.links)
-   .join('path')
-     .attr('stroke-width', 1.5)
-     .attr('stroke', d => {
-        // **FIXED**: Use the predefined arrays for checking
-        if (INFLUENCE_EDGES.includes(d.EdgeType)) return '#66f';
-        if (COLLABORATION_EDGES.includes(d.EdgeType)) return '#3c6';
-        return '#999';
-      })
-     .attr('stroke-dasharray', d => INFLUENCE_EDGES.includes(d.EdgeType)? '5,5' : null)
-     .attr('marker-end', d => {
-        if (INFLUENCE_EDGES.includes(d.EdgeType)) return 'url(#arrow-influence)';
-        if (COLLABORATION_EDGES.includes(d.EdgeType)) return 'url(#arrow-collaboration)';
-        return 'url(#arrow-business)';
-      });
+  // --- 绘制元素 (在预热后) ---
+  const link = zoomGroup.append('g').selectAll('path').data(links).join('path').attr('class', d => getLinkClass(d.type)).attr('marker-end', d => `url(#${markerConfigs[getLinkClass(d.type)].id})`);
+  const node = zoomGroup.append('g').selectAll('path').data(nodes).join('path').attr('d', symbolGenerator).attr('transform', d => `scale(${sizeScale(d.influence_score || 1) / 10})`).attr('fill', d => d.genre ? colorScale(d.genre) : '#ccc').attr('stroke', d => d.notable ? 'gold' : '#fff').attr('stroke-width', d => d.notable ? 3 : 1.5);
 
-  const node = svg.append('g')
-   .selectAll('g')
-   .data(data.nodes)
-   .join('g')
-     .call(drag(simulation));
-
-  node.append('path')
-   .attr('d', d3.symbol().type(d => symbolScale(d.NodeType)).size(d => Math.pow(radiusScale(d.influenceScore), 2) * Math.PI))
-   .attr('fill', d => colorScale(d.genre))
-   .attr('stroke', d => d.notable? 'gold' : '#fff')
-   .attr('stroke-width', d => d.notable? 3 : 1.5);
-
-  node.append('text')
-   .text(d => d.name || d.Name)
-   .attr('x', 12)
-   .attr('y', 4)
-   .attr('font-size', '10px')
-   .attr('fill', '#333');
-
+  // --- 交互 ---
+  const tooltip = d3.select(tooltipRef.value);
   node.on('mouseover', (event, d) => {
-    tooltip.visible = true;
-    tooltip.content = `<strong>${d.name || d.Name}</strong><br/>Type: ${d.NodeType}<br/>Genre: ${d.genre || 'N/A'}`;
-    tooltip.x = event.pageX + 15;
-    tooltip.y = event.pageY;
+    tooltip.transition().duration(200).style('opacity', .9);
+    tooltip.html(`<strong>${d.name}</strong><br/>Type: ${d.type}<br/>${d.genre ? `Genre: ${d.genre}<br/>` : ''}Influence: ${d.influence_score ? d.influence_score.toFixed(2) : 'N/A'}`).style('left', (event.pageX + 15) + 'px').style('top', (event.pageY - 28) + 'px');
   }).on('mouseout', () => {
-    tooltip.visible = false;
-  }).on('click', (event, d) => {
-    store.selectNode(d.id);
-  });
+    tooltip.transition().duration(500).style('opacity', 0);
+  }).on('click', (event, d) => { console.log('Clicked node:', d.id, d); });
 
-  const zoom = d3.zoom().scaleExtent([0.1, 8]).on('zoom', (event) => {
-    svg.selectAll('g').attr('transform', event.transform);
-  });
+  const drag = d3.drag().on('start', (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }).on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; }).on('end', (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; });
+  node.call(drag);
+
+  const zoom = d3.zoom().scaleExtent([0.1, 8]).on('zoom', (event) => { zoomGroup.attr('transform', event.transform); });
   svg.call(zoom);
 
+  // --- 模拟更新 ---
   simulation.on('tick', () => {
-    link.attr('d', d => `M${d.source.x},<span class="math-inline">\{d\.source\.y\} L</span>{d.target.x},${d.target.y}`);
-    node.attr('transform', d => `translate(<span class="math-inline">\{d\.x\},</span>{d.y})`);
+    link.attr('d', d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
+    node.attr('transform', d => `translate(${d.x},${d.y}) scale(${sizeScale(d.influence_score || 1) / 10})`);
   });
-}
 
-// --- 4. Dragging Logic ---
-function drag(simulation) {
-  function dragstarted(event, d) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
-    d.fx = d.x;
-    d.fy = d.y;
-  }
-  function dragged(event, d) {
-    d.fx = event.x;
-    d.fy = event.y;
-  }
-  function dragended(event, d) {
-    if (!event.active) simulation.alphaTarget(0);
-    d.fx = null;
-    d.fy = null;
-  }
-  return d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
-}
-
-// --- 5. Vue Lifecycle and Watchers ---
-watch(graphData, (newData) => {
-  if (newData && newData.nodes && newData.nodes.length > 0 && containerRef.value) {
-    if (simulation) simulation.stop();
-    renderNetwork(newData);
-  }
-}, { deep: true });
-
-onMounted(() => {
-  // Initial render if data is already available
-  console.log('onMounted: will call fetchGraphData');
-  store.fetchGraphData();
-
-  if (store.nodes && store.nodes.length > 0) {
-    renderNetwork(graphData.value);
-  }
-});
-
-onUnmounted(() => {
-  if (simulation) {
+  // 定时停止模拟
+  setTimeout(() => {
     simulation.stop();
+  }, 8000);
+};
+
+// --- Vue 生命周期钩子 ---
+onMounted(async () => {
+  try {
+    const response = await fetch('/graph_processed.json');
+    if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+    graphData = await response.json();
+    
+    await nextTick();
+    setupVisualization();
+
+  } catch (error) {
+    console.error("Failed to load or process graph data:", error);
+    isLoading.value = false;
   }
+
+  const resizeObserver = new ResizeObserver(() => {
+    if (graphData) setupVisualization();
+  });
+  if (containerRef.value) resizeObserver.observe(containerRef.value);
+
+  onUnmounted(() => {
+    if (simulation) simulation.stop();
+    resizeObserver.disconnect();
+  });
 });
+
 </script>
 
 <style>
-.network-container {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  position: relative;
-  background-color: #f9f9f9;
-}
-
-.network-container svg {
-  display: block;
-}
-
-.network-tooltip {
-  position: fixed; /* Use fixed positioning to escape SVG container */
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 8px;
-  font-size: 12px;
-  pointer-events: none;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  white-space: nowrap;
-}
-
-.node text {
-  pointer-events: none;
-  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
-}
+.influence-network-container { width: 100%; height: 100%; min-height: 500px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; }
+.loading-indicator { font-size: 1.2em; color: #6c757d; }
+.links path { stroke-opacity: 0.6; fill: none; }
+.link-influence { stroke: #007bff; stroke-dasharray: 5, 5; stroke-width: 1.5px; }
+.link-collaboration { stroke: #28a745; stroke-width: 2px; }
+.link-commercial { stroke: #6c757d; stroke-width: 1px; }
+.nodes path { cursor: pointer; transition: transform 0.1s ease-in-out; }
+.nodes path:hover { transform-origin: center; transform-box: fill-box; }
+.tooltip { position: absolute; text-align: left; padding: 8px; font: 12px sans-serif; background: lightsteelblue; border: 0px; border-radius: 8px; pointer-events: none; z-index: 10; }
 </style>
