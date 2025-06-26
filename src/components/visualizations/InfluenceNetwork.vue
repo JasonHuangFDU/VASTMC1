@@ -47,7 +47,7 @@ const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
 
 // **FIXED**: Properly define the domain and range for the symbol scale [1]
 const symbolScale = d3.scaleOrdinal()
-  .domain(['Person', 'Group', 'Organization']) // 这里填你的节点类型
+  .domain(['Person', 'Group', 'Organization']) // 这里填你的节点类型huihui
   .range([d3.symbolCircle, d3.symbolSquare, d3.symbolTriangle]);
 
 const radiusScale = (influenceScore) => 5 + Math.log2(influenceScore || 1) * 2;
