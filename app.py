@@ -965,6 +965,40 @@ def predict():
                 'risk_factors': risk_factors
             })
         
+        # 准备雷达图数据
+        radar_dimensions = {
+            'influence_score': '影响力',
+            'creative_depth': '创作深度',
+            'collab_diversity': '合作多样性',
+            'oceanus_works': 'Oceanus作品',
+            'total_notable': '知名作品',
+            'collaboration_score': '协作强度'
+        }
+        
+        radar_data = []
+        for artist in results[:3]:
+            feat = artist['features']
+            radar_values = {}
+            
+            # 计算每个维度的标准化值 (0-100)
+            for dim, dim_name in radar_dimensions.items():
+                value = feat.get(dim, 0)
+                if dim == 'influence_score':
+                    normalized = value
+                elif dim == 'creative_depth':
+                    normalized = value * 100  # 已经是0-1范围
+                else:
+                    # 其他维度使用相对比例
+                    max_val = max(1, max(feat.get(dim, 0) for feat in artist_features_dict.values()))
+                    normalized = min(value / max_val * 100, 100)
+                
+                radar_values[dim_name] = round(normalized, 1)
+            
+            radar_data.append({
+                'name': artist['name'],
+                'data': radar_values
+            })
+
         report = {
             "top_artists": top_artists,
             "trends": {
@@ -972,9 +1006,10 @@ def predict():
                 "avg_creativity": round(avg_creativity, 2),
                 "active_artists": len(results)
             },
-            "predicted_stars": predicted_stars
+            "predicted_stars": predicted_stars,
+            "radar_data": radar_data  # 包含三位艺术家的雷达图数据
         }
-        
+        print(radar_data)
         return jsonify(report)
         
     except Exception as e:
