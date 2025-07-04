@@ -23,19 +23,34 @@ export const useGraphStore = defineStore('graph', {
     // 目前为了简化，我们先返回所有节点
     filteredNodes: (state) => {
       // TODO: 在这里根据 state.selectedTimeRange 和 state.selectedGenres 过滤节点
-      
+
       return state.nodes;
     },
     // 这个 getter 会返回过滤后的链接
     filteredLinks: (state) => {
       // TODO: 过滤链接
-      
+
       return state.links;
     },
     // 这个 getter 返回当前选中节点的详细信息
     selectedNodeDetails: (state) => {
       if (!state.selectedNodeId) return null;
       return state.nodes.find(n => n.id === state.selectedNodeId);
+    },
+    // 新增：获取图谱数据用于预测
+    getGraphDataForPrediction: (state) => {
+      // 将 links 转换为 edges 格式
+      const edges = state.links.map(link => ({
+        source: link.source,
+        target: link.target,
+        // 确保有必要的属性
+        relationship: link.relationship || link['Edge Type'] || 'Unknown'
+      }));
+
+      return {
+        nodes: state.nodes,
+        edges: edges
+      };
     }
   },
 
@@ -48,8 +63,9 @@ export const useGraphStore = defineStore('graph', {
       try {
         const graphData = await loadData(); // 从 dataService 加载数据
         console.log("2.加载的图数据:", graphData);
-        this.nodes = graphData.nodes;
-        this.links = graphData.links;
+        this.nodes = graphData.nodes || [];
+        this.links = graphData.links || [];
+        console.log(`加载数据完成: ${this.nodes.length} 节点, ${this.links.length} 边`);
       } catch (e) {
         console.error("加载数据失败:", e);
         this.error = e;
@@ -57,7 +73,7 @@ export const useGraphStore = defineStore('graph', {
         this.isLoading = false;
       }
     },
-    
+
     // 更新过滤器的 action
     updateFilters(newFilters) {
       if (newFilters.timeRange) {
