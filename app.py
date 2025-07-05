@@ -450,8 +450,22 @@ class WeightOptimizer(BaseEstimator, RegressorMixin):
             self.weights = params["weights"]
         return self
 
-# 5. 网格搜索优化权重系数
-def optimize_weights(artist_features_dict):
+# 5. 网格搜索优化权重系数（修改为接受用户权重偏好）
+def optimize_weights(artist_features_dict, weight_preferences=None):
+    # 默认权重排序（如果用户未提供）
+    DEFAULT_WEIGHT_PREFS = [
+        'influence_score',
+        'creative_depth',
+        'label_weight',
+        'producer_count',
+        'oceanus',
+        'collab'
+    ]
+    
+    # 如果用户未提供权重偏好，使用默认值
+    if weight_preferences is None:
+        weight_preferences = DEFAULT_WEIGHT_PREFS
+    
     # 准备数据
     features_list = []
     scores_list = []
@@ -488,23 +502,90 @@ def optimize_weights(artist_features_dict):
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    # 定义参数网格
-    param_grid = {
-        'weights': [
-            [0.20, 0.18, 0.15, 0.15, 0.12, 0.10, 0.05, 0.05],  # 原始权重
-            [0.22, 0.20, 0.12, 0.15, 0.10, 0.08, 0.06, 0.07],  # 调整1
-            [0.18, 0.20, 0.16, 0.14, 0.10, 0.12, 0.05, 0.05],  # 调整2
-            [0.25, 0.15, 0.15, 0.12, 0.08, 0.12, 0.08, 0.05],  # 调整3
-            [0.20, 0.18, 0.10, 0.20, 0.10, 0.10, 0.07, 0.05],  # 调整4
-            [0.15, 0.25, 0.15, 0.15, 0.10, 0.10, 0.05, 0.05]   # 调整5
-        ]
+    # 根据用户偏好生成初始权重矩阵
+    base_weights = [0] * 8
+    weight_values = [0.25, 0.20, 0.18, 0.15, 0.12, 0.10]  # 线性递减权重
+    
+    # 映射用户偏好到特征索引
+    feature_mapping = {
+        'influence_score': [0],
+        'creative_depth': [1],
+        'label_weight': [2],
+        'producer_count': [5],
+        'oceanus': [3, 6],  # oceanus_recent 和 oceanus_ratio
+        'collab': [4, 7]    # collab_diversity 和 collaboration_score
     }
+    
+    # 应用用户权重偏好
+    for pref, weight in zip(weight_preferences, weight_values):
+        indices = feature_mapping.get(pref, [])
+        if not indices:
+            continue
+            
+        # 平分权重到组内特征
+        per_feature_weight = weight / len(indices)
+        for idx in indices:
+            base_weights[idx] = per_feature_weight
+    
+    # 生成权重调整版本
+    param_grid = {'weights': [base_weights]}  # 包含用户偏好的基础权重
+    
+    # 创建5个更聚焦的调整版本
+    # 1. 放大用户最关注的特征
+    top_focus = [0] * 8
+    for idx in feature_mapping[weight_preferences[0]]:
+        top_focus[idx] = 0.15  # 显著增加最关注特征的权重
+    param_grid['weights'].append([
+        min(0.3, max(0.01, base_weights[i] + top_focus[i]))
+        for i in range(8)
+    ])
+    
+    # 2. 缩小用户最不关注的特征
+    bottom_focus = [0] * 8
+    for idx in feature_mapping[weight_preferences[-1]]:
+        bottom_focus[idx] = -0.1  # 显著减少最不关注特征的权重
+    param_grid['weights'].append([
+        min(0.3, max(0.01, base_weights[i] + bottom_focus[i]))
+        for i in range(8)
+    ])
+    
+    # 3. 放大前两个关注特征
+    top2_focus = [0] * 8
+    for pref in weight_preferences[:2]:
+        for idx in feature_mapping.get(pref, []):
+            top2_focus[idx] = 0.08  # 增加关注特征的权重
+    param_grid['weights'].append([
+        min(0.3, max(0.01, base_weights[i] + top2_focus[i]))
+        for i in range(8)
+    ])
+    
+    # 4. 缩小后两个关注特征
+    bottom2_focus = [0] * 8
+    for pref in weight_preferences[-2:]:
+        for idx in feature_mapping.get(pref, []):
+            bottom2_focus[idx] = -0.06  # 减少不太关注特征的权重
+    param_grid['weights'].append([
+        min(0.3, max(0.01, base_weights[i] + bottom2_focus[i]))
+        for i in range(8)
+    ])
+    
+    # 5. 平均权重作为参考
+    param_grid['weights'].append([0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125])
+    
+    # 归一化所有权重组合
+    normalized_weights = []
+    for weight_list in param_grid['weights']:
+        total = sum(weight_list)
+        normalized = [w / total for w in weight_list]
+        normalized_weights.append(normalized)
+    
+    param_grid['weights'] = normalized_weights
     
     # 网格搜索
     grid_search = GridSearchCV(
         WeightOptimizer(),
         param_grid,
-        scoring='neg_mean_squared_error',  # 使用内置的负MSE评分
+        scoring='neg_mean_squared_error',
         cv=5,
         refit=True
     )
@@ -516,15 +597,12 @@ def optimize_weights(artist_features_dict):
     print(f"网格搜索完成，最佳权重: {best_weights}")
     print(f"最佳分数: {-grid_search.best_score_:.4f}")
     
-    # 使用SHAP分析特征重要性
+    # 使用SHAP分析特征重要性（保持不变）
     model = LinearRegression()
     model.fit(X_scaled, y)
-    
-    # 创建SHAP解释器
     explainer = shap.Explainer(model, X_scaled)
     shap_values = explainer(X_scaled)
     
-    # 计算平均SHAP值
     feature_names = [
         'influence_score',
         'creative_depth',
@@ -888,7 +966,6 @@ def train_and_predict(data, node_mapping, artist_features_dict):
     results.sort(key=lambda x: x['probability'], reverse=True)
     return results
 
-# 修改后的 Flask API
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -900,8 +977,13 @@ def predict():
         
         graph_data = request_data['graphData']
         
+        # 获取用户权重偏好（如果有）
+        weight_preferences = request_data.get('weightPreferences')
+        
         # 调试日志
         print(f"收到图谱数据: {len(graph_data.get('nodes', []))} 节点, {len(graph_data.get('edges', []))} 边")
+        if weight_preferences:
+            print(f"用户权重偏好: {weight_preferences}")
         
         # 使用接收到的数据构建图谱
         G, node_mapping, label_mapping = build_knowledge_graph(graph_data)
@@ -909,8 +991,8 @@ def predict():
         # 特征提取
         artist_features_dict = extract_features(G, node_mapping, label_mapping)
         
-        # 优化权重
-        optimized_weights = optimize_weights(artist_features_dict)
+        # 优化权重（传入用户偏好）
+        optimized_weights = optimize_weights(artist_features_dict, weight_preferences)
         
         # 准备图数据
         hetero_data = prepare_hetero_graph_data(G, artist_features_dict, node_mapping, optimized_weights)

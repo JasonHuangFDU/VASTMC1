@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { useGraphStore } from '@/stores/graphStore';
 
-export const predictArtists = async () => {
+// 修改函数以接受权重偏好参数
+export const predictArtists = async (weightPreferences = null) => {
   try {
     const graphStore = useGraphStore();
 
@@ -16,10 +17,14 @@ export const predictArtists = async () => {
       edges: graphStore.links
     };
 
+    // 构建请求体，包含权重偏好
+    const requestBody = { graphData };
+    if (weightPreferences) {
+      requestBody.weightPreferences = weightPreferences;
+    }
+
     // 使用代理路径
-    const response = await axios.post('/api/predict', {
-      graphData: graphData
-    }, {
+    const response = await axios.post('/api/predict', requestBody, {
       headers: {
         'Content-Type': 'application/json'
       }
