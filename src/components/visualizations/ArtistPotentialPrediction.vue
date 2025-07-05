@@ -70,8 +70,8 @@
                 <ArtistRadarChart
                   v-if="report.radar_data && report.radar_data[index]"
                   :artistData="report.radar_data[index]"
-                  :width="220"
-                  :height="220"
+                  :width="200"
+                  :height="200"
                 />
               </div>
             </div>
@@ -83,7 +83,6 @@
 </template>
 
 <script>
-// import axios from 'axios';
 import { useGraphStore } from '@/stores/graphStore';
 import { loadOceanusDataAndPredict } from '@/services/dataService';
 import ArtistRadarChart from './ArtistRadarChart.vue';
@@ -120,13 +119,10 @@ export default {
       this.loading = true;
       this.error = null;
       this.report = null;
-      this.showWeightDialog = false; // 关闭对话框
+      this.showWeightDialog = false;
 
       try {
-        // 获取用户排序的权重ID数组
         const weightPreferences = this.weightOrder.map(item => item.id);
-
-        // 调用服务函数，传入权重偏好
         const result = await loadOceanusDataAndPredict(weightPreferences);
         this.report = result;
       } catch (error) {
@@ -147,6 +143,7 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 .header {
@@ -154,6 +151,8 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap; /* 允许在小屏幕上换行 */
+  gap: 10px; /* 元素间距 */
 }
 
 button {
@@ -164,6 +163,7 @@ button {
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
+  white-space: nowrap; /* 防止按钮文字换行 */
 }
 
 button:disabled {
@@ -177,50 +177,7 @@ button:disabled {
   color: #b71c1c;
   border-radius: 4px;
   margin-bottom: 20px;
-}
-
-.card-title {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 8px;
-}
-
-.card-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #4a6cf7;
-}
-
-.card-companies {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.artist-table {
-  margin-top: 15px;
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-th {
-  background-color: #f9fafb;
-  font-weight: 600;
-  color: #4b5563;
-}
-
-tr:hover {
-  background-color: #f3f4f6;
+  word-break: break-word; /* 长错误信息自动换行 */
 }
 
 .predicted-stars {
@@ -229,151 +186,9 @@ tr:hover {
 
 .stars-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr)); /* 确保卡片不超出容器 */
   gap: 20px;
-  margin-top: 15px;
-}
-
-.star-card {
-  padding: 15px;
-  border-radius: 8px;
-  background-color: #f0f7ff;
-  border: 1px solid #dbeafe;
-}
-
-.star-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.star-header .rank {
-  width: 30px;
-  height: 30px;
-  background-color: #4a6cf7;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin-right: 10px;
-}
-
-.star-header .name {
-  font-weight: bold;
-  flex-grow: 1;
-}
-
-.star-header .probability {
-  background-color: #e0e7ff;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-weight: bold;
-  color: #4a6cf7;
-}
-
-.strengths, .risks {
-  margin-top: 8px;
-  font-size: 14px;
-}
-
-.strength-tag {
-  display: inline-block;
-  background-color: #d1fae5;
-  color: #047857;
-  padding: 3px 8px;
-  border-radius: 4px;
-  margin: 3px 5px 3px 0;
-  font-size: 12px;
-}
-
-.risk-tag {
-  display: inline-block;
-  background-color: #fee2e2;
-  color: #b91c1c;
-  padding: 3px 8px;
-  border-radius: 4px;
-  margin: 3px 5px 3px 0;
-  font-size: 12px;
-}
-
-.artist-prediction {
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-button {
-  padding: 8px 16px;
-  background-color: #4a6cf7;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-button:disabled {
-  background-color: #a0a0a0;
-  cursor: not-allowed;
-}
-
-.error-message {
-  padding: 10px;
-  background-color: #ffebee;
-  color: #b71c1c;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.top-artists {
-  margin-bottom: 30px;
-}
-
-.artist-table {
-  margin-top: 15px;
-  overflow-x: auto;
-}
-
-table {
   width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-th {
-  background-color: #f9fafb;
-  font-weight: 600;
-  color: #4b5563;
-}
-
-tr:hover {
-  background-color: #f3f4f6;
-}
-
-.predicted-stars {
-  margin-top: 30px;
-}
-
-.stars-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 20px;
 }
 
 .star-card {
@@ -381,12 +196,16 @@ tr:hover {
   border-radius: 10px;
   background-color: #fff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden; /* 防止内容溢出 */
+  box-sizing: border-box; /* 确保内边距不影响总宽度 */
+  max-width: 100%; /* 最大宽度限制 */
 }
 
 .star-header {
   display: flex;
   align-items: center;
   margin-bottom: 15px;
+  flex-wrap: wrap; /* 小屏幕上允许换行 */
 }
 
 .star-header .rank {
@@ -400,12 +219,17 @@ tr:hover {
   justify-content: center;
   font-weight: bold;
   margin-right: 10px;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .star-header .name {
   font-weight: bold;
   font-size: 18px;
   flex-grow: 1;
+  min-width: 120px; /* 最小宽度防止挤压 */
+  overflow: hidden;
+  text-overflow: ellipsis; /* 文本过长显示省略号 */
+  white-space: nowrap;
 }
 
 .star-header .probability {
@@ -415,11 +239,13 @@ tr:hover {
   font-weight: bold;
   color: #4a6cf7;
   font-size: 16px;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .star-content {
   display: flex;
   gap: 20px;
+  flex-wrap: wrap; /* 允许在小屏幕上换行 */
 }
 
 .star-details {
@@ -427,6 +253,7 @@ tr:hover {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 200px; /* 最小宽度保证可读性 */
 }
 
 .strengths, .risks {
@@ -443,6 +270,8 @@ tr:hover {
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 13px;
+  word-break: break-word; /* 长单词自动换行 */
+  max-width: 100%; /* 防止溢出 */
 }
 
 .risk-tag {
@@ -452,11 +281,14 @@ tr:hover {
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 13px;
+  word-break: break-word; /* 长单词自动换行 */
+  max-width: 100%; /* 防止溢出 */
 }
 
 .star-radar {
   width: 220px;
   height: 220px;
+  flex-shrink: 0; /* 防止图表被挤压 */
 }
 
 /* 权重排序对话框样式 */
@@ -480,6 +312,8 @@ tr:hover {
   width: 90%;
   max-width: 600px;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  max-height: 90vh; /* 最大高度 */
+  overflow-y: auto; /* 内容过多可滚动 */
 }
 
 .dialog-content h3 {
@@ -531,11 +365,13 @@ tr:hover {
   font-weight: bold;
   min-width: 140px;
   color: #4a6cf7;
+  flex-shrink: 0; /* 防止标签被压缩 */
 }
 
 .weight-description {
   color: #6c757d;
   font-size: 0.9rem;
+  word-break: break-word; /* 长描述自动换行 */
 }
 
 .dialog-buttons {
@@ -581,6 +417,9 @@ tr:hover {
   .star-radar {
     width: 100%;
     height: 250px;
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
   }
 
   .weight-item {
@@ -590,10 +429,34 @@ tr:hover {
 
   .drag-handle {
     margin-bottom: 10px;
+    margin-right: 0;
   }
 
   .weight-label {
     margin-bottom: 5px;
+  }
+
+  .star-header .name {
+    white-space: normal; /* 小屏幕上允许名字换行 */
+    min-width: auto;
+  }
+}
+
+/* 新增：防止在窄屏幕上内容溢出 */
+@media (max-width: 480px) {
+  .star-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .star-header .rank,
+  .star-header .probability {
+    margin-right: 0;
+  }
+
+  .probability {
+    align-self: flex-start; /* 概率标签左对齐 */
   }
 }
 </style>

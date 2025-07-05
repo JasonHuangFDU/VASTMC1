@@ -1061,20 +1061,32 @@ def predict():
         for artist in results[:3]:
             feat = artist['features']
             radar_values = {}
-            
-            # 计算每个维度的标准化值 (0-100)
+            # 预计算每个维度的最大值（排除creative_depth）
+            max_values = {}
+            for dim in radar_dimensions.keys():
+                if dim == 'creative_depth': 
+                    continue  # creative_depth不需要最大值
+                # 获取该维度在所有特征中的最大值（至少为1）
+                max_val = max(1, max(feat.get(dim, 0) for feat in artist_features_dict.values()))
+                max_values[dim] = max_val
+
+            # 计算每个维度的标准化值 (50-100)
+            radar_values = {}
             for dim, dim_name in radar_dimensions.items():
                 value = feat.get(dim, 0)
-                if dim == 'influence_score':
-                    normalized = value
-                elif dim == 'creative_depth':
-                    normalized = value * 100  # 已经是0-1范围
-                else:
-                    # 其他维度使用相对比例
-                    max_val = max(1, max(feat.get(dim, 0) for feat in artist_features_dict.values()))
-                    normalized = min(value / max_val * 100, 100)
                 
-                radar_values[dim_name] = round(normalized, 1)
+                if dim == 'influence_score':
+                    # 使用预计算的最大值归一化
+                    normalized = min(value / max_values[dim] * 100, 100)
+                elif dim == 'creative_depth':
+                    normalized = value * 100  # 0-1 -> 0-100
+                else:
+                    # 使用预计算的最大值归一化
+                    normalized = min(value / max_values[dim] * 100, 100)
+                
+                # 关键变换：映射到50-100范围
+                scaled_value = 50 + normalized * 0.5
+                radar_values[dim_name] = round(scaled_value, 1)          
             
             radar_data.append({
                 'name': artist['name'],
