@@ -7,7 +7,7 @@
     <main>
       <aside class="left-column">
         <GenreStreamgraph />
-        <InfluenceSankey />
+        <Q2SankeyView />
       </aside>
 
       <div class="center-column">
@@ -22,15 +22,15 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useGraphStore } from './stores/graphStore';
 
 // 导入所有需要的组件
 import SearchBar from './components/controls/SearchBar.vue';
 import InfluenceNetwork from './components/visualizations/InfluenceNetwork.vue';
 import GenreStreamgraph from './components/visualizations/GenreStreamgraph.vue';
-import InfluenceSankey from './components/visualizations/InfluenceSankey.vue';
 import CareerTrajectory from './components/visualizations/CareerTrajectory.vue';
+import Q2SankeyView from './components/Q2SankeyView.vue';
 
 // 获取 store 实例
 const store = useGraphStore();
@@ -87,7 +87,7 @@ main {
 }
 
 .left-column,.right-column {
-  flex: 1; /* 左右两栏各占一份空间 */
+  flex: 1.5; /* 左右两栏各占1.5份空间 */
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -102,7 +102,7 @@ main {
 }
 
 .center-column {
-  flex: 3; /* 中间一栏占据三份空间，是左右栏的三倍宽 */
+  flex: 2; /* 中间一栏占据2份空间 */
   display: flex;
   flex-direction: column;
   padding: 10px;

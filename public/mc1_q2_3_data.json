@@ -1,0 +1,846 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "name": "Oceanus Folk (Contemporary)",
+      "type": "Genre"
+    },
+    {
+      "id": 1,
+      "name": "Dream Pop",
+      "type": "Genre"
+    },
+    {
+      "id": 2,
+      "name": "Qiang Cui",
+      "type": "Artist"
+    },
+    {
+      "id": 3,
+      "name": "Yang Zhang",
+      "type": "Artist"
+    },
+    {
+      "id": 4,
+      "name": "Yan Liu",
+      "type": "Artist"
+    },
+    {
+      "id": 5,
+      "name": "Jun Yu",
+      "type": "Artist"
+    },
+    {
+      "id": 6,
+      "name": "Ping Jin",
+      "type": "Artist"
+    },
+    {
+      "id": 7,
+      "name": "Yang Zou",
+      "type": "Artist"
+    },
+    {
+      "id": 8,
+      "name": "Tao Zou",
+      "type": "Artist"
+    },
+    {
+      "id": 9,
+      "name": "Desert Rock",
+      "type": "Genre"
+    },
+    {
+      "id": 10,
+      "name": "Allison Curtis",
+      "type": "Artist"
+    },
+    {
+      "id": 11,
+      "name": "Qiang Deng",
+      "type": "Artist"
+    },
+    {
+      "id": 12,
+      "name": "Na Feng",
+      "type": "Artist"
+    },
+    {
+      "id": 13,
+      "name": "Li Li",
+      "type": "Artist"
+    },
+    {
+      "id": 14,
+      "name": "Guiying Liao",
+      "type": "Artist"
+    },
+    {
+      "id": 15,
+      "name": "Qiang Fang",
+      "type": "Artist"
+    },
+    {
+      "id": 16,
+      "name": "Christopher Conway",
+      "type": "Artist"
+    },
+    {
+      "id": 17,
+      "name": "Ping Zeng",
+      "type": "Artist"
+    },
+    {
+      "id": 18,
+      "name": "Jun Guo",
+      "type": "Artist"
+    },
+    {
+      "id": 19,
+      "name": "Miki Hayashi",
+      "type": "Artist"
+    },
+    {
+      "id": 20,
+      "name": "Wei Liao",
+      "type": "Artist"
+    },
+    {
+      "id": 21,
+      "name": "Nath Henry",
+      "type": "Artist"
+    },
+    {
+      "id": 22,
+      "name": "Na Ren",
+      "type": "Artist"
+    },
+    {
+      "id": 23,
+      "name": "Ming Zhao",
+      "type": "Artist"
+    },
+    {
+      "id": 24,
+      "name": "Indie Folk",
+      "type": "Genre"
+    },
+    {
+      "id": 25,
+      "name": "Min Fu",
+      "type": "Artist"
+    },
+    {
+      "id": 26,
+      "name": "Fang Cui",
+      "type": "Artist"
+    },
+    {
+      "id": 27,
+      "name": "Jun Qiu",
+      "type": "Artist"
+    },
+    {
+      "id": 28,
+      "name": "April Mills",
+      "type": "Artist"
+    },
+    {
+      "id": 29,
+      "name": "Xiulan Gong",
+      "type": "Artist"
+    },
+    {
+      "id": 30,
+      "name": "Yan Tang",
+      "type": "Artist"
+    },
+    {
+      "id": 31,
+      "name": "Xiuying Li",
+      "type": "Artist"
+    },
+    {
+      "id": 32,
+      "name": "Lei Jia",
+      "type": "Artist"
+    },
+    {
+      "id": 33,
+      "name": "Xia Zhu",
+      "type": "Artist"
+    },
+    {
+      "id": 34,
+      "name": "Lei Liao",
+      "type": "Artist"
+    },
+    {
+      "id": 35,
+      "name": "Space Rock",
+      "type": "Genre"
+    },
+    {
+      "id": 36,
+      "name": "Xiuying Lin",
+      "type": "Artist"
+    },
+    {
+      "id": 37,
+      "name": "Qiang Qian",
+      "type": "Artist"
+    },
+    {
+      "id": 38,
+      "name": "Na Jia",
+      "type": "Artist"
+    },
+    {
+      "id": 39,
+      "name": "Wei Gao",
+      "type": "Artist"
+    },
+    {
+      "id": 40,
+      "name": "Li Yang",
+      "type": "Artist"
+    },
+    {
+      "id": 41,
+      "name": "Bartek Krężołek",
+      "type": "Artist"
+    },
+    {
+      "id": 42,
+      "name": "Alternative Rock",
+      "type": "Genre"
+    },
+    {
+      "id": 43,
+      "name": "Yan Qiu",
+      "type": "Artist"
+    },
+    {
+      "id": 44,
+      "name": "Synthwave",
+      "type": "Genre"
+    },
+    {
+      "id": 45,
+      "name": "Charles Jacobs",
+      "type": "Artist"
+    },
+    {
+      "id": 46,
+      "name": "Heather Kennedy",
+      "type": "Artist"
+    },
+    {
+      "id": 47,
+      "name": "Ming Xiao",
+      "type": "Artist"
+    },
+    {
+      "id": 48,
+      "name": "Jazz Surf Rock",
+      "type": "Genre"
+    },
+    {
+      "id": 49,
+      "name": "Ming Xue",
+      "type": "Artist"
+    },
+    {
+      "id": 50,
+      "name": "Chao Xiao",
+      "type": "Artist"
+    },
+    {
+      "id": 51,
+      "name": "Ping Liao",
+      "type": "Artist"
+    },
+    {
+      "id": 52,
+      "name": "Meagan Hendrix",
+      "type": "Artist"
+    },
+    {
+      "id": 53,
+      "name": "Doom Metal",
+      "type": "Genre"
+    },
+    {
+      "id": 54,
+      "name": "Jun Cui",
+      "type": "Artist"
+    },
+    {
+      "id": 55,
+      "name": "Synthpop",
+      "type": "Genre"
+    },
+    {
+      "id": 56,
+      "name": "Bruce Hernandez",
+      "type": "Artist"
+    },
+    {
+      "id": 57,
+      "name": "Indie Rock",
+      "type": "Genre"
+    },
+    {
+      "id": 58,
+      "name": "Imelda Zaguri",
+      "type": "Artist"
+    },
+    {
+      "id": 59,
+      "name": "Post-Apocalyptic Folk",
+      "type": "Genre"
+    },
+    {
+      "id": 60,
+      "name": "Xiuying Xie",
+      "type": "Artist"
+    },
+    {
+      "id": 61,
+      "name": "The Hollow Monarchs",
+      "type": "Artist"
+    },
+    {
+      "id": 62,
+      "name": "Symphonic Metal",
+      "type": "Genre"
+    },
+    {
+      "id": 63,
+      "name": "Fang Wu",
+      "type": "Artist"
+    }
+  ],
+  "links": [
+    {
+      "source": 1,
+      "target": 2,
+      "value": 2
+    },
+    {
+      "source": 2,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 1,
+      "target": 3,
+      "value": 1
+    },
+    {
+      "source": 3,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 1,
+      "target": 4,
+      "value": 1
+    },
+    {
+      "source": 4,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 1,
+      "target": 5,
+      "value": 1
+    },
+    {
+      "source": 5,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 1,
+      "target": 6,
+      "value": 1
+    },
+    {
+      "source": 6,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 1,
+      "target": 7,
+      "value": 1
+    },
+    {
+      "source": 7,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 1,
+      "target": 8,
+      "value": 1
+    },
+    {
+      "source": 8,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 9,
+      "target": 10,
+      "value": 2
+    },
+    {
+      "source": 10,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 9,
+      "target": 11,
+      "value": 1
+    },
+    {
+      "source": 11,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 9,
+      "target": 12,
+      "value": 2
+    },
+    {
+      "source": 12,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 9,
+      "target": 13,
+      "value": 2
+    },
+    {
+      "source": 13,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 9,
+      "target": 14,
+      "value": 1
+    },
+    {
+      "source": 14,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 9,
+      "target": 15,
+      "value": 2
+    },
+    {
+      "source": 15,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 9,
+      "target": 16,
+      "value": 1
+    },
+    {
+      "source": 16,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 9,
+      "target": 17,
+      "value": 4
+    },
+    {
+      "source": 17,
+      "target": 0,
+      "value": 4
+    },
+    {
+      "source": 9,
+      "target": 18,
+      "value": 1
+    },
+    {
+      "source": 18,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 9,
+      "target": 19,
+      "value": 1
+    },
+    {
+      "source": 19,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 9,
+      "target": 20,
+      "value": 1
+    },
+    {
+      "source": 20,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 9,
+      "target": 21,
+      "value": 1
+    },
+    {
+      "source": 21,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 9,
+      "target": 22,
+      "value": 1
+    },
+    {
+      "source": 22,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 9,
+      "target": 23,
+      "value": 1
+    },
+    {
+      "source": 23,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 24,
+      "target": 25,
+      "value": 2
+    },
+    {
+      "source": 25,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 24,
+      "target": 26,
+      "value": 1
+    },
+    {
+      "source": 26,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 24,
+      "target": 27,
+      "value": 1
+    },
+    {
+      "source": 27,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 24,
+      "target": 28,
+      "value": 1
+    },
+    {
+      "source": 28,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 24,
+      "target": 29,
+      "value": 1
+    },
+    {
+      "source": 29,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 24,
+      "target": 30,
+      "value": 1
+    },
+    {
+      "source": 30,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 24,
+      "target": 31,
+      "value": 1
+    },
+    {
+      "source": 31,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 24,
+      "target": 32,
+      "value": 2
+    },
+    {
+      "source": 32,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 24,
+      "target": 33,
+      "value": 2
+    },
+    {
+      "source": 33,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 24,
+      "target": 34,
+      "value": 1
+    },
+    {
+      "source": 34,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 35,
+      "target": 36,
+      "value": 1
+    },
+    {
+      "source": 36,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 35,
+      "target": 37,
+      "value": 6
+    },
+    {
+      "source": 37,
+      "target": 0,
+      "value": 6
+    },
+    {
+      "source": 35,
+      "target": 38,
+      "value": 1
+    },
+    {
+      "source": 38,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 35,
+      "target": 39,
+      "value": 1
+    },
+    {
+      "source": 39,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 35,
+      "target": 40,
+      "value": 1
+    },
+    {
+      "source": 40,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 35,
+      "target": 41,
+      "value": 1
+    },
+    {
+      "source": 41,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 42,
+      "target": 43,
+      "value": 1
+    },
+    {
+      "source": 43,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 44,
+      "target": 45,
+      "value": 1
+    },
+    {
+      "source": 45,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 44,
+      "target": 14,
+      "value": 2
+    },
+    {
+      "source": 14,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 44,
+      "target": 46,
+      "value": 1
+    },
+    {
+      "source": 46,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 44,
+      "target": 47,
+      "value": 2
+    },
+    {
+      "source": 47,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 48,
+      "target": 49,
+      "value": 1
+    },
+    {
+      "source": 49,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 48,
+      "target": 50,
+      "value": 1
+    },
+    {
+      "source": 50,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 48,
+      "target": 51,
+      "value": 2
+    },
+    {
+      "source": 51,
+      "target": 0,
+      "value": 2
+    },
+    {
+      "source": 48,
+      "target": 52,
+      "value": 1
+    },
+    {
+      "source": 52,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 53,
+      "target": 54,
+      "value": 1
+    },
+    {
+      "source": 54,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 55,
+      "target": 56,
+      "value": 1
+    },
+    {
+      "source": 56,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 57,
+      "target": 58,
+      "value": 1
+    },
+    {
+      "source": 58,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 59,
+      "target": 60,
+      "value": 1
+    },
+    {
+      "source": 60,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 59,
+      "target": 61,
+      "value": 1
+    },
+    {
+      "source": 61,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 62,
+      "target": 63,
+      "value": 1
+    },
+    {
+      "source": 63,
+      "target": 0,
+      "value": 1
+    }
+  ]
+}
