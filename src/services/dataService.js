@@ -1,12 +1,39 @@
 // src/services/dataService.js
 import * as d3 from 'd3';
 
+/**
+ * @deprecated This function loads the full, unprocessed graph.
+ * Use loadYearlyData for better performance.
+ */
 export async function loadData() {
-  console.log("loadData 被调用");
-  const graph = await d3.json('/graph_processed.json');
-  console.log("1.加载的图数据:", graph);
+  console.log("loadData 被调用 (deprecated)");
+  const graph = await d3.json('/MC1_graph.json'); // 指向原始文件以防万一
+  console.log("1.加载的全量图数据:", graph);
   return graph;
 }
+
+/**
+ * Loads the graph data that has been pre-processed and chunked by year.
+ * @returns {Promise<Object>} A promise that resolves to the yearly graph data.
+ */
+export async function loadYearlyData() {
+  console.log("Loading pre-processed yearly data...");
+  const yearlyData = await d3.json('/graph_by_year.json');
+  console.log("Yearly data loaded:", yearlyData);
+  return yearlyData;
+}
+
+/**
+ * Loads the available filter options (genres, node types, edge types).
+ * @returns {Promise<Object>} A promise that resolves to the filter options.
+ */
+export async function loadFilterOptions() {
+  console.log("Loading filter options...");
+  const filterOptions = await d3.json('/filter_options.json');
+  console.log("Filter options loaded:", filterOptions);
+  return filterOptions;
+}
+
 
 // 修改函数以接受权重偏好参数
 export async function loadOceanusDataAndPredict(weightPreferences = null) {

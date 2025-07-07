@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { useGraphStore } from './stores/graphStore';
 
 // 导入所有需要的组件
@@ -36,15 +36,7 @@ import Q2SankeyView from './components/Q2SankeyView.vue';
 const store = useGraphStore();
 
 onMounted(() => {
-  document.title = 'Oceanus Influence Weaver';
-});
-
-// 在组件挂载后，触发数据加载
-onMounted(() => {
-  store.fetchGraphData().then(() => {
-    console.log('App.vue: nodes', store.nodes);
-    console.log('App.vue: links', store.links);
-  });
+  store.initializeStore();
 });
 </script>
 
@@ -87,7 +79,7 @@ main {
 }
 
 .left-column,.right-column {
-  flex: 1.5; /* 左右两栏各占1.5份空间 */
+  flex: 0.5; /* 左右两栏各占1.5份空间 */
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -102,10 +94,12 @@ main {
 }
 
 .center-column {
-  flex: 2; /* 中间一栏占据2份空间 */
+  flex: 8; /* 中间一栏占据8份空间，大幅增加 */
   display: flex;
   flex-direction: column;
-  padding: 10px;
+  padding: 5px; /* 恢复内边距 */
+  flex-grow: 1; /* 确保中间列能够填充可用空间 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 /* 为每个视图组件添加一些基本样式，方便区分 */
