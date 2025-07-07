@@ -1,5 +1,8 @@
 // src/services/dataService.js
 import * as d3 from 'd3';
+import axios from 'axios';
+
+const API_BASE_URL = 'http://localhost:5001/api';
 
 /**
  * @deprecated This function loads the full, unprocessed graph.
@@ -10,6 +13,33 @@ export async function loadData() {
   const graph = await d3.json('/MC1_graph.json'); // 指向原始文件以防万一
   console.log("1.加载的全量图数据:", graph);
   return graph;
+}
+
+export async function fetchGraphLayout(payload) {
+  try {
+    // 调用后端的 /api/graph/layout 接口
+    const response = await axios.post(`${API_BASE_URL}/graph/layout`, payload);
+    return response.data;
+  } catch (error) {
+    console.error("获取图布局时出错:", error);
+    // 重新抛出错误，以便 store 中的调用函数可以捕获它
+    throw error;
+  }
+}
+
+/**
+ * 从后端获取可用的筛选选项（流派、节点类型等）。
+ * @returns {Promise<object>} 筛选选项数据。
+ */
+export async function fetchFilterOptions() {
+  try {
+    // 调用后端的 /api/graph/meta 接口
+    const response = await axios.get(`${API_BASE_URL}/graph/meta`);
+    return response.data;
+  } catch (error) {
+    console.error("获取筛选选项时出错:", error);
+    throw error;
+  }
 }
 
 /**
