@@ -6,7 +6,7 @@
     </header>
     <main>
       <aside class="left-column">
-        <GenreStreamgraph />
+        <GenreLineGraph />
         <Q2SankeyView />
       </aside>
 
@@ -22,21 +22,39 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useGraphStore } from './stores/graphStore';
 
 // 导入所有需要的组件
 import SearchBar from './components/controls/SearchBar.vue';
 import InfluenceNetwork from './components/visualizations/InfluenceNetwork.vue';
-import GenreStreamgraph from './components/visualizations/GenreStreamgraph.vue';
+import GenreLineGraph from './components/visualizations/GenreLineGraph.vue';
 import CareerTrajectory from './components/visualizations/CareerTrajectory.vue';
 import Q2SankeyView from './components/Q2SankeyView.vue';
 
-// 获取 store 实例
+const q2_1_data = ref(null);
 const store = useGraphStore();
 
+// 异步函数加载数据
+async function loadVisualizationsData() {
+  try {
+    const response = await fetch('/mc1_q2_1_data.json');
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    q2_1_data.value = await response.json();
+    console.log("q2_1_data loaded successfully.");
+  } catch (error) {
+    console.error("Failed to load q2.1 data:", error);
+  }
+}
+
 onMounted(() => {
+  // 初始化 Pinia store
   store.initializeStore();
+  
+  // 调用函数来加载数据
+  loadVisualizationsData();
 });
 </script>
 

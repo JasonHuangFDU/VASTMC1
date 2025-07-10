@@ -1,0 +1,185 @@
+{
+    "title": "Influence of Oceanus Folk Over Time (Q2.1)",
+    "description": "Yearly count of works influenced by the Oceanus Folk genre, with a breakdown by genre.",
+    "years": [
+        "2007",
+        "2010",
+        "2012",
+        "2013",
+        "2016",
+        "2017",
+        "2018",
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024",
+        "2025",
+        "2026",
+        "2027",
+        "2028",
+        "2029",
+        "2030",
+        "2031",
+        "2033",
+        "2034",
+        "2038"
+    ],
+    "totalInfluenceByYear": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        10,
+        3,
+        1,
+        4,
+        2,
+        6,
+        21,
+        7,
+        6,
+        13,
+        25,
+        13,
+        21,
+        5,
+        2,
+        1,
+        2,
+        1
+    ],
+    "genreBreakdownByYear": [
+        {
+            "Doom Metal": 1
+        },
+        {
+            "Indie Folk": 1
+        },
+        {
+            "Americana": 1
+        },
+        {
+            "Indie Folk": 1,
+            "Americana": 1
+        },
+        {
+            "Indie Folk": 1
+        },
+        {
+            "Indie Folk": 1,
+            "Dream Pop": 4,
+            "Americana": 1,
+            "Doom Metal": 2,
+            "Alternative Rock": 1,
+            "Synthpop": 1
+        },
+        {
+            "Space Rock": 1,
+            "Americana": 1,
+            "Indie Folk": 1
+        },
+        {
+            "Darkwave": 1
+        },
+        {
+            "Indie Folk": 1,
+            "Dream Pop": 1,
+            "Desert Rock": 1,
+            "Americana": 1
+        },
+        {
+            "Synthwave": 1,
+            "Dream Pop": 1
+        },
+        {
+            "Space Rock": 2,
+            "Synthwave": 2,
+            "Dream Pop": 2
+        },
+        {
+            "Desert Rock": 4,
+            "Dream Pop": 5,
+            "Indie Folk": 5,
+            "Jazz Surf Rock": 1,
+            "Synthpop": 1,
+            "Doom Metal": 2,
+            "Synthwave": 1,
+            "Americana": 1,
+            "Space Rock": 1
+        },
+        {
+            "Desert Rock": 2,
+            "Synthwave": 1,
+            "Space Rock": 2,
+            "Post-Apocalyptic Folk": 1,
+            "Americana": 1
+        },
+        {
+            "Americana": 1,
+            "Indie Folk": 1,
+            "Space Rock": 2,
+            "Dream Pop": 1,
+            "Desert Rock": 1
+        },
+        {
+            "Synthwave": 2,
+            "Indie Folk": 4,
+            "Desert Rock": 3,
+            "Doom Metal": 1,
+            "Post-Apocalyptic Folk": 1,
+            "Space Rock": 2
+        },
+        {
+            "Space Rock": 5,
+            "Indie Folk": 4,
+            "Synthpop": 1,
+            "Dream Pop": 7,
+            "Doom Metal": 1,
+            "Desert Rock": 3,
+            "Jazz Surf Rock": 1,
+            "Americana": 2,
+            "Indie Rock": 1
+        },
+        {
+            "Indie Folk": 3,
+            "Desert Rock": 2,
+            "Space Rock": 2,
+            "Synthwave": 1,
+            "Darkwave": 1,
+            "Dream Pop": 2,
+            "Jazz Surf Rock": 1,
+            "Symphonic Metal": 1
+        },
+        {
+            "Synthwave": 2,
+            "Symphonic Metal": 1,
+            "Dream Pop": 6,
+            "Desert Rock": 6,
+            "Jazz Surf Rock": 2,
+            "Indie Folk": 3,
+            "Alternative Rock": 1
+        },
+        {
+            "Desert Rock": 2,
+            "Synthwave": 1,
+            "Indie Folk": 2
+        },
+        {
+            "Post-Apocalyptic Folk": 1,
+            "Synthpop": 1
+        },
+        {
+            "Emo/Pop Punk": 1
+        },
+        {
+            "Speed Metal": 1,
+            "Indie Rock": 1
+        },
+        {
+            "Indie Rock": 1
+        }
+    ]
+}
