@@ -14,6 +14,7 @@ export const useGraphStore = defineStore('graph', {
     selectedNodeTypes: [],
     selectedEdgeTypes: [],
     searchQuery: null,
+    hopLevel: 1, // 新增：控制网络图的跳数，1或2
 
     // --- UI State ---
     isLoading: false,
@@ -80,6 +81,7 @@ export const useGraphStore = defineStore('graph', {
       
       const payload = {
         centerNodeName: this.searchQuery,
+        hopLevel: this.hopLevel, // 新增：将跳数信息发送给后端
         filters: {
           nodeTypes: this.selectedNodeTypes.length > 0 ? this.selectedNodeTypes : null,
           edgeTypes: this.selectedEdgeTypes.length > 0 ? this.selectedEdgeTypes : null,
@@ -160,6 +162,13 @@ export const useGraphStore = defineStore('graph', {
     setEdgeTypes(types) {
         this.selectedEdgeTypes = types;
         this.updateGraphLayout();
+    },
+
+    setHopLevel(level) {
+        if (this.hopLevel !== level) {
+            this.hopLevel = level;
+            this.updateGraphLayout(); // 当跳数变化时，立即更新图
+        }
     },
 
     setGenreAndResetOthers(genre) {

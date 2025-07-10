@@ -84,6 +84,21 @@
       <div class="dropdown">
         <button @click="toggleDropdown('edgeTypes')" class="dropdown-toggle">边类型 ({{ selectedEdgeTypes.length || '所有' }})</button>
         <div v-if="activeDropdown === 'edgeTypes'" class="dropdown-menu">
+          <!-- 新增：聚合选择 -->
+          <div class="dropdown-item aggregate-item">
+            <input type="checkbox" id="edge-group-influence" v-model="influenceEdges" />
+            <label for="edge-group-influence">影响力边</label>
+          </div>
+          <div class="dropdown-item aggregate-item">
+            <input type="checkbox" id="edge-group-collaboration" v-model="collaborationEdges" />
+            <label for="edge-group-collaboration">合作边</label>
+          </div>
+          <div class="dropdown-item aggregate-item">
+            <input type="checkbox" id="edge-group-commercial" v-model="commercialEdges" />
+            <label for="edge-group-commercial">商业边</label>
+          </div>
+          <hr class="dropdown-divider" />
+          <!-- 单个边选择 -->
           <div v-for="type in filterOptions.edge_types" :key="type" class="dropdown-item">
             <input type="checkbox" :id="`edge-${type}`" :value="type" v-model="selectedEdgeTypes" @change="store.setEdgeTypes(selectedEdgeTypes)" />
             <label :for="`edge-${type}`">{{ type }}</label>
@@ -113,6 +128,35 @@ const {
   selectedEdgeTypes,
   filterOptions
 } = storeToRefs(store);
+
+// --- 边类型分组 ---
+const INFLUENCE_EDGES = ['InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'];
+const COLLABORATION_EDGES = ['PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf', 'MemberOf'];
+const COMMERCIAL_EDGES = ['RecordedBy', 'DistributedBy'];
+
+// --- 聚合选择的计算属性 ---
+const createEdgeGroupComputer = (edgeGroup) => {
+  return computed({
+    get() {
+      const selectedSet = new Set(selectedEdgeTypes.value);
+      return edgeGroup.every(edge => selectedSet.has(edge));
+    },
+    set(value) {
+      const selectedSet = new Set(selectedEdgeTypes.value);
+      if (value) {
+        edgeGroup.forEach(edge => selectedSet.add(edge));
+      } else {
+        edgeGroup.forEach(edge => selectedSet.delete(edge));
+      }
+      store.setEdgeTypes(Array.from(selectedSet));
+    }
+  });
+};
+
+const influenceEdges = createEdgeGroupComputer(INFLUENCE_EDGES);
+const collaborationEdges = createEdgeGroupComputer(COLLABORATION_EDGES);
+const commercialEdges = createEdgeGroupComputer(COMMERCIAL_EDGES);
+
 
 // --- Component Local State ---
 const activeDropdown = ref(null);
@@ -345,6 +389,16 @@ onMounted(() => {
 .dropdown-item label {
   margin-left: 0.75rem;
   font-size: 1.1rem;
+}
+
+/* 新增样式 */
+.aggregate-item label {
+  font-weight: bold;
+}
+.dropdown-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0.5rem 0;
 }
 
 .reset-button {

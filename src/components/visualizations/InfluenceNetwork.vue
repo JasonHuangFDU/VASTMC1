@@ -1,5 +1,12 @@
 <template>
   <div ref="containerRef" class="influence-network-container">
+    <!-- 新增：跳数切换按钮 -->
+    <div class="hop-toggle-container">
+      <button @click="toggleHopLevel" class="hop-toggle-button">
+        {{ store.hopLevel === 1 ? '切换到二跳连接' : '切换到一跳连接' }}
+      </button>
+    </div>
+
     <div v-if="store.isLoading" class="loading-indicator">正在计算布局...</div>
     <div v-if="!store.isLoading && (!store.graphData || store.graphData.nodes.length === 0)" class="empty-state">
       没有匹配当前筛选条件的数据。
@@ -56,10 +63,31 @@ const showGenreLegend = ref(false);
 const toggleNodeEdgeLegend = () => showNodeEdgeLegend.value = !showNodeEdgeLegend.value;
 const toggleGenreLegend = () => showGenreLegend.value = !showGenreLegend.value;
 
+// --- 新增：跳数切换逻辑 ---
+const toggleHopLevel = () => {
+  const newLevel = store.hopLevel === 1 ? 2 : 1;
+  store.setHopLevel(newLevel);
+};
+
 // --- D3 全局变量 ---
 let simulation;
 let svg;
 let zoomGroup;
+// 【箭头修正 #1】将sizeScale移至外部作用域
+let sizeScale = d3.scaleSqrt();
+
+// 【箭头修正 #2】新增获取节点半径的辅助函数
+function getNodeRadius(node) {
+  if (!node) return 8; // 返回一个默认的最小半径
+  const nodeType = node['Node Type'];
+  if (nodeType === 'Song' || nodeType === 'Album') {
+    return 12;
+  }
+  // 其他节点使用基于影响力分数的动态尺寸
+  // sizeScale的范围是[8, 30]，所以总是返回一个有效值
+  return sizeScale(node?.influence_score || 0);
+}
+
 
 // --- 图例数据 ---
 const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
@@ -76,7 +104,7 @@ const nodeLegend = computed(() => [
 const edgeLegend = computed(() => [
   { name: '影响力', color: '#007bff', dasharray: '6, 3' },
   { name: '合作', color: '#28a745', dasharray: '0' },
-  { name: '成员关系', color: '#6c757d', dasharray: '2, 2' },
+  { name: '商业', color: '#6c757d', dasharray: '2, 2' },
 ]);
 
 const genreLegend = computed(() => {
@@ -173,7 +201,8 @@ function renderGraph(data) {
   zoomGroup = svg.append('g');
 
   // --- 视觉编码 ---
-  const sizeScale = d3.scaleSqrt().domain([0, d3.max(nodes, d => d?.influence_score || 0) || 1]).range([8, 30]);
+  // 【箭头修正 #3】更新sizeScale的定义，而不是重新声明
+  sizeScale.domain([0, d3.max(nodes, d => d?.influence_score || 0) || 1]).range([8, 30]);
   colorScale.domain([...new Set(nodes.map(d => d.genre).filter(Boolean))]);
   const getSymbol = d3.scaleOrdinal().domain(['Person', 'MusicalGroup', 'Song', 'Album', 'RecordLabel']).range([d3.symbolCircle, d3.symbolDiamond, d3.symbolTriangle, d3.symbolSquare, d3.symbolWye]);
   const getLinkClass = (edgeType) => {
@@ -187,14 +216,15 @@ function renderGraph(data) {
   // --- 箭头定义 ---
   const defs = svg.append('defs');
   ['link-influence', 'link-collaboration', 'link-membership'].forEach(cls => {
-    defs.append('marker').attr('id', `arrow-${cls}`).attr('viewBox', '0 -5 10 10').attr('refX', 15).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('path').attr('d', 'M0,-5L10,0L0,5').attr('class', `arrow-head ${cls}`);
+    // 【箭头修正 #4】修正refX，使箭头尖端与线段末端对齐
+    defs.append('marker').attr('id', `arrow-${cls}`).attr('viewBox', '0 -5 10 10').attr('refX', 10).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('path').attr('d', 'M0,-5L10,0L0,5').attr('class', `arrow-head ${cls}`);
   });
 
   // --- 力模拟 ---
   simulation = d3.forceSimulation(nodes)
     .force('link', d3.forceLink(links).id(d => d.id).distance(120).strength(0.5))
     .force('charge', d3.forceManyBody().strength(-250))
-    .force('collide', d3.forceCollide().radius(d => sizeScale(d?.influence_score || 0) + 10))
+    .force('collide', d3.forceCollide().radius(d => getNodeRadius(d) + 10)) // 使用getNodeRadius
     .force('center', d3.forceCenter(0, 0));
 
   // --- 渲染 ---
@@ -202,18 +232,9 @@ function renderGraph(data) {
   
   const nodeElements = zoomGroup.append('g').selectAll('path').data(nodes, d => d.id).join('path')
     .attr('d', d => {
-      const nodeType = d['Node Type'];
-      let symbolSize;
-      if (nodeType === 'Song' || nodeType === 'Album') {
-        // 为Song和Album节点设置一个固定的、较大的尺寸
-        const fixedRadius = 12; // 固定的半径值
-        symbolSize = Math.PI * Math.pow(fixedRadius, 2);
-      } else {
-        // 其他节点使用基于影响力分数的动态尺寸
-        const radius = sizeScale(d?.influence_score || 0);
-        symbolSize = Math.PI * Math.pow(radius, 2);
-      }
-      return d3.symbol().type(getSymbol(nodeType)).size(symbolSize)();
+      const radius = getNodeRadius(d);
+      const symbolSize = Math.PI * Math.pow(radius, 2);
+      return d3.symbol().type(getSymbol(d['Node Type'])).size(symbolSize)();
     })
     .attr('fill', d => d.genre ? colorScale(d.genre) : '#cccccc')
     .attr('stroke', d => d.notable ? 'gold' : '#fff')
@@ -230,7 +251,7 @@ function renderGraph(data) {
       <strong>边信息</strong><br/>
       源: ${d.source.name}<br/>
       目标: ${d.target.name}<br/>
-      类型: ${d['Edge Type']}
+      ���型: ${d['Edge Type']}
     `;
     tooltip.html(content)
       .style('opacity', 1)
@@ -295,9 +316,28 @@ function renderGraph(data) {
   }));
 
   // --- Tick 更新 ---
+  // 【箭头修正 #5】修改tick处理器，动态计算边的端点
   simulation.on('tick', () => { 
     if (linkElements) {
-      linkElements.attr('d', d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`); 
+      linkElements.attr('d', d => {
+        const dx = d.target.x - d.source.x;
+        const dy = d.target.y - d.source.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance === 0) return `M ${d.source.x} ${d.source.y}`;
+
+        const sourceRadius = getNodeRadius(d.source);
+        const targetRadius = getNodeRadius(d.target);
+
+        // 计算线段的起点和终点，使其与节点边界相接
+        const newSourceX = d.source.x + (dx / distance) * sourceRadius;
+        const newSourceY = d.source.y + (dy / distance) * sourceRadius;
+        
+        const newTargetX = d.target.x - (dx / distance) * targetRadius;
+        const newTargetY = d.target.y - (dy / distance) * targetRadius;
+
+        return `M${newSourceX},${newSourceY} L${newTargetX},${newTargetY}`;
+      }); 
     }
     if (nodeElements) {
       nodeElements.attr('transform', d => `translate(${d.x},${d.y})`); 
@@ -368,4 +408,27 @@ onMounted(() => {
 .genre-legend-container { top: 60px; right: 20px; }
 .node-edge-toggle-button { top: 20px; left: 20px; }
 .genre-toggle-button { top: 20px; right: 20px; }
+
+/* 新增：跳数切换按钮样式 */
+.hop-toggle-container {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+}
+.hop-toggle-button {
+  padding: 5px 15px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: background-color 0.3s ease;
+}
+.hop-toggle-button:hover {
+  background-color: #c82333;
+}
 </style>

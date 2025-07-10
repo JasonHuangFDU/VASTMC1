@@ -1252,38 +1252,38 @@ def filter_by_types(graph, node_types, edge_types):
 
     return graph
 
-def get_subgraph_for_node(graph, center_node_id):
+def get_subgraph_for_node(graph, center_node_id, hop_level=1):
     """
-    获取中心节点及其一度邻居组成的子图。
-    这个函数通过显式构建来确保所有相关边都被包含。
+    获取中心节点及其N跳邻居组成的子图。
+    hop_level=1: 一跳邻居
+    hop_level=2: 二跳邻居
     """
     if center_node_id is None or not graph.has_node(center_node_id):
-        return nx.MultiDiGraph() # 返回一个空图
+        return nx.MultiDiGraph()  # 返回一个空图
 
-    app.logger.info(f"为节点ID {center_node_id} 构建子图")
-    subgraph = nx.MultiDiGraph()
-    
-    # 添加中心节点及其属性
-    center_node_data = graph.nodes[center_node_id]
-    subgraph.add_node(center_node_id, **center_node_data)
-    
-    # 获取所有邻居（包括前驱和后继）
-    all_neighbors = set(graph.predecessors(center_node_id)) | set(graph.successors(center_node_id))
+    app.logger.info(f"为节点ID {center_node_id} 构建 {hop_level}-跳子图")
 
-    for neighbor_id in all_neighbors:
-        if not subgraph.has_node(neighbor_id):
-            neighbor_data = graph.nodes[neighbor_id]
-            subgraph.add_node(neighbor_id, **neighbor_data)
+    # 从中心节点开始
+    nodes_to_include = {center_node_id}
+
+    # 一跳邻居
+    one_hop_neighbors = set(graph.predecessors(center_node_id)) | set(graph.successors(center_node_id))
+    nodes_to_include.update(one_hop_neighbors)
+
+    # 如果需要二跳，继续扩展
+    if hop_level == 2:
+        two_hop_neighbors = set()
+        for neighbor_id in one_hop_neighbors:
+            # 添加每个一跳邻居的邻居
+            two_hop_neighbors.update(set(graph.predecessors(neighbor_id)))
+            two_hop_neighbors.update(set(graph.successors(neighbor_id)))
         
-        # 检查并添加入边 (neighbor -> center)
-        if graph.has_edge(neighbor_id, center_node_id):
-            for key, edge_data in graph.get_edge_data(neighbor_id, center_node_id).items():
-                subgraph.add_edge(neighbor_id, center_node_id, key=key, **edge_data)
+        # 从二跳邻居中移除已经在一跳���中心节点集合中的节点
+        two_hop_neighbors -= nodes_to_include
+        nodes_to_include.update(two_hop_neighbors)
 
-        # 检查并添加出边 (center -> neighbor)
-        if graph.has_edge(center_node_id, neighbor_id):
-            for key, edge_data in graph.get_edge_data(center_node_id, neighbor_id).items():
-                subgraph.add_edge(center_node_id, neighbor_id, key=key, **edge_data)
+    # 使用 .subgraph() 方法高效地创建子图，它会自动包含这些节点间的所有边
+    subgraph = graph.subgraph(nodes_to_include).copy()
                 
     return subgraph
 
@@ -1330,6 +1330,8 @@ def get_graph_layout():
     
     request_data = request.json or {}
     center_node_name = request_data.get("centerNodeName")
+    # 从请求中获取hopLevel，如果未提供则默认为1
+    hop_level = request_data.get("hopLevel", 1)
     filters = request_data.get("filters", {})
 
     # 如果是初始/重置请求 (没有指定中心节点或指定为Sailor Shift且无其他筛选)
@@ -1355,7 +1357,8 @@ def get_graph_layout():
         
         if center_node_id is not None and graph.has_node(center_node_id):
             # 如果找到了节点，并且该节点在过滤后的图中依然存在
-            final_graph = get_subgraph_for_node(graph, center_node_id)
+            # 传递 hop_level 参数
+            final_graph = get_subgraph_for_node(graph, center_node_id, hop_level)
         else:
             # 如果搜索的节点不存在或已被过滤掉，返回一个空图
             app.logger.warning(f"中心节点 '{center_node_name}' 在过滤后的图中未找到。返回空图。")
