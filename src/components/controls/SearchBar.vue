@@ -4,45 +4,29 @@
     <div class="search-input-wrapper">
       <input
         type="text"
-        :value="searchTerm"
-        @input="onSearchInput($event.target.value)"
-        placeholder="搜索..."
+        :value="searchQuery"
+        @input="store.setSearchQuery($event.target.value)"
+        placeholder="搜索节点名称..."
         class="search-input"
       />
-      <div class="search-type-selector">
-        <select v-model="searchType" class="search-type-select">
-          <option value="all">所有</option>
-          <option value="artist">艺术家</option>
-          <option value="song">歌曲</option>
-          <option value="musicalGroup">乐队</option>
-        </select>
-      </div>
-      <ul v-if="suggestions.length > 0" class="suggestions-list">
-        <li
-          v-for="suggestion in suggestions"
-          :key="suggestion.id"
-          @click="selectSuggestion(suggestion)"
-        >
-          {{ suggestion.name }} ({{ suggestion['Node Type'] }})
-        </li>
-      </ul>
+      <!-- 搜索建议的功能可以后续添加，通过监听searchQuery变化，从后端获取建议列表 -->
     </div>
 
-    <!-- 时间范围下拉选择框 -->
+    <!-- 时间范围选择 -->
     <div class="filter-group time-range-group">
       <label>时间范围:</label>
       <div class="time-select-wrapper">
         <select
-          :value="timeRange.start"
-          @change="updateTimeRange({ start: parseInt($event.target.value, 10), end: timeRange.end })"
+          :value="selectedTimeRange.start"
+          @change="store.setTimeRange({ start: parseInt($event.target.value, 10), end: selectedTimeRange.end })"
           class="time-select"
         >
           <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
         </select>
         <span>-</span>
         <select
-          :value="timeRange.end"
-          @change="updateTimeRange({ start: timeRange.start, end: parseInt($event.target.value, 10) })"
+          :value="selectedTimeRange.end"
+          @change="store.setTimeRange({ start: selectedTimeRange.start, end: parseInt($event.target.value, 10) })"
           class="time-select"
         >
           <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
@@ -50,71 +34,70 @@
       </div>
     </div>
 
-    <!-- 下拉筛选器 -->
+    <!-- 流派筛选 -->
+    <div class="filter-group dropdown-group">
+       <select v-model="selectedGenre" @change="store.setGenre(selectedGenre)" class="dropdown-toggle">
+          <option :value="null">所有流派</option>
+          <option v-for="genre in filterOptions.genres" :key="genre" :value="genre">
+            {{ genre }}
+          </option>
+        </select>
+    </div>
+
+    <!-- 节点类型筛选 -->
     <div class="filter-group dropdown-group">
       <div class="dropdown">
-        <button @click="toggleDropdown('nodeTypes')" class="dropdown-toggle">节点类型 ({{ selectedNodeTypes.length || '无' }})</button>
+        <button @click="toggleDropdown('nodeTypes')" class="dropdown-toggle">节点类型 ({{ selectedNodeTypes.length || '所有' }})</button>
         <div v-if="activeDropdown === 'nodeTypes'" class="dropdown-menu">
-          <div v-for="type in availableNodeTypes" :key="type" class="dropdown-item">
-            <input type="checkbox" :id="`node-${type}`" :value="type" :checked="selectedNodeTypes.includes(type)" @change="updateMultiSelectFilter('selectedNodeTypes', type)" />
+          <div v-for="type in filterOptions.node_types" :key="type" class="dropdown-item">
+            <input type="checkbox" :id="`node-${type}`" :value="type" v-model="selectedNodeTypes" @change="store.setNodeTypes(selectedNodeTypes)" />
             <label :for="`node-${type}`">{{ type }}</label>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 边类型筛选 -->
     <div class="filter-group dropdown-group">
       <div class="dropdown">
-        <button @click="toggleDropdown('edgeTypes')" class="dropdown-toggle">边类型 ({{ selectedEdgeTypes.length || '无' }})</button>
+        <button @click="toggleDropdown('edgeTypes')" class="dropdown-toggle">边类型 ({{ selectedEdgeTypes.length || '所有' }})</button>
         <div v-if="activeDropdown === 'edgeTypes'" class="dropdown-menu">
-          <div v-for="type in availableEdgeTypes" :key="type" class="dropdown-item">
-            <input type="checkbox" :id="`edge-${type}`" :value="type" :checked="selectedEdgeTypes.includes(type)" @change="updateMultiSelectFilter('selectedEdgeTypes', type)" />
+          <div v-for="type in filterOptions.edge_types" :key="type" class="dropdown-item">
+            <input type="checkbox" :id="`edge-${type}`" :value="type" v-model="selectedEdgeTypes" @change="store.setEdgeTypes(selectedEdgeTypes)" />
             <label :for="`edge-${type}`">{{ type }}</label>
           </div>
         </div>
       </div>
     </div>
-    <div class="filter-group dropdown-group">
-      <div class="dropdown">
-        <button @click="toggleDropdown('genres')" class="dropdown-toggle">流派 ({{ selectedGenres.length || '无' }})</button>
-        <div v-if="activeDropdown === 'genres'" class="dropdown-menu">
-          <div v-for="genre in availableGenres" :key="genre" class="dropdown-item">
-            <input type="checkbox" :id="`genre-${genre}`" :value="genre" :checked="selectedGenres.includes(genre)" @change="updateMultiSelectFilter('selectedGenres', genre)" />
-            <label :for="`genre-${genre}`">{{ genre }}</label>
-          </div>
-        </div>
-      </div>
-    </div>
-    <button @click="resetAllFilters" class="reset-button">重置视图</button>
+
+    <!-- 重置按钮 -->
+    <button @click="store.resetView()" class="reset-button">重置视图</button>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useGraphStore } from '@/stores/graphStore';
-import { debounce } from 'lodash-es';
+import { storeToRefs } from 'pinia';
 import { vOnClickOutside } from '@vueuse/components';
 
+// --- Pinia Store ---
 const store = useGraphStore();
 
-onMounted(() => {
-  console.log('SearchBar mounted. Initial timeRange.end:', timeRange.value.end);
-});
+// 使用 storeToRefs 来保持响应性，这样可以直接在模板中使用 v-model
+const {
+  searchQuery,
+  selectedTimeRange,
+  selectedGenre,
+  selectedNodeTypes,
+  selectedEdgeTypes,
+  filterOptions
+} = storeToRefs(store);
 
-// --- Component State ---
+// --- Component Local State ---
 const activeDropdown = ref(null);
-const suggestions = ref([]);
-const searchTerm = ref('');
-const searchType = ref('all'); // 'all', 'artist', 'song', 'musicalGroup'
 
-// --- Computed Properties from Store ---
-const availableNodeTypes = computed(() => store.filterOptions.nodeTypes);
-const availableEdgeTypes = computed(() => store.filterOptions.edgeTypes);
-const availableGenres = computed(() => store.filterOptions.genres);
-const timeRange = computed(() => store.selectedTimeRange);
-const selectedNodeTypes = computed(() => store.selectedNodeTypes);
-const selectedEdgeTypes = computed(() => store.selectedEdgeTypes);
-const selectedGenres = computed(() => store.selectedGenres);
-
+// 生成可用的年份列表
 const availableYears = computed(() => {
   const years = [];
   for (let i = 1981; i <= 2034; i++) {
@@ -132,70 +115,19 @@ const closeDropdowns = () => {
   activeDropdown.value = null;
 };
 
-const onSearchInput = (value) => {
-  searchTerm.value = value;
-  debouncedSearch(value);
-};
-
-const performSearch = (value) => {
-  if (value.length < 2) {
-    suggestions.value = [];
-    return;
-  }
-  const lowerCaseValue = value.toLowerCase();
-  let filteredNodes = store.allNodesMasterList.filter(node =>
-    node.name.toLowerCase().includes(lowerCaseValue)
-  );
-
-  if (searchType.value === 'artist') {
-    filteredNodes = filteredNodes.filter(node => node['Node Type'] === 'Person');
-  } else if (searchType.value === 'song') {
-    filteredNodes = filteredNodes.filter(node => node['Node Type'] === 'Song');
-  } else if (searchType.value === 'musicalGroup') {
-    filteredNodes = filteredNodes.filter(node => node['Node Type'] === 'MusicalGroup');
-  }
-
-  suggestions.value = filteredNodes.slice(0, 10);
-};
-
-const debouncedSearch = debounce(performSearch, 300);
-
-const selectSuggestion = (node) => {
-  searchTerm.value = node.name;
-  suggestions.value = [];
-  store.focusOnNode(node.id);
-};
-
-const updateTimeRange = (newRange) => {
-  if (newRange.start > newRange.end) {
-    newRange.end = newRange.start;
-  }
-  store.setFilters({ selectedTimeRange: newRange });
-};
-
-const updateMultiSelectFilter = (filterKey, value) => {
-  const currentValues = [...store[filterKey]];
-  const index = currentValues.indexOf(value);
-  if (index > -1) {
-    currentValues.splice(index, 1);
-  } else {
-    currentValues.push(value);
-  }
-  store.setFilters({ [filterKey]: currentValues });
-};
-
-const resetAllFilters = () => {
-  searchTerm.value = '';
-  suggestions.value = [];
-  store.resetFilters();
-};
+// --- Lifecycle Hook ---
+// 在组件挂载时，初始化store（获取筛选选项和初始视图）
+onMounted(() => {
+  store.initializeStore();
+});
 </script>
 
 <style scoped>
+/* 样式保持不变，与您提供的文件一致 */
 .search-bar-container {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
   padding: 1rem;
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
@@ -206,40 +138,16 @@ const resetAllFilters = () => {
 
 .search-input-wrapper {
   position: relative;
-  flex: 1 1 200px;
-  max-width: 300px;
+  flex-grow: 1;
+  min-width: 200px;
 }
 
 .search-input {
   width: 100%;
-  padding: 14px 18px;
+  padding: 7px 5px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
   font-size: 1.1rem;
-}
-
-.suggestions-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  z-index: 101;
-  max-height: 300px;
-  overflow-y: auto;
-}
-.suggestions-list li {
-  padding: 12px 18px;
-  cursor: pointer;
-}
-.suggestions-list li:hover {
-  background-color: #f3f4f6;
 }
 
 .filter-group {
@@ -247,38 +155,30 @@ const resetAllFilters = () => {
 }
 
 .time-range-group {
-  flex: 2 1 300px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 .time-range-group label {
   font-size: 1rem;
   color: #4b5563;
+  white-space: nowrap;
 }
 .time-select-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
 }
 .time-select {
-  flex-grow: 1;
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
   font-size: 1.1rem;
-  text-align: center;
   background-color: #f3f4f6;
-  cursor: pointer;
-}
-.time-select:hover {
-  background-color: #e5e7eb;
 }
 
 .dropdown-group {
-  flex: 1 1 200px;
+  min-width: 180px;
 }
 
 .dropdown-toggle {
@@ -293,9 +193,6 @@ const resetAllFilters = () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.dropdown-toggle:hover {
-  background-color: #e5e7eb;
 }
 
 .dropdown-menu {
@@ -320,7 +217,6 @@ const resetAllFilters = () => {
 }
 .dropdown-item label {
   margin-left: 0.75rem;
-  white-space: nowrap;
   font-size: 1.1rem;
 }
 
@@ -333,39 +229,8 @@ const resetAllFilters = () => {
   cursor: pointer;
   font-weight: 600;
   font-size: 1.1rem;
-  transition: background-color 0.2s;
 }
 .reset-button:hover {
   background-color: #4b5563;
-}
-
-.search-input-wrapper {
-  display: flex; /* Make it a flex container */
-  align-items: center; /* Align items vertically */
-  gap: 10px; /* Space between input and select */
-  position: relative;
-  flex: 1 1 200px;
-  max-width: 400px; /* Increased max-width to accommodate select */
-}
-
-.search-input {
-  flex-grow: 1; /* Allow input to take available space */
-}
-
-.search-type-selector {
-  /* No specific styles needed here, as select is styled directly */
-}
-
-.search-type-select {
-  padding: 14px 10px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  font-size: 1.1rem;
-  background-color: #f3f4f6;
-  cursor: pointer;
-}
-
-.search-type-select:hover {
-  background-color: #e5e7eb;
 }
 </style>

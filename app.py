@@ -21,9 +21,12 @@ import matplotlib.pyplot as plt
 import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import re
+import logging
 
 app = Flask(__name__)
 CORS(app)  # 允许所有跨域请求
+logging.basicConfig(level=logging.INFO) # 设置日志级别
 
 # 当前日期设定
 CURRENT_YEAR = 2040
@@ -1110,6 +1113,260 @@ def predict():
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'服务器错误: {str(e)}'}), 500
+# --- 全局变量 ---
+# 用于一次性加载和存储图数据，避免每次请求都重新加载文件
+FULL_NETWORKX_GRAPH = None
+NODE_ID_MAP = {} # 用于通过节点名称快速查找ID
+
+# --- 数据加载与图构建 (在应用启动时执行一次) ---
+def load_graph_data(filename="MC1_graph.json"):
+    """
+    从JSON文件加载数据并构建一个NetworkX图。
+    这个函数只在服务器启动时运行一次。
+    """
+    global FULL_NETWORKX_GRAPH, NODE_ID_MAP
+    if FULL_NETWORKX_GRAPH is not None:
+        return
+
+    app.logger.info(f"开始从 {filename} 加载并构建图...")
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # 使用MultiDiGraph因为它支持平行边和有向边
+        G = nx.MultiDiGraph()
+        
+        # 创建一个从节点小写名称到ID的映射，用于快速、不区分大小写的搜索
+        temp_node_map = {}
+
+        # 添加节点
+        for node_data in data.get('nodes', []):
+            node_id = node_data['id']
+            # 将所有属性解包作为节点属性
+            G.add_node(node_id, **node_data)
+            temp_node_map[node_data['name'].lower()] = node_id
+
+        # 添加边 (注意：JSON文件中的键是 'links')
+        for edge_data in data.get('links', []):
+            source_id = edge_data.get('source')
+            target_id = edge_data.get('target')
+            if G.has_node(source_id) and G.has_node(target_id):
+                G.add_edge(source_id, target_id, **edge_data)
+
+        FULL_NETWORKX_GRAPH = G
+        NODE_ID_MAP = temp_node_map
+        app.logger.info(f"图加载完成。节点数: {G.number_of_nodes()}, 边数: {G.number_of_edges()}")
+    except FileNotFoundError:
+        app.logger.error(f"错误: 数据文件 {filename} 未找到！")
+    except json.JSONDecodeError:
+        app.logger.error(f"错误: {filename} 不是一个有效的JSON文件。")
+    except Exception as e:
+        app.logger.error(f"加载图时发生未知错误: {e}")
+
+
+# --- 过滤逻辑辅助函数 ---
+
+def find_node_id_by_name(name):
+    """通过名称模糊查找节点ID（大小写不敏感的子字符串匹配）"""
+    if not name:
+        return None
+    lower_name = name.lower()
+    # 优先完全匹配
+    if lower_name in NODE_ID_MAP:
+        return NODE_ID_MAP[lower_name]
+    # 模糊匹配 (查找第一个包含搜索词的节点)
+    for node_name, node_id in NODE_ID_MAP.items():
+        if lower_name in node_name:
+            return node_id
+    return None
+
+def filter_by_genre(graph, genre):
+    """根据流派筛选图，并移除因此产生的孤立节点"""
+    if not genre:
+        return graph
+
+    app.logger.info(f"应用流派筛选: {genre}")
+    nodes_to_remove = {
+        n for n, d in graph.nodes(data=True)
+        if d.get('Node Type') in ['Song', 'Album'] and d.get('genre') != genre
+    }
+    
+    graph.remove_nodes_from(nodes_to_remove)
+    # 移除因节点删除而产生的孤立节点
+    graph.remove_nodes_from(list(nx.isolates(graph)))
+    return graph
+
+def filter_by_time_range(graph, time_range):
+    """根据时间范围筛选图，并移除因此产生的孤立节点"""
+    if not time_range or 'start' not in time_range or 'end' not in time_range:
+        return graph
+
+    try:
+        start_year = int(time_range['start'])
+        end_year = int(time_range['end'])
+        app.logger.info(f"应用时间筛选: {start_year}-{end_year}")
+    except (ValueError, TypeError):
+        return graph # 如果年份格式错误，则不筛选
+
+    nodes_to_remove = set()
+    for n, d in graph.nodes(data=True):
+        if d.get('Node Type') in ['Song', 'Album']:
+            release_date_str = d.get('release_date')
+            if release_date_str and release_date_str.isdigit():
+                release_year = int(release_date_str)
+                if not (start_year <= release_year <= end_year):
+                    nodes_to_remove.add(n)
+            else: # 如果没有发布日期或格式不正确，也移除
+                nodes_to_remove.add(n)
+
+    graph.remove_nodes_from(nodes_to_remove)
+    graph.remove_nodes_from(list(nx.isolates(graph)))
+    return graph
+
+def filter_by_types(graph, node_types, edge_types):
+    """根据节点和边的类型筛选图。保留孤立节点。"""
+    if not node_types and not edge_types:
+        return graph
+    
+    app.logger.info(f"应用类型筛选: 节点={node_types}, 边={edge_types}")
+    
+    # 如果有节点类型筛选，先处理节点
+    if node_types:
+        nodes_to_keep = {
+            n for n, d in graph.nodes(data=True)
+            if d.get('Node Type') in node_types
+        }
+        # 创建一个只包含所需节点的子图。这会自动处理边的连接关系。
+        graph = graph.subgraph(nodes_to_keep).copy()
+
+    # 在可能已经缩小的图上，再处理边类型
+    if edge_types:
+        edges_to_remove = [
+            (u, v, k) for u, v, k, d in graph.edges(data=True, keys=True)
+            if d.get('Edge Type') not in edge_types
+        ]
+        graph.remove_edges_from(edges_to_remove)
+        # 注意：这里我们不移除孤立节点，以满足需求3
+
+    return graph
+
+def get_subgraph_for_node(graph, center_node_id):
+    """
+    获取中心节点及其一度邻居组成的子图。
+    这个函数通过显式构建来确保所有相关边都被包含。
+    """
+    if center_node_id is None or not graph.has_node(center_node_id):
+        return nx.MultiDiGraph() # 返回一个空图
+
+    app.logger.info(f"为节点ID {center_node_id} 构建子图")
+    subgraph = nx.MultiDiGraph()
+    
+    # 添加中心节点及其属性
+    center_node_data = graph.nodes[center_node_id]
+    subgraph.add_node(center_node_id, **center_node_data)
+    
+    # 获取所有邻居（包括前驱和后继）
+    all_neighbors = set(graph.predecessors(center_node_id)) | set(graph.successors(center_node_id))
+
+    for neighbor_id in all_neighbors:
+        if not subgraph.has_node(neighbor_id):
+            neighbor_data = graph.nodes[neighbor_id]
+            subgraph.add_node(neighbor_id, **neighbor_data)
+        
+        # 检查并添加入边 (neighbor -> center)
+        if graph.has_edge(neighbor_id, center_node_id):
+            for key, edge_data in graph.get_edge_data(neighbor_id, center_node_id).items():
+                subgraph.add_edge(neighbor_id, center_node_id, key=key, **edge_data)
+
+        # 检查并添加出边 (center -> neighbor)
+        if graph.has_edge(center_node_id, neighbor_id):
+            for key, edge_data in graph.get_edge_data(center_node_id, neighbor_id).items():
+                subgraph.add_edge(center_node_id, neighbor_id, key=key, **edge_data)
+                
+    return subgraph
+
+def format_graph_for_d3(graph):
+    """将NetworkX图对象转换为D3.js兼容的JSON格式"""
+    if graph is None:
+        return {"nodes": [], "links": []}
+    # node_link_data 是最适合D3力导向图的格式
+    graph_data = nx.node_link_data(graph)
+    return graph_data
+
+
+# --- API 路由 ---
+
+@app.route('/api/graph/meta', methods=['GET'])
+def get_graph_meta():
+    """提供图的元数据，用于前端筛选器的动态填充"""
+    if FULL_NETWORKX_GRAPH is None:
+        return jsonify({"error": "Graph data is not loaded yet."}), 500
+
+    node_types = sorted(list(set(d['Node Type'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True) if 'Node Type' in d)))
+    edge_types = sorted(list(set(d['Edge Type'] for _, _, d in FULL_NETWORKX_GRAPH.edges(data=True) if 'Edge Type' in d)))
+    genres = sorted(list(set(d['genre'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre'))))
+
+    return jsonify({
+        "node_types": node_types,
+        "edge_types": edge_types,
+        "genres": genres,
+    })
+
+
+@app.route('/api/graph/layout', methods=['POST'])
+def get_graph_layout():
+    """
+    核心API：根据前端请求动态筛选和构建力导向图。
+    """
+    if FULL_NETWORKX_GRAPH is None:
+        return jsonify({"error": "Graph data is not available."}), 500
+    
+    # 复制完整的图，确保每次请求都在原始数据上操作
+    graph = FULL_NETWORKX_GRAPH.copy()
+    
+    request_data = request.json or {}
+    center_node_name = request_data.get("centerNodeName")
+    filters = request_data.get("filters", {})
+
+    # 如果是初始/重置请求 (没有指定中心节点或指定为Sailor Shift且无其他筛选)
+    is_initial_request = not center_node_name and not filters
+    is_reset_request = center_node_name == "Sailor Shift" and not filters
+    if is_initial_request or is_reset_request:
+        center_node_name = "Sailor Shift"
+
+    # --- 组合逻辑：按顺序应用筛选 ---
+    # 1. 按流派筛选
+    graph = filter_by_genre(graph, filters.get('genre'))
+
+    # 2. 按时间范围筛选
+    graph = filter_by_time_range(graph, filters.get('timeRange'))
+
+    # 3. 按节点/边类型筛选
+    graph = filter_by_types(graph, filters.get('nodeTypes'), filters.get('edgeTypes'))
+
+    # --- 处理居中和最终图的构建 ---
+    final_graph = None
+    if center_node_name:
+        center_node_id = find_node_id_by_name(center_node_name)
+        
+        if center_node_id is not None and graph.has_node(center_node_id):
+            # 如果找到了节点，并且该节点在过滤后的图中依然存在
+            final_graph = get_subgraph_for_node(graph, center_node_id)
+        else:
+            # 如果搜索的节点不存在或已被过滤掉，返回一个空图
+            app.logger.warning(f"中心节点 '{center_node_name}' 在过滤后的图中未找到。返回空图。")
+            final_graph = nx.MultiDiGraph()
+    else:
+        # 如果没有指定中心节点，则返回整个筛选后的图
+        final_graph = graph
+    
+    # 格式化为D3兼容的JSON并返回
+    response_json = format_graph_for_d3(final_graph)
+    app.logger.info(f"请求处理完毕，返回 {len(response_json['nodes'])} 个节点和 {len(response_json['links'])} 条边。")
+    return jsonify(response_json)
     
 if __name__ == '__main__':
+    # 在第一次请求前加载数据
+    with app.app_context():
+        load_graph_data()
     app.run(host='0.0.0.0', port=5001, debug=True)
