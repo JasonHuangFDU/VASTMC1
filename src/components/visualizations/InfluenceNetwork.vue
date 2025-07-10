@@ -13,7 +13,7 @@
       <div class="legend-section">
         <h4>节点类型</h4>
         <div v-for="nodeType in nodeLegend" :key="nodeType.name" class="legend-item">
-          <svg width="30" height="30"><path :d="nodeType.symbol" :fill="nodeType.color" stroke="#333" stroke-width="1.5" transform="translate(15,15)"></path></svg>
+          <svg width="30" height="30"><path :d="nodeType.symbol" :fill="nodeType.color" :stroke="nodeType.stroke" :stroke-width="nodeType.strokeWidth" transform="translate(15,15)"></path></svg>
           <span>{{ nodeType.name }}</span>
         </div>
       </div>
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue';
 import * as d3 from 'd3';
 import { useGraphStore } from '@/stores/graphStore';
 import { debounce } from 'lodash-es';
@@ -50,8 +50,8 @@ const containerRef = ref(null);
 const tooltipRef = ref(null);
 
 // --- 图例控制 ---
-const showNodeEdgeLegend = ref(true);
-const showGenreLegend = ref(true);
+const showNodeEdgeLegend = ref(false);
+const showGenreLegend = ref(false);
 
 const toggleNodeEdgeLegend = () => showNodeEdgeLegend.value = !showNodeEdgeLegend.value;
 const toggleGenreLegend = () => showGenreLegend.value = !showGenreLegend.value;
@@ -65,11 +65,12 @@ let zoomGroup;
 const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
 
 const nodeLegend = computed(() => [
-  { name: '人', type: 'Person', symbol: d3.symbol().type(d3.symbolCircle).size(100)(), color: '#999999' },
-  { name: '乐队', type: 'MusicalGroup', symbol: d3.symbol().type(d3.symbolDiamond).size(100)(), color: '#999999' },
-  { name: '歌曲', type: 'Song', symbol: d3.symbol().type(d3.symbolTriangle).size(100)(), color: '#999999' },
-  { name: '专辑', type: 'Album', symbol: d3.symbol().type(d3.symbolSquare).size(100)(), color: '#999999' },
-  { name: '唱片公司', type: 'RecordLabel', symbol: d3.symbol().type(d3.symbolWye).size(100)(), color: '#999999' },
+  { name: '人', type: 'Person', symbol: d3.symbol().type(d3.symbolCircle).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  { name: '乐队', type: 'MusicalGroup', symbol: d3.symbol().type(d3.symbolDiamond).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  { name: '歌曲', type: 'Song', symbol: d3.symbol().type(d3.symbolTriangle).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  { name: '专辑', type: 'Album', symbol: d3.symbol().type(d3.symbolSquare).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  { name: '唱片公司', type: 'RecordLabel', symbol: d3.symbol().type(d3.symbolWye).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  { name: '知名节点', type: 'Notable', symbol: d3.symbol().type(d3.symbolCircle).size(100)(), color: '#999999', stroke: 'gold', strokeWidth: 3 },
 ]);
 
 const edgeLegend = computed(() => [
@@ -198,15 +199,73 @@ function renderGraph(data) {
 
   // --- 渲染 ---
   const linkElements = zoomGroup.append('g').selectAll('path').data(links).join('path').attr('class', d => `link ${getLinkClass(d['Edge Type'])}`).attr('marker-end', d => `url(#arrow-${getLinkClass(d['Edge Type'])}`);
-  const nodeElements = zoomGroup.append('g').selectAll('path').data(nodes, d => d.id).join('path').attr('d', d => d3.symbol().type(getSymbol(d['Node Type'])).size(Math.PI * Math.pow(sizeScale(d?.influence_score || 0), 2))()).attr('fill', d => d.genre ? colorScale(d.genre) : '#cccccc').attr('stroke', d => d.notable ? 'gold' : '#fff').attr('stroke-width', d => d.notable ? 3 : 1.5).attr('class', 'node');
+  
+  const nodeElements = zoomGroup.append('g').selectAll('path').data(nodes, d => d.id).join('path')
+    .attr('d', d => {
+      const nodeType = d['Node Type'];
+      let symbolSize;
+      if (nodeType === 'Song' || nodeType === 'Album') {
+        // 为Song和Album节点设置一个固定的、较大的尺寸
+        const fixedRadius = 12; // 固定的半径值
+        symbolSize = Math.PI * Math.pow(fixedRadius, 2);
+      } else {
+        // 其他节点使用基于影响力分数的动态尺寸
+        const radius = sizeScale(d?.influence_score || 0);
+        symbolSize = Math.PI * Math.pow(radius, 2);
+      }
+      return d3.symbol().type(getSymbol(nodeType)).size(symbolSize)();
+    })
+    .attr('fill', d => d.genre ? colorScale(d.genre) : '#cccccc')
+    .attr('stroke', d => d.notable ? 'gold' : '#fff')
+    .attr('stroke-width', d => d.notable ? 3 : 1.5)
+    .attr('class', 'node');
 
   // --- 交互 ---
   const tooltip = d3.select(tooltipRef.value);
+
+  // 边交互
+  linkElements.on('mouseover', function(event, d) {
+    d3.select(this).style('stroke-opacity', 1);
+    const content = `
+      <strong>边信息</strong><br/>
+      源: ${d.source.name}<br/>
+      目标: ${d.target.name}<br/>
+      类型: ${d['Edge Type']}
+    `;
+    tooltip.html(content)
+      .style('opacity', 1)
+      .style('left', (event.pageX + 10) + 'px')
+      .style('top', (event.pageY - 28) + 'px');
+  }).on('mouseout', function() {
+    d3.select(this).style('stroke-opacity', 0.6);
+    tooltip.style('opacity', 0);
+  });
+
+  // 节点交互
   nodeElements.on('mouseover', function(event, d) { 
     d3.select(this).attr('stroke', 'black').attr('stroke-width', 3); 
-    let content = `<strong>${d.name}</strong><br/>类型: ${d['Node Type']}`; 
-    if(d.genre) content += `<br/>流派: ${d.genre}`; 
-    tooltip.html(content).style('opacity', 1).style('left', (event.pageX + 10) + 'px').style('top', (event.pageY - 28) + 'px'); 
+    
+    let content = `<strong>${d.name}</strong><br/>类型: ${d['Node Type']}`;
+    
+    // 检查 'Person' 或 'MusicalGroup'
+    if (d['Node Type'] === 'Person' || d['Node Type'] === 'MusicalGroup') {
+      if (d.max_genre) content += `<br/>主导流派: ${d.max_genre}`;
+      if (d.influence_score) content += `<br/>影响力: ${d.influence_score.toFixed(2)}`;
+      if (d.notable !== undefined) content += `<br/>是否出名: ${d.notable ? '是' : '否'}`;
+    } 
+    // 检查 'RecordLabel'
+    else if (d['Node Type'] === 'RecordLabel') {
+      if (d.influence_score) content += `<br/>影响力: ${d.influence_score.toFixed(2)}`;
+    } 
+    // 对于其他节点类型（如 Song, Album），使用 'genre'
+    else if (d.genre) {
+      content += `<br/>流派: ${d.genre}`;
+    }
+
+    tooltip.html(content)
+      .style('opacity', 1)
+      .style('left', (event.pageX + 10) + 'px')
+      .style('top', (event.pageY - 28) + 'px'); 
   }).on('mouseout', function(event, d) { 
     d3.select(this).attr('stroke', d.notable ? 'gold' : '#fff').attr('stroke-width', d.notable ? 3 : 1.5); 
     tooltip.style('opacity', 0); 
@@ -255,6 +314,14 @@ function renderGraph(data) {
 watch(() => store.graphData, (newGraphData) => {
   console.log('检测到数据变化，触发重渲染');
   renderGraph(newGraphData);
+
+  // 当图表数据加载并渲染后，再显示图例，确保图例能正确绘制
+  if (newGraphData && newGraphData.nodes.length > 0) {
+    nextTick(() => {
+      showNodeEdgeLegend.value = true;
+      showGenreLegend.value = true;
+    });
+  }
 }, { deep: true });
 
 // --- 生命周期钩子 ---

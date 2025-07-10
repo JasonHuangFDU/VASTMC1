@@ -6,11 +6,11 @@ export const useGraphStore = defineStore('graph', {
   state: () => ({
     // --- Data from Backend ---
     graphData: { nodes: [], links: [] },
-    filterOptions: { genres: [], node_types: [], edge_types: [] },
+    filterOptions: { genres: [], node_types: [], edge_types: [], node_names: [] },
 
     // --- Filter Criteria ---
     selectedTimeRange: { start: 1981, end: 2034 },
-    selectedGenre: null,
+    selectedGenres: [], // <--- MODIFIED: Was selectedGenre: null
     selectedNodeTypes: [],
     selectedEdgeTypes: [],
     searchQuery: null,
@@ -19,11 +19,6 @@ export const useGraphStore = defineStore('graph', {
     isLoading: false,
     error: null,
     isRequestPending: false,
-    
-    // ================================================================= //
-    //                            【核心修正】                             //
-    //      新增一个初始化锁，确保 initializeStore 只会完整执行一次。    //
-    // ================================================================= //
     isInitialized: false,
   }),
 
@@ -42,7 +37,7 @@ export const useGraphStore = defineStore('graph', {
       
       // Set initial state for the first graph request.
       this.searchQuery = "Sailor Shift";
-      this.selectedGenre = null;
+      this.selectedGenres = []; // <--- MODIFIED: Was selectedGenre: null
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
       this.selectedTimeRange = { start: 1981, end: 2034 };
@@ -60,7 +55,10 @@ export const useGraphStore = defineStore('graph', {
     async loadFilterOptions() {
         try {
             const options = await fetchFilterOptions();
-            this.filterOptions = options;
+            this.filterOptions.genres = options.genres || [];
+            this.filterOptions.node_types = options.node_types || [];
+            this.filterOptions.edge_types = options.edge_types || [];
+            this.filterOptions.node_names = options.node_names || [];
         } catch (e) {
             console.error('Failed to load filter options:', e);
             this.error = 'Could not load filter options.';
@@ -85,7 +83,7 @@ export const useGraphStore = defineStore('graph', {
         filters: {
           nodeTypes: this.selectedNodeTypes.length > 0 ? this.selectedNodeTypes : null,
           edgeTypes: this.selectedEdgeTypes.length > 0 ? this.selectedEdgeTypes : null,
-          genre: this.selectedGenre,
+          genre: this.selectedGenres.length > 0 ? this.selectedGenres : null, // <--- MODIFIED: Use selectedGenres
           timeRange: this.selectedTimeRange,
         },
       };
@@ -123,7 +121,7 @@ export const useGraphStore = defineStore('graph', {
       console.log("Resetting view to 'Sailor Shift'");
       // Reset all filter states
       this.searchQuery = "Sailor Shift";
-      this.selectedGenre = null;
+      this.selectedGenres = []; // <--- MODIFIED: Was selectedGenre: null
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
       this.selectedTimeRange = { start: 1981, end: 2034 };
@@ -136,7 +134,7 @@ export const useGraphStore = defineStore('graph', {
 
     setSearchQuery(query) {
         this.searchQuery = query;
-        this.debouncedUpdateGraphLayout();
+        // DO NOT trigger update here. The component will do it.
     },
     
     selectCenterNode(nodeName) {
@@ -144,8 +142,8 @@ export const useGraphStore = defineStore('graph', {
         this.updateGraphLayout(); // Immediate update, no debounce
     },
 
-    setGenre(genre) {
-        this.selectedGenre = genre;
+    setGenres(genres) { // <--- MODIFIED: Renamed from setGenre
+        this.selectedGenres = genres;
         this.updateGraphLayout();
     },
 
@@ -162,6 +160,21 @@ export const useGraphStore = defineStore('graph', {
     setEdgeTypes(types) {
         this.selectedEdgeTypes = types;
         this.updateGraphLayout();
+    },
+
+    setGenreAndResetOthers(genre) {
+      console.log(`Filtering by Sankey click, genre: ${genre}`);
+      // 1. Set the genre filter
+      this.selectedGenres = [genre];
+      
+      // 2. Reset all other filters to their default state
+      this.searchQuery = ''; // Clear center node
+      this.selectedNodeTypes = [];
+      this.selectedEdgeTypes = [];
+      this.selectedTimeRange = { start: 1981, end: 2034 };
+      
+      // 3. Trigger the graph update with the new, clean state
+      this.updateGraphLayout();
     }
   },
 });

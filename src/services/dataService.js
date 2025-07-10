@@ -10,7 +10,7 @@ const API_BASE_URL = 'http://localhost:5001/api';
  */
 export async function loadData() {
   console.log("loadData 被调用 (deprecated)");
-  const graph = await d3.json('/MC1_graph.json'); // 指向原始文件以防万一
+  const graph = await d3.json('/graph_processed.json'); // 更新为处理后的数据源
   console.log("1.加载的全量图数据:", graph);
   return graph;
 }

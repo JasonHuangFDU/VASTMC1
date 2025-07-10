@@ -1,15 +1,34 @@
 <template>
   <div class="search-bar-container" v-on-click-outside="closeDropdowns">
-    <!-- 搜索输入框 -->
-    <div class="search-input-wrapper">
-      <input
-        type="text"
-        :value="searchQuery"
-        @input="store.setSearchQuery($event.target.value)"
-        placeholder="搜索节点名称..."
-        class="search-input"
-      />
-      <!-- 搜索建议的功能可以后续添加，通过监听searchQuery变化，从后端获取建议列表 -->
+    <!-- 中心节点选择框 -->
+    <div class="filter-group search-group">
+      <label for="search-input-field" class="search-label">中心节点:</label>
+      <div class="search-input-wrapper">
+        <input
+          id="search-input-field"
+          type="text"
+          v-model="localSearchQuery"
+          @input="updateSuggestions"
+          @focus="showSuggestions = true"
+          placeholder="输入以搜索..."
+          class="search-input"
+          autocomplete="off"
+        />
+        <div class="search-buttons">
+          <button @click="confirmSearch" class="search-confirm-btn">确认</button>
+          <button @click="clearSearch" class="search-clear-btn">清空</button>
+        </div>
+        <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-list">
+          <div
+            v-for="suggestion in suggestions"
+            :key="suggestion"
+            class="suggestion-item"
+            @mousedown="selectSuggestion(suggestion)"
+          >
+            {{ suggestion }}
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 时间范围选择 -->
@@ -36,12 +55,15 @@
 
     <!-- 流派筛选 -->
     <div class="filter-group dropdown-group">
-       <select v-model="selectedGenre" @change="store.setGenre(selectedGenre)" class="dropdown-toggle">
-          <option :value="null">所有流派</option>
-          <option v-for="genre in filterOptions.genres" :key="genre" :value="genre">
-            {{ genre }}
-          </option>
-        </select>
+      <div class="dropdown">
+        <button @click="toggleDropdown('genres')" class="dropdown-toggle">流派 ({{ selectedGenres.length || '所有' }})</button>
+        <div v-if="activeDropdown === 'genres'" class="dropdown-menu long-dropdown">
+          <div v-for="genre in filterOptions.genres" :key="genre" class="dropdown-item">
+            <input type="checkbox" :id="`genre-${genre}`" :value="genre" v-model="selectedGenres" @change="store.setGenres(selectedGenres)" />
+            <label :for="`genre-${genre}`">{{ genre }}</label>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 节点类型筛选 -->
@@ -76,19 +98,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useGraphStore } from '@/stores/graphStore';
 import { storeToRefs } from 'pinia';
 import { vOnClickOutside } from '@vueuse/components';
 
 // --- Pinia Store ---
 const store = useGraphStore();
-
-// 使用 storeToRefs 来保持响应性，这样可以直接在模板中使用 v-model
 const {
   searchQuery,
   selectedTimeRange,
-  selectedGenre,
+  selectedGenres,
   selectedNodeTypes,
   selectedEdgeTypes,
   filterOptions
@@ -96,8 +116,16 @@ const {
 
 // --- Component Local State ---
 const activeDropdown = ref(null);
+const localSearchQuery = ref(searchQuery.value || '');
+const suggestions = ref([]);
+const showSuggestions = ref(false);
 
-// 生成可用的年份列表
+// --- Watchers ---
+watch(searchQuery, (newVal) => {
+  localSearchQuery.value = newVal;
+});
+
+// --- Computed Properties ---
 const availableYears = computed(() => {
   const years = [];
   for (let i = 1981; i <= 2034; i++) {
@@ -113,17 +141,45 @@ const toggleDropdown = (dropdownName) => {
 
 const closeDropdowns = () => {
   activeDropdown.value = null;
+  showSuggestions.value = false;
+};
+
+const confirmSearch = () => {
+  store.setSearchQuery(localSearchQuery.value);
+  store.updateGraphLayout(); // Explicitly trigger the update
+  showSuggestions.value = false;
+};
+
+const clearSearch = () => {
+  localSearchQuery.value = '';
+  // This only clears the local input. The user must click "Confirm" to apply.
+  showSuggestions.value = false;
+};
+
+const updateSuggestions = () => {
+  if (!localSearchQuery.value) {
+    suggestions.value = [];
+    return;
+  }
+  const query = localSearchQuery.value.toLowerCase();
+  suggestions.value = filterOptions.value.node_names
+    .filter(name => name.toLowerCase().includes(query))
+    .slice(0, 10); // Limit to 10 suggestions
+  showSuggestions.value = true;
+};
+
+const selectSuggestion = (suggestion) => {
+  localSearchQuery.value = suggestion;
+  showSuggestions.value = false; // Just update the input and hide suggestions
 };
 
 // --- Lifecycle Hook ---
-// 在组件挂载时，初始化store（获取筛选选项和初始视图）
 onMounted(() => {
   store.initializeStore();
 });
 </script>
 
 <style scoped>
-/* 样式保持不变，与您提供的文件一致 */
 .search-bar-container {
   display: flex;
   align-items: center;
@@ -136,27 +192,94 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.filter-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-group {
+  flex-grow: 1;
+  min-width: 300px;
+}
+
+.search-label {
+  margin-right: 0.5rem;
+  font-size: 1rem;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
 .search-input-wrapper {
   position: relative;
-  flex-grow: 1;
-  min-width: 200px;
+  width: 100%;
 }
 
 .search-input {
   width: 100%;
-  padding: 7px 5px;
+  padding: 10px 130px 10px 15px; /* Right padding for buttons */
   border-radius: 8px;
   border: 1px solid #d1d5db;
   font-size: 1.1rem;
+  box-sizing: border-box;
 }
 
-.filter-group {
-  position: relative;
+.search-buttons {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 5px;
+}
+
+.search-confirm-btn, .search-clear-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.search-confirm-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+.search-confirm-btn:hover {
+  background-color: #2563eb;
+}
+
+.search-clear-btn {
+  background-color: #e5e7eb;
+  color: #4b5563;
+}
+.search-clear-btn:hover {
+  background-color: #d1d5db;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 101;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 10px 15px;
+  cursor: pointer;
+}
+.suggestion-item:hover {
+  background-color: #f3f4f6;
 }
 
 .time-range-group {
-  display: flex;
-  align-items: center;
   gap: 0.5rem;
 }
 .time-range-group label {
@@ -208,6 +331,10 @@ onMounted(() => {
   max-height: 300px;
   overflow-y: auto;
   width: 100%;
+}
+
+.long-dropdown {
+  max-height: 400px; /* Increased height for genre list */
 }
 
 .dropdown-item {

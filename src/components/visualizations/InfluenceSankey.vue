@@ -9,6 +9,9 @@
 import { ref, onMounted, watch, onUnmounted } from 'vue';
 import * as d3 from 'd3';
 import { sankey, sankeyLinkHorizontal, sankeyJustify } from 'd3-sankey';
+import { useGraphStore } from '@/stores/graphStore';
+
+const store = useGraphStore();
 
 const props = defineProps({
   data: {
@@ -60,6 +63,7 @@ const drawChart = () => {
     .selectAll('path')
     .data(links)
     .join('path')
+    .style('cursor', 'pointer') // 添加手型光标，提示可以点击
     .attr('d', sankeyLinkHorizontal())
     .attr('stroke', d => color(d.source.name)) // 按源头节点的名称分配颜色，使来自同一源的流颜色一致
     .attr('stroke-width', d => Math.max(1.5, d.width))
@@ -85,6 +89,11 @@ const drawChart = () => {
     .on('mouseout', function() {
         d3.select(this).attr('stroke-opacity', 0.55); // 恢复不透明度
         d3.select(tooltipRef.value).style('opacity', 0);
+    })
+    .on('click', (event, d) => {
+      const genre = d.source.name;
+      console.log(`Sankey link clicked, filtering by genre and resetting others: ${genre}`);
+      store.setGenreAndResetOthers(genre);
     });
 
   // 绘制节点

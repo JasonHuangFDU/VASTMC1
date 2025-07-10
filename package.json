@@ -12,10 +12,7 @@
   },
   "dependencies": {
     "@vueuse/components": "^10.11.0",
-<<<<<<< HEAD
-=======
     "axios": "^1.10.0",
->>>>>>> 2b83a00346f8fd55f0b015fca5bc5d97e805964d
     "chart.js": "^4.5.0",
     "d3": "^7.9.0",
     "d3-sankey": "^0.12.3",

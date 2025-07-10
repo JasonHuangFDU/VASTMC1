@@ -1119,7 +1119,7 @@ FULL_NETWORKX_GRAPH = None
 NODE_ID_MAP = {} # 用于通过节点名称快速查找ID
 
 # --- 数据加载与图构建 (在应用启动时执行一次) ---
-def load_graph_data(filename="MC1_graph.json"):
+def load_graph_data(filename="public/graph_processed.json"):
     """
     从JSON文件加载数据并构建一个NetworkX图。
     这个函数只在服务器启动时运行一次。
@@ -1180,15 +1180,17 @@ def find_node_id_by_name(name):
             return node_id
     return None
 
-def filter_by_genre(graph, genre):
-    """根据流派筛选图，并移除因此产生的孤立节点"""
-    if not genre:
+def filter_by_genre(graph, genres):
+    """根据一个或多个流派筛选图，并移除因此产生的孤立节点"""
+    # 如果流派列表为空或无效，则不进行筛选
+    if not genres or not isinstance(genres, list):
         return graph
 
-    app.logger.info(f"应用流派筛选: {genre}")
+    app.logger.info(f"应用流派筛选: {genres}")
+    # 需要移除的节点是那些类型为Song或Album，且其流派不在所选列表中的节点
     nodes_to_remove = {
         n for n, d in graph.nodes(data=True)
-        if d.get('Node Type') in ['Song', 'Album'] and d.get('genre') != genre
+        if d.get('Node Type') in ['Song', 'Album'] and d.get('genre') not in genres
     }
     
     graph.remove_nodes_from(nodes_to_remove)
@@ -1305,11 +1307,13 @@ def get_graph_meta():
     node_types = sorted(list(set(d['Node Type'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True) if 'Node Type' in d)))
     edge_types = sorted(list(set(d['Edge Type'] for _, _, d in FULL_NETWORKX_GRAPH.edges(data=True) if 'Edge Type' in d)))
     genres = sorted(list(set(d['genre'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre'))))
+    node_names = sorted([d['name'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True)])
 
     return jsonify({
         "node_types": node_types,
         "edge_types": edge_types,
         "genres": genres,
+        "node_names": node_names,
     })
 
 
