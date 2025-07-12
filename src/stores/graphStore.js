@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchGraphLayout, fetchFilterOptions } from '../services/dataService';
+import { fetchGraphLayout, fetchFilterOptions, processArtistData } from '../services/dataService';
 import { debounce } from 'lodash-es';
 
 export const useGraphStore = defineStore('graph', {
@@ -21,7 +21,47 @@ export const useGraphStore = defineStore('graph', {
     error: null,
     isRequestPending: false,
     isInitialized: false,
+
+    //新增艺术家生涯轨迹相关状态
+    artistCareerData: null,      // 当前选中的艺术家生涯数据
+    artistComparisonData: null,  // 艺术家对比数据
+    selectedArtists: [],         // 选择的艺术家ID列表（用于对比）
   }),
+
+  getters: {
+    // ================================================ //
+    //           新增艺术家生涯轨迹相关计算属性           //
+    // ================================================ //
+    /**
+     * 获取当前艺术家的时间线事件
+     */
+    careerTimelineEvents: (state) => {
+      return state.artistCareerData?.timelineEvents || [];
+    },
+
+    /**
+     * 获取当前艺术家的年度统计数据
+     */
+    careerYearlyStats: (state) => {
+      return state.artistCareerData?.yearlyStats || {};
+    },
+
+    /**
+     * 获取所有艺术家列表（Person节点）
+     */
+    artistList: (state) => {
+      return state.graphData.nodes.filter(node =>
+        node['Node Type'] === 'Person' && node.name
+      );
+    },
+
+    /**
+     * 检查是否可以选择艺术家进行对比
+     */
+    canCompareArtists: (state) => {
+      return state.selectedArtists.filter(id => id !== null).length === 3;
+    }
+  },
 
   actions: {
     /**
@@ -35,14 +75,14 @@ export const useGraphStore = defineStore('graph', {
 
       // Fetch filter options first, as they are needed for the UI.
       await this.loadFilterOptions();
-      
+
       // Set initial state for the first graph request.
       this.searchQuery = "Sailor Shift";
       this.selectedGenres = []; // <--- MODIFIED: Was selectedGenre: null
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
       this.selectedTimeRange = { start: 1981, end: 2034 };
-      
+
       // Fetch the initial graph view.
       await this.updateGraphLayout();
 
@@ -74,11 +114,11 @@ export const useGraphStore = defineStore('graph', {
         console.log("Request is already in progress. Skipping new request.");
         return;
       }
-      
+
       this.isLoading = true;
       this.error = null;
       this.isRequestPending = true;
-      
+
       const payload = {
         centerNodeName: this.searchQuery,
         hopLevel: this.hopLevel, // 新增：将跳数信息发送给后端
@@ -127,7 +167,7 @@ export const useGraphStore = defineStore('graph', {
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
       this.selectedTimeRange = { start: 1981, end: 2034 };
-      
+
       // Fetch the initial graph view
       await this.updateGraphLayout();
     },
@@ -138,7 +178,7 @@ export const useGraphStore = defineStore('graph', {
         this.searchQuery = query;
         // DO NOT trigger update here. The component will do it.
     },
-    
+
     selectCenterNode(nodeName) {
         this.searchQuery = nodeName;
         this.updateGraphLayout(); // Immediate update, no debounce
@@ -175,15 +215,82 @@ export const useGraphStore = defineStore('graph', {
       console.log(`Filtering by Sankey click, genre: ${genre}`);
       // 1. Set the genre filter
       this.selectedGenres = [genre];
-      
+
       // 2. Reset all other filters to their default state
       this.searchQuery = ''; // Clear center node
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
       this.selectedTimeRange = { start: 1981, end: 2034 };
-      
+
       // 3. Trigger the graph update with the new, clean state
       this.updateGraphLayout();
+    },
+
+    /**
+     * 设置选中的艺术家列表（用于对比）
+     * @param {Array} artistIds - 艺术家ID数组
+     */
+    setSelectedArtists(artistIds) {
+      this.selectedArtists = [...artistIds];
+    },
+
+    /**
+     * 清除特定位置的艺术家选择
+     * @param {number} index - 艺术家在列表中的索引
+     */
+    clearArtistSelection(index) {
+      this.selectedArtists[index] = null;
+      this.artistComparisonData = null;
+    },
+
+    /**
+     * 加载单个艺术家的生涯数据
+     * @param {number} artistId - 艺术家ID
+     */
+    async fetchArtistCareerData(artistId) {
+      if (!this.graphData.nodes.length || !this.graphData.links.length) {
+        await this.updateGraphLayout();
+      }
+
+      try {
+        this.artistCareerData = processArtistData(
+          {
+            nodes: this.graphData.nodes,
+            links: this.graphData.links
+          },
+          artistId
+        );
+      } catch (error) {
+        console.error('处理艺术家生涯数据失败:', error);
+        this.artistCareerData = null;
+      }
+    },
+
+    /**
+     * 加载多个艺术家的对比数据
+     */
+    async fetchArtistComparisonData() {
+      if (!this.canCompareArtists) {
+        console.error('需要选择三位艺术家才能进行对比');
+        return;
+      }
+
+      const artistIds = this.selectedArtists.filter(id => id !== null);
+      const results = [];
+
+      for (const id of artistIds) {
+        await this.fetchArtistCareerData(id);
+        if (this.artistCareerData) {
+          const artistNode = this.graphData.nodes.find(n => n.id === id);
+          results.push({
+            id,
+            data: this.artistCareerData,
+            name: artistNode?.name || `艺术家 ${id}`
+          });
+        }
+      }
+
+      this.artistComparisonData = results;
     }
   },
 });
