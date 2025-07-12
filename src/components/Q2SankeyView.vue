@@ -60,6 +60,7 @@ const loadData = async (view) => {
  * 新增：处理桑基图链接点击事件的逻辑
  */
 const handleSankeyClick = (linkData) => {
+  console.log("Sankey link clicked:", linkData);
   const { source, target } = linkData;
   console.log(`Sankey link clicked in view '${currentView.value}':`, source, '->', target);
 
@@ -78,7 +79,10 @@ const handleSankeyClick = (linkData) => {
     else if (source.type === 'Genre' && target.type === 'Artist') {
       payload = {
         type: 'outward_genre_to_artist',
-        params: { genre: source.name, artist: target.name }
+        params: { 
+          genre: source.name, 
+          artist_id: target.id // <-- 使用ID替代name
+        }
       };
     }
   }

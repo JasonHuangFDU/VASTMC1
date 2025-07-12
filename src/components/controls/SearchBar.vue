@@ -172,7 +172,7 @@ watch(searchQuery, (newVal) => {
 // --- Computed Properties ---
 const availableYears = computed(() => {
   const years = [];
-  for (let i = 1981; i <= 2034; i++) {
+  for (let i = 1981; i <= 2040; i++) {
     years.push(i);
   }
   return years;

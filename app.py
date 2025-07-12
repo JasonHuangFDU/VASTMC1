@@ -1341,7 +1341,10 @@ def filter_for_sankey():
         nodes_to_add = set()
         edges_to_add = []
         for u, v, data in FULL_NETWORKX_GRAPH.edges(data=True):
-            if u in oceanus_works and v in target_genre_works and data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
+            # 修正: 当用户在“Outward Influence”视图中点击 Oceanus Folk -> 其他流派时，
+            # 我们实际上想展示从“其他流派”到“Oceanus Folk”的影响力。
+            # 因此，源(u)应该是目标流派的作品，目标(v)应该是Oceanus Folk的作品。
+            if u in target_genre_works and v in oceanus_works and data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
                 nodes_to_add.add(u)
                 nodes_to_add.add(v)
                 edges_to_add.append((u, v, data))
@@ -1353,25 +1356,33 @@ def filter_for_sankey():
     # --- 2. Outward: Genre -> Artist (修正后) ---
     elif filter_type == 'outward_genre_to_artist':
         genre = params.get('genre')
-        artist_name = params.get('artist')
-        if not genre or not artist_name:
-            return jsonify({"error": "Missing 'genre' or 'artist' parameter"}), 400
+        artist_id = params.get('artist_id') # <-- 使用 artist_id
+        if not genre or not artist_id:
+            return jsonify({"error": "Missing 'genre' or 'artist_id' parameter"}), 400
 
-        artist_id = find_node_id_by_name(artist_name)
-        if not artist_id:
+        # artist_id = find_node_id_by_name(artist_name) # <-- 不再需要名称查找
+        if not FULL_NETWORKX_GRAPH.has_node(artist_id):
             return jsonify({"nodes": [], "links": []})
 
         # 添加艺术家本人到子图
         subgraph.add_node(artist_id, **FULL_NETWORKX_GRAPH.nodes[artist_id])
         
-        # 遍历艺术家的创作边
+        # 修正: 同时检查两个方向的创作关系边
+        # 场景 A: 艺术家 -> 作品 (例如: MemberOf)
         for u, v, data in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True):
             if data.get('Edge Type') in CREATION_EDGE_TYPES:
                 work_node = FULL_NETWORKX_GRAPH.nodes[v]
-                # 检查作品是否属于目标流派
                 if work_node.get('Node Type') in ['Song', 'Album'] and work_node.get('genre') == genre:
-                    # 添加作品和创作边到子图
                     subgraph.add_node(v, **work_node)
+                    subgraph.add_edge(u, v, **data)
+
+        # 场景 B: 作品 -> 艺术家 (例如: PerformerOf)
+        # 这是更常见的情况，但为了完整性，我们检查两个方向
+        for u, v, data in FULL_NETWORKX_GRAPH.in_edges(artist_id, data=True):
+            if data.get('Edge Type') in CREATION_EDGE_TYPES:
+                work_node = FULL_NETWORKX_GRAPH.nodes[u]
+                if work_node.get('Node Type') in ['Song', 'Album'] and work_node.get('genre') == genre:
+                    subgraph.add_node(u, **work_node)
                     subgraph.add_edge(u, v, **data)
 
     # --- 3. Inward: Genre -> Artist (修正后) ---

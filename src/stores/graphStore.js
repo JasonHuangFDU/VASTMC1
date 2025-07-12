@@ -9,7 +9,7 @@ export const useGraphStore = defineStore('graph', {
     filterOptions: { genres: [], node_types: [], edge_types: [], node_names: [] },
 
     // --- Filter Criteria ---
-    selectedTimeRange: { start: 1981, end: 2034 },
+    selectedTimeRange: { start: 1981, end: 2040 },
     selectedGenres: [], // <--- MODIFIED: Was selectedGenre: null
     selectedNodeTypes: [],
     selectedEdgeTypes: [],
@@ -81,7 +81,7 @@ export const useGraphStore = defineStore('graph', {
       this.selectedGenres = []; // <--- MODIFIED: Was selectedGenre: null
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
-      this.selectedTimeRange = { start: 1981, end: 2034 };
+      this.selectedTimeRange = { start: 1981, end: 2040 };
 
       // Fetch the initial graph view.
       await this.updateGraphLayout();
@@ -191,7 +191,7 @@ export const useGraphStore = defineStore('graph', {
       this.selectedGenres = []; // <--- MODIFIED: Was selectedGenre: null
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
-      this.selectedTimeRange = { start: 1981, end: 2034 };
+      this.selectedTimeRange = { start: 1981, end: 2040 };
 
       // Fetch the initial graph view
       await this.updateGraphLayout();
@@ -245,7 +245,7 @@ export const useGraphStore = defineStore('graph', {
       this.searchQuery = ''; // Clear center node
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
-      this.selectedTimeRange = { start: 1981, end: 2034 };
+      this.selectedTimeRange = { start: 1981, end: 2040 };
 
       // 3. Trigger the graph update with the new, clean state
       this.updateGraphLayout();
