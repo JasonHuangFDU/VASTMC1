@@ -83,7 +83,7 @@
     <div class="filter-group dropdown-group">
       <div class="dropdown">
         <button @click="toggleDropdown('edgeTypes')" class="dropdown-toggle">边类型 ({{ selectedEdgeTypes.length || '所有' }})</button>
-        <div v-if="activeDropdown === 'edgeTypes'" class="dropdown-menu">
+        <div v-if="activeDropdown === 'edgeTypes'" class="dropdown-menu edge-type-dropdown">
           <!-- 新增：聚合选择 -->
           <div class="dropdown-item aggregate-item">
             <input type="checkbox" id="edge-group-influence" v-model="influenceEdges" />
@@ -227,7 +227,7 @@ onMounted(() => {
 .search-bar-container {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 4rem; /* 增加间距 */
   padding: 1rem;
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
@@ -243,8 +243,8 @@ onMounted(() => {
 }
 
 .search-group {
-  flex-grow: 1;
-  min-width: 300px;
+  flex-grow: 0; /* 取消弹性增长以防止过度拉伸 */
+  width: 350px; /* 设置一个固定的、较��的宽度 */
 }
 
 .search-label {
@@ -378,7 +378,13 @@ onMounted(() => {
 }
 
 .long-dropdown {
-  max-height: 400px; /* Increased height for genre list */
+  max-height: 520px; /* 显著增加高度以尝试显示所有流派 */
+}
+
+/* 为边类型下拉菜单新增的样式 */
+.edge-type-dropdown {
+  min-width: 280px; /* 增加宽度以显示完整边类型名称 */
+  max-height: 450px; /* 增加高度以显示所有边类型 */
 }
 
 .dropdown-item {

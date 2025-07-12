@@ -236,9 +236,16 @@ function renderGraph(data) {
       const symbolSize = Math.PI * Math.pow(radius, 2);
       return d3.symbol().type(getSymbol(d['Node Type'])).size(symbolSize)();
     })
-    .attr('fill', d => d.genre ? colorScale(d.genre) : '#cccccc')
-    .attr('stroke', d => d.notable ? 'gold' : '#fff')
-    .attr('stroke-width', d => d.notable ? 3 : 1.5)
+    // --- 修改：增加高亮逻辑 ---
+    .attr('fill', d => {
+      if (d.highlight) return '#ffc107'; // 高亮颜色：亮黄色
+      return d.genre ? colorScale(d.genre) : '#cccccc';
+    })
+    .attr('stroke', d => {
+      if (d.highlight) return '#e85a19'; // 高亮描边：橙色
+      return d.notable ? 'gold' : '#fff';
+    })
+    .attr('stroke-width', d => d.highlight || d.notable ? 3 : 1.5)
     .attr('class', 'node');
 
   // --- 交互 ---
@@ -251,7 +258,7 @@ function renderGraph(data) {
       <strong>边信息</strong><br/>
       源: ${d.source.name}<br/>
       目标: ${d.target.name}<br/>
-      ���型: ${d['Edge Type']}
+      类型: ${d['Edge Type']}
     `;
     tooltip.html(content)
       .style('opacity', 1)

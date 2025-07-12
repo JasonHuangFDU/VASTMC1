@@ -1287,13 +1287,157 @@ def get_subgraph_for_node(graph, center_node_id, hop_level=1):
                 
     return subgraph
 
-def format_graph_for_d3(graph):
-    """将NetworkX图对象转换为D3.js兼容的JSON格式"""
+def format_graph_for_d3(graph, highlighted_nodes=None):
+    """
+    将NetworkX图对象转换为D3.js兼容的JSON格式。
+    新增功能：为指定的节点添加 'highlight' 属性。
+    """
+    if highlighted_nodes is None:
+        highlighted_nodes = set()
+
     if graph is None:
         return {"nodes": [], "links": []}
-    # node_link_data 是最适合D3力导向图的格式
+    
     graph_data = nx.node_link_data(graph)
+    
+    # 为需要高亮的节点添加属性
+    for node in graph_data.get('nodes', []):
+        if node['id'] in highlighted_nodes:
+            node['highlight'] = True
+            
     return graph_data
+
+
+# --- 新增：桑基图交互的API端点 ---
+@app.route('/api/filter-for-sankey', methods=['POST'])
+def filter_for_sankey():
+    """
+    专门处理来自桑基图点击事件的过滤请求。
+    V2: 重写逻辑以更精确地匹配用户需求。
+    """
+    if FULL_NETWORKX_GRAPH is None:
+        return jsonify({"error": "Graph data is not available."}), 500
+
+    req_data = request.json
+    filter_type = req_data.get('type')
+    params = req_data.get('params', {})
+    app.logger.info(f"收到桑基图过滤请求 V2: 类型='{filter_type}', 参数={params}")
+
+    subgraph = nx.MultiDiGraph()
+    highlighted_nodes = set()
+
+    INFLUENCE_EDGE_TYPES = {'InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'}
+    CREATION_EDGE_TYPES = {'PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf'}
+
+    # --- 1. Outward: Oceanus Folk -> Genre ---
+    if filter_type == 'outward_oceanus_to_genre':
+        target_genre = params.get('genre')
+        if not target_genre:
+            return jsonify({"error": "Missing 'genre' parameter"}), 400
+
+        target_genre_works = {n for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre') == target_genre and d.get('Node Type') in ['Song', 'Album']}
+        oceanus_works = {n for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre') == 'Oceanus Folk' and d.get('Node Type') in ['Song', 'Album']}
+        
+        nodes_to_add = set()
+        edges_to_add = []
+        for u, v, data in FULL_NETWORKX_GRAPH.edges(data=True):
+            if u in oceanus_works and v in target_genre_works and data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
+                nodes_to_add.add(u)
+                nodes_to_add.add(v)
+                edges_to_add.append((u, v, data))
+        
+        if nodes_to_add:
+            subgraph.add_nodes_from((n, FULL_NETWORKX_GRAPH.nodes[n]) for n in nodes_to_add)
+            subgraph.add_edges_from(edges_to_add)
+
+    # --- 2. Outward: Genre -> Artist (修正后) ---
+    elif filter_type == 'outward_genre_to_artist':
+        genre = params.get('genre')
+        artist_name = params.get('artist')
+        if not genre or not artist_name:
+            return jsonify({"error": "Missing 'genre' or 'artist' parameter"}), 400
+
+        artist_id = find_node_id_by_name(artist_name)
+        if not artist_id:
+            return jsonify({"nodes": [], "links": []})
+
+        # 添加艺术家本人到子图
+        subgraph.add_node(artist_id, **FULL_NETWORKX_GRAPH.nodes[artist_id])
+        
+        # 遍历艺术家的创作边
+        for u, v, data in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True):
+            if data.get('Edge Type') in CREATION_EDGE_TYPES:
+                work_node = FULL_NETWORKX_GRAPH.nodes[v]
+                # 检查作品是否属于目标流派
+                if work_node.get('Node Type') in ['Song', 'Album'] and work_node.get('genre') == genre:
+                    # 添加作品和创作边到子图
+                    subgraph.add_node(v, **work_node)
+                    subgraph.add_edge(u, v, **data)
+
+    # --- 3. Inward: Genre -> Artist (修正后) ---
+    elif filter_type == 'inward_genre_to_artist':
+        genre = params.get('genre')
+        artist_name = params.get('artist')
+        if not genre or not artist_name:
+            return jsonify({"error": "Missing 'genre' or 'artist' parameter"}), 400
+
+        artist_id = find_node_id_by_name(artist_name)
+        if not artist_id:
+            return jsonify({"nodes": [], "links": []})
+
+        # 添加艺术家本人到子图
+        subgraph.add_node(artist_id, **FULL_NETWORKX_GRAPH.nodes[artist_id])
+
+        # 遍历并添加艺术家的所有作品和创作边
+        for u_artist, v_work, creation_data in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True):
+            if creation_data.get('Edge Type') in CREATION_EDGE_TYPES:
+                work_node = FULL_NETWORKX_GRAPH.nodes[v_work]
+                if work_node.get('Node Type') in ['Song', 'Album']:
+                    subgraph.add_node(v_work, **work_node)
+                    subgraph.add_edge(u_artist, v_work, **creation_data)
+                    
+                    # 检查该作品是否受目标流派启发
+                    for u_work, v_inspiration, influence_data in FULL_NETWORKX_GRAPH.out_edges(v_work, data=True):
+                        if influence_data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
+                            inspiration_node = FULL_NETWORKX_GRAPH.nodes[v_inspiration]
+                            if inspiration_node.get('genre') == genre:
+                                # 添加灵感来源节点和影响力边
+                                subgraph.add_node(v_inspiration, **inspiration_node)
+                                subgraph.add_edge(u_work, v_inspiration, **influence_data)
+
+    # --- 4. Inward: Artist -> Oceanus Folk ---
+    elif filter_type == 'inward_artist_to_oceanus':
+        artist_name = params.get('artist')
+        if not artist_name:
+            return jsonify({"error": "Missing 'artist' parameter"}), 400
+
+        artist_id = find_node_id_by_name(artist_name)
+        if not artist_id:
+            return jsonify({"nodes": [], "links": []})
+
+        subgraph.add_node(artist_id, **FULL_NETWORKX_GRAPH.nodes[artist_id])
+        
+        oceanus_works_by_artist = {v for u, v, d in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True) if d.get('Edge Type') in CREATION_EDGE_TYPES and FULL_NETWORKX_GRAPH.nodes[v].get('genre') == 'Oceanus Folk'}
+
+        for work_id in oceanus_works_by_artist:
+            subgraph.add_node(work_id, **FULL_NETWORKX_GRAPH.nodes[work_id])
+            # 添加创作边
+            for u, v, data in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True):
+                if v == work_id:
+                    subgraph.add_edge(u, v, **data)
+
+            # 检查并添加灵感来源
+            for u_work, v_inspiration, influence_data in FULL_NETWORKX_GRAPH.out_edges(work_id, data=True):
+                if influence_data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
+                    inspiration_node = FULL_NETWORKX_GRAPH.nodes[v_inspiration]
+                    if inspiration_node.get('genre') != 'Oceanus Folk':
+                        highlighted_nodes.add(work_id)
+                        subgraph.add_node(v_inspiration, **inspiration_node)
+                        subgraph.add_edge(u_work, v_inspiration, **influence_data)
+    else:
+        return jsonify({"error": f"Unknown filter type: {filter_type}"}), 400
+
+    return jsonify(format_graph_for_d3(subgraph, highlighted_nodes=highlighted_nodes))
 
 
 # --- API 路由 ---

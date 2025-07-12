@@ -15,17 +15,18 @@
     <main class="q2-main">
       <div v-if="loading" class="status">Loading Chart Data...</div>
       <div v-else-if="error" class="status error">{{ error }}</div>
-      <InfluenceSankey v-if="chartData" :data="chartData" />
+      <!-- 修改：监听子组件的 link-clicked 事件 -->
+      <InfluenceSankey v-if="chartData" :data="chartData" @link-clicked="handleSankeyClick" />
     </main>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-// 导入已经存在的、负责渲染图表的InfluenceSankey组件
 import InfluenceSankey from './visualizations/InfluenceSankey.vue'; 
+import { useGraphStore } from '@/stores/graphStore';
 
-// --- 这是Q2的 App.vue 中所有的 <script> 逻辑 ---
+const store = useGraphStore();
 const loading = ref(true);
 const error = ref(null);
 const chartData = ref(null);
@@ -52,6 +53,57 @@ const loadData = async (view) => {
     chartData.value = null;
   } finally {
     loading.value = false;
+  }
+};
+
+/**
+ * 新增：处理桑基图链接点击事件的逻辑
+ */
+const handleSankeyClick = (linkData) => {
+  const { source, target } = linkData;
+  console.log(`Sankey link clicked in view '${currentView.value}':`, source, '->', target);
+
+  let payload = null;
+
+  // --- Outward Influence (q2_2) ---
+  if (currentView.value === 'q2_2') {
+    // 场景1: Oceanus Folk -> Genre
+    if (source.name === 'Oceanus Folk' && target.type === 'Genre') {
+      payload = {
+        type: 'outward_oceanus_to_genre',
+        params: { genre: target.name }
+      };
+    }
+    // 场景2: Genre -> Artist
+    else if (source.type === 'Genre' && target.type === 'Artist') {
+      payload = {
+        type: 'outward_genre_to_artist',
+        params: { genre: source.name, artist: target.name }
+      };
+    }
+  }
+  // --- Inward Inspirations (q2_3) ---
+  else if (currentView.value === 'q2_3') {
+    // 场景3: Genre -> Artist
+    if (source.type === 'Genre' && target.type === 'Artist') {
+      payload = {
+        type: 'inward_genre_to_artist',
+        params: { genre: source.name, artist: target.name }
+      };
+    }
+    // 场景4: Artist -> Oceanus Folk
+    else if (source.type === 'Artist' && target.name === 'Oceanus Folk') {
+      payload = {
+        type: 'inward_artist_to_oceanus',
+        params: { artist: source.name }
+      };
+    }
+  }
+
+  if (payload) {
+    store.filterGraphForSankey(payload);
+  } else {
+    console.warn("Sankey click did not match any known interaction patterns.");
   }
 };
 

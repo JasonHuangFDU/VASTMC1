@@ -28,6 +28,22 @@ export async function fetchGraphLayout(payload) {
 }
 
 /**
+ * 新增：为桑基图交互获取过滤后的图数据。
+ * @param {object} payload - 包含过滤类型和参数的对象。
+ * @returns {Promise<object>} D3兼容的图数据。
+ */
+export async function getFilteredGraphForSankey(payload) {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/filter-for-sankey`, payload);
+    return response.data;
+  } catch (error)
+  {
+    console.error("从桑基图交互获取图数据时出错:", error);
+    throw error;
+  }
+}
+
+/**
  * 从后端获取可用的筛选选项（流派、节点类型等）。
  * @returns {Promise<object>} 筛选选项数据。
  */
@@ -257,3 +273,4 @@ function calculateYearlyStats(result, works, collaborations) {
 
   result.yearlyStats = stats;
 }
+

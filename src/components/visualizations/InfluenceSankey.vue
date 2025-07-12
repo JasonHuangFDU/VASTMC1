@@ -6,12 +6,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, onUnmounted } from 'vue';
+import { ref, onMounted, watch, onUnmounted, defineEmits } from 'vue';
 import * as d3 from 'd3';
 import { sankey, sankeyLinkHorizontal, sankeyJustify } from 'd3-sankey';
-import { useGraphStore } from '@/stores/graphStore';
 
-const store = useGraphStore();
+// --- 新增：定义组件可以发出的事件 ---
+const emit = defineEmits(['link-clicked']);
 
 const props = defineProps({
   data: {
@@ -40,7 +40,6 @@ const drawChart = () => {
     .attr('height', height)
     .attr('viewBox', `0 0 ${width} ${height}`);
 
-  // 关键的Sankey布局配置
   const sankeyLayout = sankey()
     .nodeId(d => d.id)
     .nodeAlign(sankeyJustify)
@@ -52,24 +51,20 @@ const drawChart = () => {
   const graph = JSON.parse(JSON.stringify(props.data));
   const { nodes, links } = sankeyLayout(graph);
   
-  // --- 色彩方案更新 ---
-  // 使用d3.schemeTableau10，一个视觉效果非常出色的分类色板
   const color = d3.scaleOrdinal(d3.schemeTableau10);
 
-  // 绘制链接 (河流)
   svg.append('g')
     .attr('fill', 'none')
-    .attr('stroke-opacity', 0.55) // 稍微增加不透明度，使颜色更明显
+    .attr('stroke-opacity', 0.55)
     .selectAll('path')
     .data(links)
     .join('path')
-    .style('cursor', 'pointer') // 添加手型光标，提示可以点击
+    .style('cursor', 'pointer')
     .attr('d', sankeyLinkHorizontal())
-    .attr('stroke', d => color(d.source.name)) // 按源头节点的名称分配颜色，使来自同一源的流颜色一致
+    .attr('stroke', d => color(d.source.name))
     .attr('stroke-width', d => Math.max(1.5, d.width))
     .on('mouseover', function(event, d) {
-        // --- Tooltip 内容和样式更新 ---
-        d3.select(this).attr('stroke-opacity', 0.8); // 悬停时高亮
+        d3.select(this).attr('stroke-opacity', 0.8);
         const tooltip = d3.select(tooltipRef.value);
         tooltip.style('opacity', 1)
             .html(`
@@ -87,16 +82,14 @@ const drawChart = () => {
             .style('top', `${event.pageY}px`);
     })
     .on('mouseout', function() {
-        d3.select(this).attr('stroke-opacity', 0.55); // 恢复不透明度
+        d3.select(this).attr('stroke-opacity', 0.55);
         d3.select(tooltipRef.value).style('opacity', 0);
     })
     .on('click', (event, d) => {
-      const genre = d.source.name;
-      console.log(`Sankey link clicked, filtering by genre and resetting others: ${genre}`);
-      store.setGenreAndResetOthers(genre);
+      // --- 修改：发出带有详细数据的事件，而不是直接调用store ---
+      emit('link-clicked', { source: d.source, target: d.target });
     });
 
-  // 绘制节点
   const node = svg.append('g')
     .selectAll('g')
     .data(nodes)
@@ -107,11 +100,10 @@ const drawChart = () => {
     .attr('y', d => d.y0)
     .attr('height', d => Math.max(1, d.y1 - d.y0))
     .attr('width', d => d.x1 - d.x0)
-    .attr('fill', d => color(d.name)) // 节点颜色也跟随其名称
+    .attr('fill', d => color(d.name))
     .attr('stroke', '#555')
     .attr('stroke-width', 0.5);
 
-  // 添加节点标签
   node.append('text')
     .attr('x', d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
     .attr('y', d => (d.y1 + d.y0) / 2)

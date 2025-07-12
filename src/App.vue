@@ -87,6 +87,7 @@ header h1 {
   margin: 0;
   margin-right: 30px;
   font-size: 1.5em;
+  white-space: nowrap; /* 防止标题换行 */
 }
 
 /* 主内容区采用三栏式 Flexbox 布局 */
@@ -97,7 +98,7 @@ main {
 }
 
 .left-column,.right-column {
-  flex: 0.5; /* 左右两栏各占1.5份空间 */
+  flex: 0.6; /* 左右两栏各占1.5份空间 */
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -112,7 +113,7 @@ main {
 }
 
 .center-column {
-  flex: 8; /* 中间一栏占据8份空间，大幅增加 */
+  flex: 4; /* 中间一栏占据4份空间 */
   display: flex;
   flex-direction: column;
   padding: 5px; /* 恢复内边距 */

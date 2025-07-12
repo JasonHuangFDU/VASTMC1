@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchGraphLayout, fetchFilterOptions, processArtistData } from '../services/dataService';
+import { fetchGraphLayout, fetchFilterOptions, processArtistData, getFilteredGraphForSankey } from '../services/dataService';
 import { debounce } from 'lodash-es';
 
 export const useGraphStore = defineStore('graph', {
@@ -150,6 +150,31 @@ export const useGraphStore = defineStore('graph', {
     },
 
     /**
+     * 新增: 处理来自桑基图的过滤请求
+     */
+    async filterGraphForSankey(filterPayload) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        console.log("Requesting graph for Sankey with payload:", JSON.stringify(filterPayload, null, 2));
+        const data = await getFilteredGraphForSankey(filterPayload);
+        if (data.error) {
+          this.error = data.error;
+          this.graphData = { nodes: [], links: [] };
+        } else {
+          // 直接用后端返回的子图更新graphData
+          this.graphData = data;
+        }
+      } catch (e) {
+        this.error = 'Failed to fetch graph for Sankey interaction: ' + e.toString();
+        console.error(this.error);
+        this.graphData = { nodes: [], links: [] };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    /**
      * Debounced version of the update function for frequent UI events.
      */
     debouncedUpdateGraphLayout: debounce(function() {
@@ -207,7 +232,7 @@ export const useGraphStore = defineStore('graph', {
     setHopLevel(level) {
         if (this.hopLevel !== level) {
             this.hopLevel = level;
-            this.updateGraphLayout(); // 当跳数变化时，立即更新图
+            this.updateGraphLayout(); // 当跳数变化时，��即更新图
         }
     },
 
