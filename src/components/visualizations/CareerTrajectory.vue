@@ -64,11 +64,14 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import * as d3 from 'd3';
 import Chart from 'chart.js/auto';
 import ArtistPotentialPrediction from './ArtistPotentialPrediction.vue';
 import { processArtistData } from '@/services/dataService';
+
+// 定义默认艺术家的ID
+const DEFAULT_ARTIST_IDS = [17255, 2, 3];
 
 export default {
   name: 'CareerTrajectory',
@@ -89,7 +92,17 @@ export default {
       if (!graphData.value || !graphData.value.nodes) return [];
       return graphData.value.nodes.filter(node =>
         node['Node Type'] === 'Person' && node.name
-      );
+      ).sort((a, b) => a.name.localeCompare(b.name)); // 添加A-Z排序
+    });
+
+    // 获取默认艺术家名称
+    const defaultArtistNames = computed(() => {
+      if (!graphData.value || !graphData.value.nodes) return ["", "", ""];
+
+      return DEFAULT_ARTIST_IDS.map(id => {
+        const artist = graphData.value.nodes.find(n => n.id === id);
+        return artist ? artist.name : "";
+      });
     });
 
     // 检查是否可以开始对比
@@ -112,10 +125,17 @@ export default {
         loading.value = true;
         graphData.value = await d3.json('/MC1_graph.json');
         console.log('图数据加载完成', graphData.value);
+
+        // 设置默认艺术家
+        selectedArtists.value = [...DEFAULT_ARTIST_IDS];
+
+        // 使用 nextTick 确保在设置默认艺术家后加载对比数据
+        nextTick(() => {
+          console.log("加载默认艺术家对比数据");
+          loadComparisonData();
+        });
       } catch (error) {
         console.error('加载图数据失败:', error);
-      } finally {
-        loading.value = false;
       }
     };
 
@@ -135,6 +155,8 @@ export default {
       destroyCharts();
 
       try {
+        console.log("开始加载对比数据，艺术家ID:", selectedArtists.value);
+
         // 获取三位艺术家的生涯数据
         const artistIds = selectedArtists.value.filter(id => id !== null);
         const results = [];
@@ -152,6 +174,7 @@ export default {
         }
 
         comparisonData.value = results;
+        console.log("对比数据加载完成", results);
 
         // 渲染图表
         setTimeout(renderCharts, 100);
@@ -455,7 +478,8 @@ export default {
       canCompare,
       mainChart,
       clearArtist,
-      loadComparisonData
+      loadComparisonData,
+      defaultArtistNames // 添加默认艺术家名称
     };
   }
 };

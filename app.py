@@ -379,12 +379,12 @@ def extract_features(G, node_mapping, label_mapping):
                 # 作品被其他作品影响
                 for _, _, edge_data in G.in_edges(work['id'], data=True):
                     if edge_data['relationship'] in influence_relations:
-                        influence_score += 1.0  # 被动影响力
+                        influence_score += 0.5  # 被动影响力
                     
                 # 作品影响其他作品
                 for _, _, edge_data in G.out_edges(work['id'], data=True):
                     if edge_data['relationship'] in influence_relations:
-                        influence_score += 0.5  # 主动影响力
+                        influence_score += 1.0  # 主动影响力
                         
                     # 特定关系类型计数
                     if edge_data['relationship'] == 'InterpolatesFrom':
