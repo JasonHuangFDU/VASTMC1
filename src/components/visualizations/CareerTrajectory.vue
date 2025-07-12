@@ -38,8 +38,37 @@
 
     <!-- 主图表容器 -->
     <div v-if="comparisonData.length" class="chart-container">
-      <div class="chart-wrapper">
-        <canvas ref="mainChart"></canvas>
+      <div class="chart-wrapper" ref="chartWrapper">
+        <canvas ref="mainChart" @mousemove="handleChartHover" @mouseleave="hideTooltip"></canvas>
+      </div>
+    </div>
+
+    <!-- 自定义工具提示 -->
+    <div v-if="showTooltip" class="custom-tooltip" :style="tooltipStyle">
+      <div class="tooltip-header">
+        <span class="year">{{ hoverYear }}</span> 年
+      </div>
+      <div class="tooltip-content">
+        <div v-for="(artist, index) in hoverData" :key="index" class="artist-info">
+          <div class="artist-color" :style="{ backgroundColor: getArtistColor(index) }"></div>
+          <div class="artist-details">
+            <div class="artist-name">{{ artist.name }}</div>
+            <div class="artist-stats">
+              <div class="stat-item">
+                <span class="stat-label">累计影响力:</span>
+                <span class="stat-value">{{ artist.cumulativeInfluence.toFixed(1) }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">新作品:</span>
+                <span class="stat-value">{{ artist.workCount }} 首</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">合作:</span>
+                <span class="stat-value">{{ artist.collabCount }} 次</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -71,12 +100,12 @@ import ArtistPotentialPrediction from './ArtistPotentialPrediction.vue';
 import { processArtistData } from '@/services/dataService';
 
 // 定义默认艺术家的ID
-const DEFAULT_ARTIST_IDS = [17255, 2, 3];
+const DEFAULT_ARTIST_IDS = [17255, 17155, 17126];
 
 export default {
   name: 'CareerTrajectory',
   components: {
-    ArtistPotentialPrediction: ArtistPotentialPrediction
+    ArtistPotentialPrediction
   },
   setup() {
     const graphData = ref(null);
@@ -87,12 +116,18 @@ export default {
     let mainChartInstance = null;
     let sortedYears = [];
 
+    // 悬停交互状态
+    const showTooltip = ref(false);
+    const tooltipStyle = ref({ left: '0px', top: '0px' });
+    const hoverYear = ref('');
+    const hoverData = ref([]);
+
     // 获取所有艺术家（Person节点）
     const artistList = computed(() => {
       if (!graphData.value || !graphData.value.nodes) return [];
       return graphData.value.nodes.filter(node =>
         node['Node Type'] === 'Person' && node.name
-      ).sort((a, b) => a.name.localeCompare(b.name)); // 添加A-Z排序
+      ).sort((a, b) => a.name.localeCompare(b.name));
     });
 
     // 获取默认艺术家名称
@@ -115,6 +150,7 @@ export default {
       selectedArtists.value[index] = null;
       comparisonData.value = [];
       destroyCharts();
+      hideTooltip();
     };
 
     // 加载图数据
@@ -136,6 +172,8 @@ export default {
         });
       } catch (error) {
         console.error('加载图数据失败:', error);
+      } finally {
+        loading.value = false;
       }
     };
 
@@ -153,6 +191,7 @@ export default {
       loading.value = true;
       comparisonData.value = [];
       destroyCharts();
+      hideTooltip();
 
       try {
         console.log("开始加载对比数据，艺术家ID:", selectedArtists.value);
@@ -161,10 +200,39 @@ export default {
         const artistIds = selectedArtists.value.filter(id => id !== null);
         const results = [];
 
+        // 先收集所有年份
+        const allYears = new Set();
+
+        for (const id of artistIds) {
+          const careerData = processArtistData(graphData.value, id);
+          if (careerData && careerData.yearlyStats) {
+            Object.keys(careerData.yearlyStats).forEach(year => allYears.add(parseInt(year)));
+          }
+        }
+
+        // 转换为排序后的数组
+        const sortedGlobalYears = Array.from(allYears).sort((a, b) => a - b);
+
         for (const id of artistIds) {
           const careerData = processArtistData(graphData.value, id);
           if (careerData) {
             const artistNode = graphData.value.nodes.find(n => n.id === id);
+
+            // 计算累计影响力
+            let cumulativeInfluence = 0;
+            const cumulativeInfluenceByYear = {};
+
+            // 按年份顺序计算累计影响力
+            sortedGlobalYears.forEach(year => {
+              if (careerData.yearlyStats && careerData.yearlyStats[year]) {
+                cumulativeInfluence += careerData.yearlyStats[year].influence;
+              }
+              cumulativeInfluenceByYear[year] = cumulativeInfluence;
+            });
+
+            // 添加累计影响力数据
+            careerData.cumulativeInfluenceByYear = cumulativeInfluenceByYear;
+
             results.push({
               id,
               data: careerData,
@@ -222,105 +290,110 @@ export default {
 
     // 渲染主图表（影响力、作品发布、合作）
     const renderMainChart = () => {
-
       // 准备数据集
-  const datasets = [];
+      const datasets = [];
 
-  // 1. 影响力折线图（累计影响力）
-  comparisonData.value.forEach((artist, index) => {
-    const color = getArtistColor(index);
+      // 1. 影响力折线图（累计影响力）
+      comparisonData.value.forEach((artist, index) => {
+        const color = getArtistColor(index);
 
-    // 计算累计影响力
-    let cumulativeInfluence = 0;
-    const cumulativeInfluenceData = [];
-    sortedYears.forEach(year => {
-      if (artist.data.yearlyStats[year]) {
-        cumulativeInfluence += artist.data.yearlyStats[year].influence;
-      }
-      cumulativeInfluenceData.push({
-        x: year.toString(),  // 使用年份字符串作为x坐标
-        y: cumulativeInfluence
-      });
-    });
+        // 使用累计影响力数据
+        const cumulativeInfluenceData = sortedYears.map(year => {
+          const influence = artist.data.cumulativeInfluenceByYear?.[year] || 0;
+          return {
+            x: year.toString(),
+            y: influence
+          };
+        });
 
-    // 添加折线数据集
-    datasets.push({
-      type: 'line',
-      label: `${artist.name} - 影响力`,
-      data: cumulativeInfluenceData,  // 使用对象数组
-      borderColor: color,
-      backgroundColor: 'transparent',
-      tension: 0,
-      yAxisID: 'y',
-      pointRadius: 0,
-    });
+        // 添加折线数据集
+        datasets.push({
+          type: 'line',
+          label: `${artist.name} - 累计影响力`,
+          data: cumulativeInfluenceData,
+          borderColor: color,
+          backgroundColor: 'transparent',
+          tension: 0.3,
+          yAxisID: 'y',
+          pointRadius: 0,
+          borderWidth: 3,
+        });
 
-    // 2. 添加作品发布事件标记
-    const eventPoints = [];
-    if (artist.data.yearlyStats) {
-      sortedYears.forEach(year => {
-        if (artist.data.yearlyStats[year]) {
-          const releaseCount = artist.data.yearlyStats[year].workCount || 0;
-          if (releaseCount > 0) {
-            // 查找该年份的累计影响力值
-            const influenceEntry = cumulativeInfluenceData.find(d => d.x === year.toString());
-            eventPoints.push({
-              x: year.toString(),  // 使用年份字符串作为x坐标
-              y: influenceEntry ? influenceEntry.y : 0,
-              count: releaseCount
-            });
-          }
+        // 2. 添加作品发布事件标记
+        const eventPoints = [];
+        if (artist.data.yearlyStats) {
+          sortedYears.forEach(year => {
+            if (artist.data.yearlyStats[year]) {
+              const releaseCount = artist.data.yearlyStats[year].workCount || 0;
+              const notableCount = artist.data.yearlyStats[year].notableCount || 0; // 获取重要作品数
+
+              if (releaseCount > 0) {
+                // 查找该年份的累计影响力值
+                const influenceEntry = cumulativeInfluenceData.find(d => d.x === year.toString());
+
+                eventPoints.push({
+                  x: year.toString(),
+                  y: influenceEntry ? influenceEntry.y : 0,
+                  count: releaseCount,
+                  notableCount: notableCount // 存储重要作品数
+                });
+              }
+            }
+          });
         }
+
+        // 计算点半径范围
+        const maxCount = Math.max(...eventPoints.map(p => p.count), 1);
+        const minRadius = 4;
+        const maxRadius = 12;
+
+        datasets.push({
+          type: 'scatter',
+          label: `${artist.name} - 作品发布`,
+          data: eventPoints,
+          pointStyle: 'rectRot',
+          pointRadius: eventPoints.map(p => minRadius + (p.count / maxCount) * (maxRadius - minRadius)),
+          pointHoverRadius: eventPoints.map(p => minRadius + (p.count / maxCount) * (maxRadius - minRadius) + 5),
+          backgroundColor: color,
+          // 根据重要作品数设置样式
+          borderColor: eventPoints.map(p =>
+            p.notableCount > 0 ? '#00CED1' : 'white' // 重要作品
+          ),
+          borderWidth: eventPoints.map(p =>
+            p.notableCount > 0 ? 3 : 2 // 重要作品边框加粗
+          ),
+          yAxisID: 'y'
+        });
       });
-    }
 
-    // 计算点半径范围
-    const maxCount = Math.max(...eventPoints.map(p => p.count), 1);
-    const minRadius = 4;
-    const maxRadius = 12;
+      // 3. 合作频率条形图
+      comparisonData.value.forEach((artist, index) => {
+        const color = getArtistColor(index);
 
-    datasets.push({
-      type: 'scatter',
-      label: `${artist.name} - 作品发布`,
-      data: eventPoints,  // 使用对象数组
-      pointStyle: 'rectRot',
-      pointRadius: eventPoints.map(p => minRadius + (p.count / maxCount) * (maxRadius - minRadius)),
-      pointHoverRadius: eventPoints.map(p => minRadius + (p.count / maxCount) * (maxRadius - minRadius) + 5),
-      backgroundColor: color,
-      borderColor: 'white',
-      borderWidth: 2,
-      yAxisID: 'y'
-    });
-  });
+        const collabData = sortedYears.map(year => {
+          let value = 0;
+          if (artist.data.yearlyStats[year]) {
+            const roles = artist.data.yearlyStats[year].collabRoles || {};
+            value = Object.values(roles).reduce((sum, count) => sum + count, 0);
+          }
+          return {
+            x: year.toString(),
+            y: value
+          };
+        });
 
-  // 3. 合作频率条形图
-  comparisonData.value.forEach((artist, index) => {
-    const color = getArtistColor(index);
-
-    const collabData = sortedYears.map(year => {
-      let value = 0;
-      if (artist.data.yearlyStats[year]) {
-        const roles = artist.data.yearlyStats[year].collabRoles || {};
-        value = Object.values(roles).reduce((sum, count) => sum + count, 0);
-      }
-      return {
-        x: year.toString(),  // 使用年份字符串作为x坐标
-        y: value
-      };
-    });
-
-    datasets.push({
-      type: 'bar',
-      label: `${artist.name} - 合作`,
-      data: collabData,  // 使用对象数组
-      backgroundColor: `${color}80`,
-      borderColor: color,
-      borderWidth: 1,
-      yAxisID: 'y1',
-      barPercentage: 0.6,
-      categoryPercentage: 0.8
-    });
-  });
+        datasets.push({
+          type: 'bar',
+          label: `${artist.name} - 合作`,
+          data: collabData,
+          backgroundColor: `${color}80`,
+          borderColor: color,
+          borderWidth: 1,
+          yAxisID: 'y1',
+          barPercentage: 0.6,
+          categoryPercentage: 0.8
+        });
+      });
 
       // 创建主图表
       mainChartInstance = new Chart(mainChart.value, {
@@ -329,60 +402,31 @@ export default {
           datasets: datasets
         },
         options: {
-          responsive: false, // 禁用响应式，使用固定宽度
+          responsive: false,
           maintainAspectRatio: false,
           interaction: {
             mode: 'index',
             intersect: false
+          },
+          onHover: () => {
+            // 在Chart.js中禁用默认的tooltip
           },
           plugins: {
             legend: {
               position: 'top',
               labels: {
                 filter: item => {
-                  // 只显示影响力和作品发布的图例
                   return item.text.includes('影响力') || item.text.includes('作品发布');
                 },
                 font: {
                   size: 14
-                }
+                },
+                usePointStyle: true,
+                padding: 20
               }
             },
             tooltip: {
-              padding: 12,
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleFont: {
-                size: 16
-              },
-              bodyFont: {
-                size: 14
-              },
-              callbacks: {
-                title: (items) => {
-                  return `年份: ${sortedYears[items[0].dataIndex]}`;
-                },
-                beforeBody: (items) => {
-                  const datasetLabel = items[0].dataset.label;
-                  const artistName = datasetLabel.split(' - ')[0];
-                  return `艺术家: ${artistName}`;
-                },
-                label: (context) => {
-                  const label = context.dataset.label || '';
-                  const value = context.parsed.y || 0;
-
-                  if (label.includes('影响力')) {
-                    return `影响力: ${value.toFixed(1)}`;
-                  }
-                  if (label.includes('合作')) {
-                    return `合作次数: ${value}`;
-                  }
-                  if (label.includes('作品发布')) {
-                    const pointData = context.dataset.data[context.dataIndex];
-                    return `新作品发布: ${pointData.count} 首`;
-                  }
-                  return `${label}: ${value}`;
-                }
-              }
+              enabled: false // 禁用默认tooltip
             }
           },
           scales: {
@@ -408,7 +452,7 @@ export default {
               position: 'left',
               title: {
                 display: true,
-                text: '影响力分数',
+                text: '累计影响力分数',
                 font: {
                   size: 14,
                   weight: 'bold'
@@ -452,6 +496,75 @@ export default {
       return colors[index % colors.length];
     };
 
+    // 处理图表悬停事件
+    const handleChartHover = (event) => {
+      if (!mainChartInstance || !comparisonData.value.length) return;
+
+      // 获取悬停位置对应的图表元素
+      const elements = mainChartInstance.getElementsAtEventForMode(
+        event,
+        'index',
+        { intersect: false },
+        true
+      );
+
+      if (elements.length === 0) {
+        hideTooltip();
+        return;
+      }
+
+      const element = elements[0];
+      const yearIndex = element.index;
+      const year = sortedYears[yearIndex];
+
+      // 收集该年份所有艺术家的数据
+      const artistData = comparisonData.value.map(artist => {
+        const yearStats = artist.data.yearlyStats[year] || {};
+        return {
+          id: artist.id,
+          name: artist.name,
+          cumulativeInfluence: artist.data.cumulativeInfluenceByYear?.[year] || 0, // 累计影响力
+          workCount: yearStats.workCount || 0,
+          collabCount: yearStats.collabRoles
+            ? Object.values(yearStats.collabRoles).reduce((sum, count) => sum + count, 0)
+            : 0
+        };
+      });
+
+      // 更新悬停状态
+      showTooltip.value = true;
+      hoverYear.value = year;
+      hoverData.value = artistData;
+
+      // 定位工具提示
+      const offsetX = 20;
+      const offsetY = 20;
+      let left = event.clientX + offsetX;
+      let top = event.clientY + offsetY;
+
+      // 确保工具提示不会超出屏幕
+      const tooltipWidth = 300;
+      const tooltipHeight = artistData.length * 70 + 50;
+
+      if (left + tooltipWidth > window.innerWidth) {
+        left = event.clientX - tooltipWidth - offsetX;
+      }
+
+      if (top + tooltipHeight > window.innerHeight) {
+        top = event.clientY - tooltipHeight - offsetY;
+      }
+
+      tooltipStyle.value = {
+        left: `${left}px`,
+        top: `${top}px`
+      };
+    };
+
+    // 隐藏工具提示
+    const hideTooltip = () => {
+      showTooltip.value = false;
+    };
+
     // 销毁所有图表实例
     const destroyCharts = () => {
       if (mainChartInstance) {
@@ -479,7 +592,14 @@ export default {
       mainChart,
       clearArtist,
       loadComparisonData,
-      defaultArtistNames // 添加默认艺术家名称
+      defaultArtistNames,
+      showTooltip,
+      tooltipStyle,
+      hoverYear,
+      hoverData,
+      handleChartHover,
+      hideTooltip,
+      getArtistColor
     };
   }
 };
@@ -495,6 +615,7 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   min-height: 600px;
+  position: relative;
 }
 
 .artist-selection {
@@ -606,6 +727,106 @@ export default {
   height: 500px;
 }
 
+/* 自定义工具提示样式 */
+.custom-tooltip {
+  position: fixed;
+  z-index: 1000;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 15px;
+  width: 300px;
+  pointer-events: none;
+  opacity: 0.95;
+  backdrop-filter: blur(4px);
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.custom-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  border-width: 0 10px 10px 10px;
+  border-style: solid;
+  border-color: transparent transparent white transparent;
+}
+
+.tooltip-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.tooltip-header .year {
+  color: #3498db;
+  font-size: 18px;
+}
+
+.tooltip-content {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.artist-info {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.artist-info:last-child {
+  border-bottom: none;
+}
+
+.artist-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.artist-details {
+  flex: 1;
+}
+
+.artist-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.artist-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat-item {
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  padding: 5px 8px;
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
+.stat-value {
+  display: block;
+  font-weight: bold;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
 .loading {
   display: flex;
   flex-direction: column;
@@ -670,6 +891,14 @@ export default {
 
   .clear-btn {
     top: 35px;
+  }
+
+  .custom-tooltip {
+    width: 260px;
+  }
+
+  .artist-stats {
+    grid-template-columns: 1fr;
   }
 }
 </style>
