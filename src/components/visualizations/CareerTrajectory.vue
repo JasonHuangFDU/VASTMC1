@@ -88,7 +88,7 @@
     </div>
 
     <!-- 艺术家潜力预测组件 -->
-    <ArtistPotentialPrediction />
+    <ArtistPotentialPrediction @prediction-complete="handlePredictionComplete" />
   </div>
 </template>
 
@@ -573,6 +573,15 @@ export default {
       }
     };
 
+    // 新增: 处理预测完成事件
+    const handlePredictionComplete = (artistIds) => {
+      // 确保有3个艺术家ID
+      if (artistIds.length === 3) {
+        selectedArtists.value = artistIds;
+        loadComparisonData();
+      }
+    };
+
     // 组件挂载时加载图数据
     onMounted(() => {
       loadGraphData();
@@ -599,7 +608,8 @@ export default {
       hoverData,
       handleChartHover,
       hideTooltip,
-      getArtistColor
+      getArtistColor,
+      handlePredictionComplete
     };
   }
 };

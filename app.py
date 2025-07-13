@@ -1043,13 +1043,15 @@ def predict():
             if 'collab_diversity' in feat:
                 risk_factors.append(f"合作多样性: {feat['collab_diversity']}")
             
+            # 添加艺术家ID到预测结果
             predicted_stars.append({
+                'id': artist['id'],  # 关键修改：添加id字段
                 'name': artist['name'],
                 'probability': round(artist['probability'], 4),
                 'strengths': strengths,
                 'risk_factors': risk_factors
             })
-        
+
         # 准备雷达图数据
         radar_dimensions = {
             'influence_score': '影响力',
@@ -1092,6 +1094,7 @@ def predict():
                 radar_values[dim_name] = round(scaled_value, 1)          
             
             radar_data.append({
+                'id': artist['id'],  # 关键修改：添加id字段
                 'name': artist['name'],
                 'data': radar_values
             })
@@ -1106,7 +1109,6 @@ def predict():
             "predicted_stars": predicted_stars,
             "radar_data": radar_data  # 包含三位艺术家的雷达图数据
         }
-        print(radar_data)
         return jsonify(report)
         
     except Exception as e:

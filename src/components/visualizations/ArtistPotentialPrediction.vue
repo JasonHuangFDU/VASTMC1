@@ -125,6 +125,9 @@ export default {
         const weightPreferences = this.weightOrder.map(item => item.id);
         const result = await loadOceanusDataAndPredict(weightPreferences);
         this.report = result;
+        // 新增: 提取预测艺术家的ID并传递给父组件
+        const predictedIds = result.predicted_stars.map(star => star.id);
+        this.$emit('prediction-complete', predictedIds);
       } catch (error) {
         this.error = `预测失败: ${error.message}`;
         console.error('预测错误详情:', error);
