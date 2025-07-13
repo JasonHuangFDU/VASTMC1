@@ -1117,14 +1117,15 @@ def predict():
 # 用于一次性加载和存储图数据，避免每次请求都重新加载文件
 FULL_NETWORKX_GRAPH = None
 NODE_ID_MAP = {} # 用于通过节点名称快速查找ID
+INFLUENCE_THRESHOLDS = {} # 用于存储影响力阈值
 
 # --- 数据加载与图构建 (在应用启动时执行一次) ---
-def load_graph_data(filename="public/graph_processed.json"):
+def load_graph_data(filename="public/graph_with_yearly_influence.json"):
     """
     从JSON文件加载数据并构建一个NetworkX图。
     这个函数只在服务器启动时运行一次。
     """
-    global FULL_NETWORKX_GRAPH, NODE_ID_MAP
+    global FULL_NETWORKX_GRAPH, NODE_ID_MAP, INFLUENCE_THRESHOLDS
     if FULL_NETWORKX_GRAPH is not None:
         return
 
@@ -1133,6 +1134,11 @@ def load_graph_data(filename="public/graph_processed.json"):
         with open(filename, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
+        # 存储影响力阈值
+        if 'influence_thresholds' in data:
+            INFLUENCE_THRESHOLDS = data.pop('influence_thresholds')
+            app.logger.info(f"影响力阈值加载成功: {INFLUENCE_THRESHOLDS}")
+
         # 使用MultiDiGraph因为它支持平行边和有向边
         G = nx.MultiDiGraph()
         
@@ -1146,8 +1152,9 @@ def load_graph_data(filename="public/graph_processed.json"):
             G.add_node(node_id, **node_data)
             temp_node_map[node_data['name'].lower()] = node_id
 
-        # 添加边 (注意：JSON文件中的键是 'links')
-        for edge_data in data.get('links', []):
+        # 添加边 (注意：JSON文件中的键是 'links' 或 'edges')
+        edges_key = 'links' if 'links' in data else 'edges'
+        for edge_data in data.get(edges_key, []):
             source_id = edge_data.get('source')
             target_id = edge_data.get('target')
             if G.has_node(source_id) and G.has_node(target_id):
@@ -1162,6 +1169,44 @@ def load_graph_data(filename="public/graph_processed.json"):
         app.logger.error(f"错误: {filename} 不是一个有效的JSON文件。")
     except Exception as e:
         app.logger.error(f"加载图时发生未知错误: {e}")
+
+def process_dynamic_node_attributes(graph, time_range):
+    """
+    根据时间范围动态计算节点的影响力分数和notable状态。
+    """
+    if not INFLUENCE_THRESHOLDS:
+        app.logger.warning("影响力阈值未加载，无法处理动态属性。")
+        return
+
+    end_year = None
+    if time_range and 'end' in time_range:
+        try:
+            end_year = int(time_range['end'])
+        except (ValueError, TypeError):
+            end_year = None
+
+    for node_id, node_data in graph.nodes(data=True):
+        node_type = node_data.get('Node Type')
+        if node_type in ['Person', 'MusicGroup', 'RecordLabel']:
+            current_influence = 0
+            # 如果有指定结束年份，则计算累积影响力
+            if end_year is not None and 'influence_score' in node_data and isinstance(node_data['influence_score'], list):
+                # 年份从1981年开始，所以索引是 year - 1981
+                end_index = end_year - 1981
+                if 0 <= end_index < len(node_data['influence_score']):
+                    # 计算到指定年份（包含）的累积和
+                    current_influence = sum(node_data['influence_score'][:end_index + 1])
+            # 否则，使用总影响力分数
+            elif 'total_influence_score' in node_data:
+                current_influence = node_data.get('total_influence_score', 0)
+
+            # 更新节点数据
+            # 注意：我们是在一个副本上操作，所以可以直接修改
+            graph.nodes[node_id]['influence_score'] = current_influence
+            
+            # 动态计算notable状态
+            threshold = INFLUENCE_THRESHOLDS.get(node_type, float('inf'))
+            graph.nodes[node_id]['notable'] = current_influence >= threshold
 
 
 # --- 过滤逻辑辅助函数 ---
@@ -1510,7 +1555,7 @@ def get_graph_layout():
     # 3. 按节点/边类型筛选
     graph = filter_by_types(graph, filters.get('nodeTypes'), filters.get('edgeTypes'))
 
-    # --- ��理居中和最终图的构建 ---
+    # --- 处理居中和最终图的构建 ---
     final_graph = None
     if center_node_id:
         if graph.has_node(center_node_id):
@@ -1525,6 +1570,9 @@ def get_graph_layout():
         # 如果没有指定中心节点，则返回整个筛选后的图
         final_graph = graph
     
+    # 在返回最终图之前，处理动态节点属性
+    process_dynamic_node_attributes(final_graph, filters.get('timeRange'))
+
     # 格式化为D3兼容的JSON并返回
     response_json = format_graph_for_d3(final_graph)
     app.logger.info(f"请求处理完毕，返回 {len(response_json['nodes'])} 个节点和 {len(response_json['links'])} 条边。")

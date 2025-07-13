@@ -100,7 +100,7 @@ const ALL_NODE_LEGEND_INFO = {
   'Song': { name: '歌曲', symbol: d3.symbol().type(d3.symbolTriangle).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
   'Album': { name: '专辑', symbol: d3.symbol().type(d3.symbolSquare).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
   'RecordLabel': { name: '唱片公司', symbol: d3.symbol().type(d3.symbolWye).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
-  // 'Notable' is a state, not a type, handled by stroke color directly on the node.
+  'Notable': { name: '知名节点', symbol: d3.symbol().type(d3.symbolCircle).size(100)(), color: '#cccccc', stroke: 'gold', strokeWidth: 3 },
 };
 
 const ALL_EDGE_LEGEND_INFO = {
@@ -158,8 +158,13 @@ function renderGraph(data) {
   const nodeTypesInGraph = new Set(nodes.map(n => n['Node Type']));
   const edgeClassesInGraph = new Set(links.map(l => getLinkClass(l['Edge Type'])));
   const genresInGraph = new Set(nodes.map(n => n.genre).filter(Boolean));
+  const hasNotableNode = nodes.some(n => n.notable);
 
   displayedNodeTypes.value = Array.from(nodeTypesInGraph).map(type => ALL_NODE_LEGEND_INFO[type]).filter(Boolean);
+  if (hasNotableNode) {
+    displayedNodeTypes.value.push(ALL_NODE_LEGEND_INFO['Notable']);
+  }
+
   displayedEdgeTypes.value = Array.from(edgeClassesInGraph).map(cls => ALL_EDGE_LEGEND_INFO[cls]).filter(Boolean);
   
   colorScale.domain(Array.from(genresInGraph));
