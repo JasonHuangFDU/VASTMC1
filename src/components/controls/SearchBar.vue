@@ -21,11 +21,11 @@
         <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-list">
           <div
             v-for="suggestion in suggestions"
-            :key="suggestion"
+            :key="suggestion.id"
             class="suggestion-item"
             @mousedown="selectSuggestion(suggestion)"
           >
-            {{ suggestion }}
+            {{ suggestion.name }} (id: {{ suggestion.id }})
           </div>
         </div>
       </div>
@@ -165,8 +165,24 @@ const suggestions = ref([]);
 const showSuggestions = ref(false);
 
 // --- Watchers ---
-watch(searchQuery, (newVal) => {
-  localSearchQuery.value = newVal;
+// This watcher synchronizes the local input field with the store's state,
+// ensuring the user-friendly "Name (id: XXX)" format is displayed.
+watch([searchQuery, filterOptions], ([newQueryId, newOptions]) => {
+  if (newQueryId && newOptions.person_nodes && newOptions.person_nodes.length > 0) {
+    const selectedNode = newOptions.person_nodes.find(p => p.id === newQueryId);
+    if (selectedNode) {
+      // Found the corresponding person, so format the input text
+      localSearchQuery.value = `${selectedNode.name} (id: ${selectedNode.id})`;
+    } else {
+      // If the ID is not in the person list (e.g., another node type), display the ID itself
+      localSearchQuery.value = newQueryId.toString();
+    }
+  } else if (!newQueryId) {
+    // If the search query is cleared, clear the input field
+    localSearchQuery.value = '';
+  }
+}, {
+  deep: true // Use a deep watch to detect changes within the filterOptions object
 });
 
 // --- Computed Properties ---
@@ -206,15 +222,17 @@ const updateSuggestions = () => {
     return;
   }
   const query = localSearchQuery.value.toLowerCase();
-  suggestions.value = filterOptions.value.node_names
-    .filter(name => name.toLowerCase().includes(query))
-    .slice(0, 10); // Limit to 10 suggestions
+  suggestions.value = filterOptions.value.person_nodes
+    .filter(node => node.name.toLowerCase().includes(query))
+    .slice(0, 20); // Limit to 20 suggestions
   showSuggestions.value = true;
 };
 
 const selectSuggestion = (suggestion) => {
-  localSearchQuery.value = suggestion;
-  showSuggestions.value = false; // Just update the input and hide suggestions
+  // suggestion is now an object: { name: '...', id: '...' }
+  localSearchQuery.value = `${suggestion.name} (id: ${suggestion.id})`;
+  store.selectCenterNode(suggestion.id); // Use the action that updates immediately
+  showSuggestions.value = false;
 };
 
 // --- Lifecycle Hook ---
@@ -244,7 +262,7 @@ onMounted(() => {
 
 .search-group {
   flex-grow: 0; /* 取消弹性增长以防止过度拉伸 */
-  width: 350px; /* 设置一个固定的、较��的宽度 */
+  width: 450px; /* 设置一个固定的、较长的宽度 */
 }
 
 .search-label {

@@ -1463,12 +1463,17 @@ def get_graph_meta():
     edge_types = sorted(list(set(d['Edge Type'] for _, _, d in FULL_NETWORKX_GRAPH.edges(data=True) if 'Edge Type' in d)))
     genres = sorted(list(set(d['genre'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre'))))
     node_names = sorted([d['name'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True)])
+    person_nodes = sorted(
+        [{'name': d['name'], 'id': n} for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('Node Type') == 'Person'],
+        key=lambda x: x['name']
+    )
 
     return jsonify({
         "node_types": node_types,
         "edge_types": edge_types,
         "genres": genres,
         "node_names": node_names,
+        "person_nodes": person_nodes,
     })
 
 
@@ -1484,16 +1489,16 @@ def get_graph_layout():
     graph = FULL_NETWORKX_GRAPH.copy()
     
     request_data = request.json or {}
-    center_node_name = request_data.get("centerNodeName")
+    center_node_id = request_data.get("centerNodeId")
     # 从请求中获取hopLevel，如果未提供则默认为1
     hop_level = request_data.get("hopLevel", 1)
     filters = request_data.get("filters", {})
 
     # 如果是初始/重置请求 (没有指定中心节点或指定为Sailor Shift且无其他筛选)
-    is_initial_request = not center_node_name and not filters
-    is_reset_request = center_node_name == "Sailor Shift" and not filters
+    is_initial_request = not center_node_id and not filters
+    is_reset_request = center_node_id == 17255 and not filters # Check for ID
     if is_initial_request or is_reset_request:
-        center_node_name = "Sailor Shift"
+        center_node_id = 17255 # ID for "Sailor Shift"
 
     # --- 组合逻辑：按顺序应用筛选 ---
     # 1. 按流派筛选
@@ -1505,18 +1510,16 @@ def get_graph_layout():
     # 3. 按节点/边类型筛选
     graph = filter_by_types(graph, filters.get('nodeTypes'), filters.get('edgeTypes'))
 
-    # --- 处理居中和最终图的构建 ---
+    # --- ��理居中和最终图的构建 ---
     final_graph = None
-    if center_node_name:
-        center_node_id = find_node_id_by_name(center_node_name)
-        
-        if center_node_id is not None and graph.has_node(center_node_id):
+    if center_node_id:
+        if graph.has_node(center_node_id):
             # 如果找到了节点，并且该节点在过滤后的图中依然存在
             # 传递 hop_level 参数
             final_graph = get_subgraph_for_node(graph, center_node_id, hop_level)
         else:
             # 如果搜索的节点不存在或已被过滤掉，返回一个空图
-            app.logger.warning(f"中心节点 '{center_node_name}' 在过滤后的图中未找到。返回空图。")
+            app.logger.warning(f"中心节点ID '{center_node_id}' 在过滤后的图中未找到。返回空图。")
             final_graph = nx.MultiDiGraph()
     else:
         # 如果没有指定中心节点，则返回整个筛选后的图

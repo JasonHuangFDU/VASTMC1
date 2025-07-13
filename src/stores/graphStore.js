@@ -6,14 +6,14 @@ export const useGraphStore = defineStore('graph', {
   state: () => ({
     // --- Data from Backend ---
     graphData: { nodes: [], links: [] },
-    filterOptions: { genres: [], node_types: [], edge_types: [], node_names: [] },
+    filterOptions: { genres: [], node_types: [], edge_types: [], node_names: [], person_nodes: [] },
 
     // --- Filter Criteria ---
     selectedTimeRange: { start: 1981, end: 2040 },
     selectedGenres: [], // <--- MODIFIED: Was selectedGenre: null
     selectedNodeTypes: [],
     selectedEdgeTypes: [],
-    searchQuery: null,
+    searchQuery: null, // This will now hold the center node ID
     hopLevel: 1, // 新增：控制网络图的跳数，1或2
 
     // --- UI State ---
@@ -77,7 +77,7 @@ export const useGraphStore = defineStore('graph', {
       await this.loadFilterOptions();
 
       // Set initial state for the first graph request.
-      this.searchQuery = "Sailor Shift";
+      this.searchQuery = 17255; // ID for "Sailor Shift"
       this.selectedGenres = []; // <--- MODIFIED: Was selectedGenre: null
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
@@ -100,6 +100,7 @@ export const useGraphStore = defineStore('graph', {
             this.filterOptions.node_types = options.node_types || [];
             this.filterOptions.edge_types = options.edge_types || [];
             this.filterOptions.node_names = options.node_names || [];
+            this.filterOptions.person_nodes = options.person_nodes || []; // Populate the new state
         } catch (e) {
             console.error('Failed to load filter options:', e);
             this.error = 'Could not load filter options.';
@@ -120,7 +121,7 @@ export const useGraphStore = defineStore('graph', {
       this.isRequestPending = true;
 
       const payload = {
-        centerNodeName: this.searchQuery,
+        centerNodeId: this.searchQuery, // Use ID now
         hopLevel: this.hopLevel, // 新增：将跳数信息发送给后端
         filters: {
           nodeTypes: this.selectedNodeTypes.length > 0 ? this.selectedNodeTypes : null,
@@ -187,7 +188,7 @@ export const useGraphStore = defineStore('graph', {
     async resetView() {
       console.log("Resetting view to 'Sailor Shift'");
       // Reset all filter states
-      this.searchQuery = "Sailor Shift";
+      this.searchQuery = 17255; // ID for "Sailor Shift"
       this.selectedGenres = []; // <--- MODIFIED: Was selectedGenre: null
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
@@ -204,8 +205,8 @@ export const useGraphStore = defineStore('graph', {
         // DO NOT trigger update here. The component will do it.
     },
 
-    selectCenterNode(nodeName) {
-        this.searchQuery = nodeName;
+    selectCenterNode(nodeId) {
+        this.searchQuery = nodeId;
         this.updateGraphLayout(); // Immediate update, no debounce
     },
 
