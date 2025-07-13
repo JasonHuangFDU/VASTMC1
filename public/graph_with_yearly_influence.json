@@ -1163918,7 +1163918,7 @@
     }
   ],
   "influence_thresholds": {
-    "Person": 6.0,
+    "Person": 15.0,
     "RecordLabel": 15.0,
     "MusicalGroup": 15.0
   }
