@@ -122,22 +122,19 @@ export default {
     const hoverYear = ref('');
     const hoverData = ref([]);
 
+    // 添加水平参考线状态
+    const hoverLine = ref({
+      show: false,
+      year: null,
+      position: 0
+    });
+
     // 获取所有艺术家（Person节点）
     const artistList = computed(() => {
       if (!graphData.value || !graphData.value.nodes) return [];
       return graphData.value.nodes.filter(node =>
         node['Node Type'] === 'Person' && node.name
       ).sort((a, b) => a.name.localeCompare(b.name));
-    });
-
-    // 获取默认艺术家名称
-    const defaultArtistNames = computed(() => {
-      if (!graphData.value || !graphData.value.nodes) return ["", "", ""];
-
-      return DEFAULT_ARTIST_IDS.map(id => {
-        const artist = graphData.value.nodes.find(n => n.id === id);
-        return artist ? artist.name : "";
-      });
     });
 
     // 检查是否可以开始对比
@@ -270,19 +267,20 @@ export default {
 
       sortedYears = Array.from(allYears).sort((a, b) => a - b);
 
-      // 计算图表宽度 - 每1年100px
-      const minWidth = 1200;
-      const width = Math.max(minWidth, sortedYears.length * 100);
+      // 计算图表高度 - 每1年50px
+      const minHeight = 500;
+      const height = Math.max(minHeight, sortedYears.length * 50);
 
-      // 设置图表容器宽度
+      // 设置图表容器高度（不再设置固定宽度）
       const chartWrapper = document.querySelector('.chart-wrapper');
       if (chartWrapper) {
-        chartWrapper.style.width = `${width}px`;
+        chartWrapper.style.height = `${height}px`;
       }
 
-      // 设置主图表尺寸
-      mainChart.value.width = width;
-      mainChart.value.height = 500;
+      // 设置主图表尺寸（使用容器宽度）
+      const containerWidth = chartWrapper.clientWidth;
+      mainChart.value.width = containerWidth;
+      mainChart.value.height = height;
 
       // 渲染主图表
       renderMainChart();
@@ -301,8 +299,8 @@ export default {
         const cumulativeInfluenceData = sortedYears.map(year => {
           const influence = artist.data.cumulativeInfluenceByYear?.[year] || 0;
           return {
-            x: year.toString(),
-            y: influence
+            y: year.toString(),
+            x: influence
           };
         });
 
@@ -314,6 +312,7 @@ export default {
           borderColor: color,
           backgroundColor: 'transparent',
           tension: 0.3,
+          xAxisID: 'x',
           yAxisID: 'y',
           pointRadius: 0,
           borderWidth: 3,
@@ -329,11 +328,11 @@ export default {
 
               if (releaseCount > 0) {
                 // 查找该年份的累计影响力值
-                const influenceEntry = cumulativeInfluenceData.find(d => d.x === year.toString());
+                const influenceEntry = cumulativeInfluenceData.find(d => d.y === year.toString());
 
                 eventPoints.push({
-                  x: year.toString(),
-                  y: influenceEntry ? influenceEntry.y : 0,
+                  y: year.toString(),
+                  x: influenceEntry ? influenceEntry.x : 0,
                   count: releaseCount,
                   notableCount: notableCount // 存储重要作品数
                 });
@@ -362,6 +361,7 @@ export default {
           borderWidth: eventPoints.map(p =>
             p.notableCount > 0 ? 3 : 2 // 重要作品边框加粗
           ),
+          xAxisID: 'x',
           yAxisID: 'y'
         });
       });
@@ -377,8 +377,8 @@ export default {
             value = Object.values(roles).reduce((sum, count) => sum + count, 0);
           }
           return {
-            x: year.toString(),
-            y: value
+            y: year.toString(),
+            x: value
           };
         });
 
@@ -389,7 +389,8 @@ export default {
           backgroundColor: `${color}80`,
           borderColor: color,
           borderWidth: 1,
-          yAxisID: 'y1',
+          xAxisID: 'x1',
+          yAxisID: 'y',
           barPercentage: 0.6,
           categoryPercentage: 0.8
         });
@@ -398,12 +399,12 @@ export default {
       // 创建主图表
       mainChartInstance = new Chart(mainChart.value, {
         data: {
-          labels: sortedYears.map(year => year.toString()),
           datasets: datasets
         },
         options: {
           responsive: false,
           maintainAspectRatio: false,
+          indexAxis: 'y', // 关键修改：设置为纵向图表
           interaction: {
             mode: 'index',
             intersect: false
@@ -430,7 +431,7 @@ export default {
             }
           },
           scales: {
-            x: {
+            y: {
               title: {
                 display: true,
                 text: '年份',
@@ -448,8 +449,8 @@ export default {
                 display: false
               }
             },
-            y: {
-              position: 'left',
+            x: {
+              position: 'top',
               title: {
                 display: true,
                 text: '累计影响力分数',
@@ -465,8 +466,8 @@ export default {
               },
               beginAtZero: true
             },
-            y1: {
-              position: 'right',
+            x1: {
+              position: 'bottom',
               title: {
                 display: true,
                 text: '合作次数',
@@ -486,7 +487,27 @@ export default {
               }
             }
           }
-        }
+        },
+        // 添加插件绘制水平参考线
+        plugins: [{
+          id: 'hoverLinePlugin',
+          afterDraw: (chart) => {
+            if (!hoverLine.value.show) return;
+
+            const ctx = chart.ctx;
+            const yPos = hoverLine.value.position;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([5, 3]);
+            ctx.moveTo(0, yPos);
+            ctx.lineTo(chart.width, yPos);
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.restore();
+          }
+        }]
       });
     };
 
@@ -496,26 +517,40 @@ export default {
       return colors[index % colors.length];
     };
 
-    // 处理图表悬停事件
+    // 处理图表悬停事件 - 修改后版本
     const handleChartHover = (event) => {
       if (!mainChartInstance || !comparisonData.value.length) return;
 
-      // 获取悬停位置对应的图表元素
-      const elements = mainChartInstance.getElementsAtEventForMode(
-        event,
-        'index',
-        { intersect: false },
-        true
+      // 获取canvas位置和鼠标坐标
+      const canvas = event.currentTarget;
+      const rect = canvas.getBoundingClientRect();
+      const mouseY = event.clientY - rect.top;
+
+      // 获取Y轴比例尺
+      const yAxis = mainChartInstance.scales.y;
+      if (!yAxis) return;
+
+      // 计算年份索引
+      const yearIndex = Math.round(
+        (mouseY - yAxis.top) / (yAxis.bottom - yAxis.top) * (sortedYears.length - 1)
       );
 
-      if (elements.length === 0) {
+      // 确保索引在有效范围内
+      if (yearIndex < 0 || yearIndex >= sortedYears.length) {
         hideTooltip();
+        hoverLine.value.show = false;
         return;
       }
 
-      const element = elements[0];
-      const yearIndex = element.index;
       const year = sortedYears[yearIndex];
+
+      // 更新水平线位置
+      const yPos = yAxis.getPixelForValue(year.toString());
+      hoverLine.value = {
+        show: true,
+        year,
+        position: yPos
+      };
 
       // 收集该年份所有艺术家的数据
       const artistData = comparisonData.value.map(artist => {
@@ -536,22 +571,19 @@ export default {
       hoverYear.value = year;
       hoverData.value = artistData;
 
-      // 定位工具提示
-      const offsetX = 20;
-      const offsetY = 20;
-      let left = event.clientX + offsetX;
-      let top = event.clientY + offsetY;
-
-      // 确保工具提示不会超出屏幕
+      // 定位工具提示 - 优化定位逻辑
       const tooltipWidth = 300;
       const tooltipHeight = artistData.length * 70 + 50;
+      let left = event.clientX + 20;
+      let top = event.clientY + 20;
 
+      // 确保工具提示不会超出屏幕
       if (left + tooltipWidth > window.innerWidth) {
-        left = event.clientX - tooltipWidth - offsetX;
+        left = event.clientX - tooltipWidth - 20;
       }
 
       if (top + tooltipHeight > window.innerHeight) {
-        top = event.clientY - tooltipHeight - offsetY;
+        top = window.innerHeight - tooltipHeight - 10;
       }
 
       tooltipStyle.value = {
@@ -563,6 +595,7 @@ export default {
     // 隐藏工具提示
     const hideTooltip = () => {
       showTooltip.value = false;
+      hoverLine.value.show = false;
     };
 
     // 销毁所有图表实例
@@ -573,7 +606,7 @@ export default {
       }
     };
 
-    // 新增: 处理预测完成事件
+    // 处理预测完成事件
     const handlePredictionComplete = (artistIds) => {
       // 确保有3个艺术家ID
       if (artistIds.length === 3) {
@@ -585,12 +618,21 @@ export default {
     // 组件挂载时加载图数据
     onMounted(() => {
       loadGraphData();
+      window.addEventListener('resize', handleResize);
     });
 
     // 组件卸载时清理
     onBeforeUnmount(() => {
       destroyCharts();
+      window.removeEventListener('resize', handleResize);
     });
+
+    // 窗口大小变化时重新渲染图表
+    const handleResize = () => {
+      if (comparisonData.value.length) {
+        renderCharts();
+      }
+    };
 
     return {
       selectedArtists,
@@ -601,7 +643,6 @@ export default {
       mainChart,
       clearArtist,
       loadComparisonData,
-      defaultArtistNames,
       showTooltip,
       tooltipStyle,
       hoverYear,
@@ -729,12 +770,13 @@ export default {
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .chart-wrapper {
   position: relative;
   height: 500px;
+  width: 100%; /* 宽度设置为100%自适应 */
 }
 
 /* 自定义工具提示样式 */
@@ -908,6 +950,18 @@ export default {
   }
 
   .artist-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .chart-wrapper {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 700px) {
+  .selectors {
     grid-template-columns: 1fr;
   }
 }
