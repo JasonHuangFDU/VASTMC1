@@ -1,8 +1,8 @@
 <template>
   <div class="q2-sankey-container">
     <header class="q2-header">
-      <h3>Influence Analysis (Q2)</h3>
-      <div class="controls">
+      <h3>Influence Sankey</h3> <!-- 标题：Influence Flow Analysis -->
+      <div class="controls"> <!-- 按钮容器 -->
         <button @click="loadData('q2_2')" :class="{ active: currentView === 'q2_2' }">
           Outward Influence
         </button>
@@ -15,8 +15,7 @@
     <main class="q2-main">
       <div v-if="loading" class="status">Loading Chart Data...</div>
       <div v-else-if="error" class="status error">{{ error }}</div>
-      <!-- 修改：监听子组件的 link-clicked 事件 -->
-      <InfluenceSankey v-if="chartData" :data="chartData" @link-clicked="handleSankeyClick" />
+      <InfluenceSankey v-if="chartData" :data="chartData" :currentView="currentView" @link-clicked="handleSankeyClick" />
     </main>
   </div>
 </template>
@@ -25,12 +24,13 @@
 import { ref, onMounted } from 'vue';
 import InfluenceSankey from './visualizations/InfluenceSankey.vue'; 
 import { useGraphStore } from '@/stores/graphStore';
+import { appColors } from '@/utils/colors'; // Import color definitions
 
 const store = useGraphStore();
 const loading = ref(true);
 const error = ref(null);
 const chartData = ref(null);
-const currentView = ref('');
+const currentView = ref(''); 
 
 const dataFiles = {
   'q2_2': 'mc1_q2_2_data.json',
@@ -42,7 +42,7 @@ const loadData = async (view) => {
 
   loading.value = true;
   error.value = null;
-  currentView.value = view;
+  currentView.value = view; 
   
   try {
     const response = await fetch(`/${dataFiles[view]}`);
@@ -57,7 +57,7 @@ const loadData = async (view) => {
 };
 
 /**
- * 新增：处理桑基图链接点击事件的逻辑
+ * Handle Sankey chart link click event logic
  */
 const handleSankeyClick = (linkData) => {
   console.log("Sankey link clicked:", linkData);
@@ -68,34 +68,34 @@ const handleSankeyClick = (linkData) => {
 
   // --- Outward Influence (q2_2) ---
   if (currentView.value === 'q2_2') {
-    // 场景1: Oceanus Folk -> Genre
+    // Scenario 1: Oceanus Folk -> Genre
     if (source.name === 'Oceanus Folk' && target.type === 'Genre') {
       payload = {
         type: 'outward_oceanus_to_genre',
         params: { genre: target.name }
       };
     }
-    // 场景2: Genre -> Artist
+    // Scenario 2: Genre -> Artist
     else if (source.type === 'Genre' && target.type === 'Artist') {
       payload = {
         type: 'outward_genre_to_artist',
         params: { 
           genre: source.name, 
-          artist_id: target.id // <-- 使用ID替代name
+          artist_id: target.id 
         }
       };
     }
   }
   // --- Inward Inspirations (q2_3) ---
   else if (currentView.value === 'q2_3') {
-    // 场景3: Genre -> Artist
+    // Scenario 3: Genre -> Artist
     if (source.type === 'Genre' && target.type === 'Artist') {
       payload = {
         type: 'inward_genre_to_artist',
         params: { genre: source.name, artist: target.name }
       };
     }
-    // 场景4: Artist -> Oceanus Folk
+    // Scenario 4: Artist -> Oceanus Folk
     else if (source.type === 'Artist' && target.name === 'Oceanus Folk') {
       payload = {
         type: 'inward_artist_to_oceanus',
@@ -112,42 +112,48 @@ const handleSankeyClick = (linkData) => {
 };
 
 onMounted(() => {
-  loadData('q2_2');
+  loadData('q2_2'); 
 });
 </script>
 
 <style scoped>
-/* --- 这里是Q2的 App.vue 中所有的 <style> 逻辑 --- */
-/* 使用 scoped! 这能确保这里的样式只对本组件生效，绝不会污染全局样式 */
-
-/* 定义本组件内部的颜色变量，避免与全局 :root 冲突 */
 .q2-sankey-container {
-  --q2-primary-color: #2c3e50;
-  --q2-accent-color: #5d9cec;
-  
   display: flex;
   flex-direction: column;
-  height: 100%; /* 让组件填满父容器（left-column）的高度 */
+  height: 100%; 
+  font-family: 'Inter', sans-serif; 
 }
 
 .q2-header {
   margin-bottom: 1rem;
   text-align: center;
-  flex-shrink: 0; /* 防止头部被压缩 */
+  flex-shrink: 0; 
 }
 
 .q2-header h3 {
   margin: 0 0 10px 0;
   font-weight: 600;
-  color: var(--q2-primary-color);
+  color: var(--color-text-primary); 
+}
+
+/* --- 按钮布局修改为横向 --- */
+.controls {
+  display: flex; /* 使用 Flexbox 实现横向布局 */
+  flex-direction: row; /* 明确设置为行方向 */
+  justify-content: center; /* 按钮居中 */
+  gap: 10px; /* 按钮之间的间距 */
+  background-color: var(--color-background);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  margin-top: 10px; /* 与标题的间距 */
 }
 
 .controls button {
-  padding: 8px 16px; /* 调整大小以适应侧边栏 */
-  margin: 0 5px;
+  padding: 8px 16px; 
   border: none;
-  background-color: #e9ecef;
-  color: var(--q2-primary-color);
+  background-color: transparent; 
+  color: var(--color-text-secondary); 
   cursor: pointer;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -161,25 +167,25 @@ onMounted(() => {
 }
 
 .controls button.active {
-  background-color: var(--q2-accent-color);
-  color: white;
+  background-color: var(--color-primary-accent); 
+  color: var(--color-surface); 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .q2-main {
-  /* 让 main 区域填满剩余空间并允许滚动 */
   flex-grow: 1;
   overflow: hidden; 
-  position: relative; /* 为 status 定位提供参考 */
+  position: relative; 
 }
 
 .status {
   padding: 2rem;
   font-size: 1rem;
-  color: #888;
+  color: var(--color-text-light); 
   text-align: center;
 }
 
 .error {
-  color: #e74c3c;
+  color: #e74c3c; 
 }
 </style>
