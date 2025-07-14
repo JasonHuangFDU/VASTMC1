@@ -53,6 +53,7 @@
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue';
 import * as d3 from 'd3';
 import { useGraphStore } from '@/stores/graphStore';
+import { getGenreColor } from '@/utils/colors'; // 导入颜色函数
 import { debounce } from 'lodash-es';
 
 const store = useGraphStore();
@@ -88,7 +89,6 @@ function getNodeRadius(node) {
 }
 
 // --- 动态图例数据 ---
-const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
 const displayedNodeTypes = ref([]);
 const displayedEdgeTypes = ref([]);
 const displayedGenres = ref([]);
@@ -167,10 +167,9 @@ function renderGraph(data) {
 
   displayedEdgeTypes.value = Array.from(edgeClassesInGraph).map(cls => ALL_EDGE_LEGEND_INFO[cls]).filter(Boolean);
   
-  colorScale.domain(Array.from(genresInGraph));
   displayedGenres.value = Array.from(genresInGraph).map(genre => ({
     name: genre,
-    color: colorScale(genre)
+    color: getGenreColor(genre)
   }));
   // --- 结束动态更新图例 ---
 
@@ -208,7 +207,7 @@ function renderGraph(data) {
       const symbolSize = Math.PI * Math.pow(radius, 2);
       return d3.symbol().type(getSymbol(d['Node Type'])).size(symbolSize)();
     })
-    .attr('fill', d => d.highlight ? '#ffc107' : (d.genre ? colorScale(d.genre) : '#cccccc'))
+    .attr('fill', d => d.highlight ? '#ffc107' : (d.genre ? getGenreColor(d.genre) : '#cccccc'))
     .attr('stroke', d => d.highlight ? '#e85a19' : (d.notable ? 'gold' : '#fff'))
     .attr('stroke-width', d => d.highlight || d.notable ? 3 : 1.5)
     .attr('class', 'node');
