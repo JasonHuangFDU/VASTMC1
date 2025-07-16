@@ -80,12 +80,24 @@ let zoomGroup;
 let sizeScale = d3.scaleSqrt();
 
 function getNodeRadius(node) {
-  if (!node) return 8;
+  if (!node) return 8; // 安全回退
   const nodeType = node['Node Type'];
+
+  // 根据后端逻辑，这些类型有 influence_score
+  if (nodeType === 'Person' || nodeType === 'MusicalGroup' || nodeType === 'RecordLabel') {
+    const score = node.influence_score;
+    // 确保 score 是一个有效数字，否则默认为0
+    const numericScore = (typeof score === 'number' && isFinite(score)) ? score : 0;
+    return sizeScale(numericScore);
+  }
+
+  // 对于没有 influence_score 的类型，返回固定大小
   if (nodeType === 'Song' || nodeType === 'Album') {
     return 12;
   }
-  return sizeScale(node?.influence_score || 0);
+
+  // 为其他任何未预料到的类型提供一个默认大小
+  return 8;
 }
 
 // --- 动态图例数据 ---
@@ -183,7 +195,8 @@ function renderGraph(data) {
 
   zoomGroup = svg.append('g');
 
-  sizeScale.domain([0, d3.max(nodes, d => d?.influence_score || 0) || 1]).range([8, 30]);
+  const maxInfluence = d3.max(nodes, d => d.influence_score);
+  sizeScale.domain([0, maxInfluence > 0 ? maxInfluence : 1]).range([8, 30]);
   const getSymbol = d3.scaleOrdinal().domain(['Person', 'MusicalGroup', 'Song', 'Album', 'RecordLabel']).range([d3.symbolCircle, d3.symbolDiamond, d3.symbolTriangle, d3.symbolSquare, d3.symbolWye]);
   
   const defs = svg.append('defs');
@@ -215,11 +228,18 @@ function renderGraph(data) {
   const tooltip = d3.select(tooltipRef.value);
 
   linkElements.on('mouseover', function(event, d) {
-    d3.select(this).style('stroke-opacity', 1);
+    d3.select(this)
+      .style('stroke-opacity', 1)
+      .style('stroke-width', '4px'); // 加粗高亮
     const content = `<strong>边信息</strong><br/>源: ${d.source.name}<br/>目标: ${d.target.name}<br/>类型: ${d['Edge Type']}`;
-    tooltip.html(content).style('opacity', 1).style('left', (event.pageX + 10) + 'px').style('top', (event.pageY - 28) + 'px');
+    const containerRect = containerRef.value.getBoundingClientRect();
+    const tooltipX = event.clientX - containerRect.left + 10;
+    const tooltipY = event.clientY - containerRect.top - 28;
+    tooltip.html(content).style('opacity', 1).style('left', `${tooltipX}px`).style('top', `${tooltipY}px`);
   }).on('mouseout', function() {
-    d3.select(this).style('stroke-opacity', 0.6);
+    d3.select(this)
+      .style('stroke-opacity', 0.6)
+      .style('stroke-width', '2px'); // 恢复默认宽度
     tooltip.style('opacity', 0);
   });
 
@@ -228,14 +248,17 @@ function renderGraph(data) {
     let content = `<strong>${d.name}</strong><br/>类型: ${d['Node Type']}`;
     if (d['Node Type'] === 'Person' || d['Node Type'] === 'MusicalGroup') {
       if (d.max_genre) content += `<br/>主导流派: ${d.max_genre}`;
-      if (d.influence_score) content += `<br/>影响力: ${d.influence_score.toFixed(2)}`;
+      if (typeof d.influence_score === 'number') content += `<br/>影响力: ${d.influence_score.toFixed(2)}`;
       if (d.notable !== undefined) content += `<br/>是否出名: ${d.notable ? '是' : '否'}`;
     } else if (d['Node Type'] === 'RecordLabel') {
-      if (d.influence_score) content += `<br/>影响力: ${d.influence_score.toFixed(2)}`;
+      if (typeof d.influence_score === 'number') content += `<br/>影响力: ${d.influence_score.toFixed(2)}`;
     } else if (d.genre) {
       content += `<br/>流派: ${d.genre}`;
     }
-    tooltip.html(content).style('opacity', 1).style('left', (event.pageX + 10) + 'px').style('top', (event.pageY - 28) + 'px'); 
+    const containerRect = containerRef.value.getBoundingClientRect();
+    const tooltipX = event.clientX - containerRect.left + 10;
+    const tooltipY = event.clientY - containerRect.top - 28;
+    tooltip.html(content).style('opacity', 1).style('left', `${tooltipX}px`).style('top', `${tooltipY}px`);
   }).on('mouseout', function(event, d) { 
     d3.select(this).attr('stroke', d.notable ? 'gold' : '#fff').attr('stroke-width', d.notable ? 3 : 1.5); 
     tooltip.style('opacity', 0); 
@@ -298,7 +321,7 @@ onMounted(() => {
 .influence-network-container { width: 100%; height: 100%; min-height: 600px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background-color: #f8f9fa; }
 .loading-indicator, .empty-state { font-size: 1.5em; color: #6c757d; }
 .tooltip { position: absolute; text-align: left; padding: 8px; font: 12px sans-serif; background: rgba(0, 0, 0, 0.8); color: white; border-radius: 8px; pointer-events: none; z-index: 10; }
-.link { fill: none; stroke-opacity: 0.6; }
+.link { fill: none; stroke-opacity: 0.6; stroke-width: 2px; /* 新增：设置默认边宽度 */ }
 .link.link-influence { stroke: #007bff; }
 .link.link-collaboration { stroke: #28a745; }
 .link.link-membership { stroke: #6c757d; }
