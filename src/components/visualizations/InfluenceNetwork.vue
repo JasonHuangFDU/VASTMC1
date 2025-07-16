@@ -1,10 +1,21 @@
 <template>
   <div ref="containerRef" class="influence-network-container">
-    <!-- 新增：跳数切换按钮 -->
+    <!-- 修改：分段式跳数切换按钮 -->
     <div class="hop-toggle-container">
-      <button @click="toggleHopLevel" class="hop-toggle-button">
-        {{ store.hopLevel === 1 ? '切换到二跳连接' : '切换到一跳连接' }}
-      </button>
+      <div class="hop-toggle-group">
+        <button 
+          @click="setHopLevel(1)" 
+          :class="['hop-toggle-button', 'left-button', { active: store.hopLevel === 1 }]"
+        >
+          一跳连接
+        </button>
+        <button 
+          @click="setHopLevel(2)" 
+          :class="['hop-toggle-button', 'right-button', { active: store.hopLevel === 2 }]"
+        >
+          二跳连接
+        </button>
+      </div>
     </div>
 
     <div v-if="store.isLoading" class="loading-indicator">正在计算布局...</div>
@@ -67,10 +78,9 @@ const showGenreLegend = ref(false);
 const toggleNodeEdgeLegend = () => showNodeEdgeLegend.value = !showNodeEdgeLegend.value;
 const toggleGenreLegend = () => showGenreLegend.value = !showGenreLegend.value;
 
-// --- 新增：跳数切换逻辑 ---
-const toggleHopLevel = () => {
-  const newLevel = store.hopLevel === 1 ? 2 : 1;
-  store.setHopLevel(newLevel);
+// --- 修改：跳数切换逻辑 ---
+const setHopLevel = (level) => {
+  store.setHopLevel(level);
 };
 
 // --- D3 全局变量 ---
@@ -88,6 +98,8 @@ function getNodeRadius(node) {
     const score = node.influence_score;
     // 确保 score 是一个有效数字，否则默认为0
     const numericScore = (typeof score === 'number' && isFinite(score)) ? score : 0;
+    
+    // 使用sizeScale计算基础半径，sizeScale本身就是根号缩放
     return sizeScale(numericScore);
   }
 
@@ -97,7 +109,7 @@ function getNodeRadius(node) {
   }
 
   // 为其他任何未预料到的类型提供一个默认大小
-  return 8;
+  return 15;
 }
 
 // --- 动态图例数据 ---
@@ -196,7 +208,14 @@ function renderGraph(data) {
   zoomGroup = svg.append('g');
 
   const maxInfluence = d3.max(nodes, d => d.influence_score);
-  sizeScale.domain([0, maxInfluence > 0 ? maxInfluence : 1]).range([8, 30]);
+  // 根据跳数级别调整缩放范围，但保持根号等比关系
+  if (store.hopLevel === 2) {
+    // 二跳连接模式下，适当调整大小范围以适应更多节点
+    sizeScale.domain([0, maxInfluence > 0 ? maxInfluence : 1]).range([6, 25]);
+  } else {
+    // 一跳连接模式下，保持原有范围
+    sizeScale.domain([0, maxInfluence > 0 ? maxInfluence : 1]).range([8, 30]);
+  }
   const getSymbol = d3.scaleOrdinal().domain(['Person', 'MusicalGroup', 'Song', 'Album', 'RecordLabel']).range([d3.symbolCircle, d3.symbolDiamond, d3.symbolTriangle, d3.symbolSquare, d3.symbolWye]);
   
   const defs = svg.append('defs');
@@ -342,7 +361,7 @@ onMounted(() => {
 .node-edge-toggle-button { top: 20px; left: 20px; }
 .genre-toggle-button { top: 20px; right: 20px; }
 
-/* 新增：跳数切换按钮样式 */
+/* 修改：分段式跳数切换按钮样式 */
 .hop-toggle-container {
   position: absolute;
   top: 20px;
@@ -350,18 +369,49 @@ onMounted(() => {
   transform: translateX(-50%);
   z-index: 11;
 }
+
+.hop-toggle-group {
+  display: flex;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
 .hop-toggle-button {
-  padding: 5px 15px;
-  background-color: #dc3545;
-  color: white;
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  color: #6c757d;
   border: none;
-  border-radius: 5px;
   cursor: pointer;
   font-size: 0.9em;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  position: relative;
 }
-.hop-toggle-button:hover {
-  background-color: #c82333;
+
+.hop-toggle-button.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.hop-toggle-button:hover:not(.active) {
+  background-color: #e9ecef;
+}
+
+.hop-toggle-button.left-button {
+  border-right: 1px solid #ccc;
+}
+
+.hop-toggle-button.right-button {
+  border-left: none;
+}
+
+.hop-toggle-button.active.left-button {
+  border-right: 1px solid #007bff;
+}
+
+.hop-toggle-button.active.right-button {
+  border-left: none;
 }
 </style>

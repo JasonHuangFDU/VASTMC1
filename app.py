@@ -1189,7 +1189,7 @@ def process_dynamic_node_attributes(graph, time_range):
 
     for node_id, node_data in graph.nodes(data=True):
         node_type = node_data.get('Node Type')
-        if node_type in ['Person', 'MusicGroup', 'RecordLabel']:
+        if node_type in ['Person', 'MusicalGroup', 'RecordLabel']:
             current_influence = 0
             # 如果有指定结束年份，则计算累积影响力
             if end_year is not None and 'influence_score' in node_data and isinstance(node_data['influence_score'], list):
