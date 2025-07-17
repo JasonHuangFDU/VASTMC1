@@ -38,15 +38,14 @@ const store = useGraphStore();
 // Asynchronous function to load data
 async function loadVisualizationsData() {
   try {
-    // 修改：使用修正后的数据文件
-    const response = await fetch('/mc1_q2_1_data_fixed.json');
+    const response = await fetch('/mc1_q2_1_data_new.json');
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     q2_1_data.value = await response.json();
-    console.log("q2_1_data_fixed loaded successfully.");
+    console.log("q2_1_data loaded successfully.");
   } catch (error) {
-    console.error("Failed to load q2.1 fixed data:", error);
+    console.error("Failed to load q2.1 data:", error);
   }
 }
 

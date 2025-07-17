@@ -240,7 +240,7 @@ const handleMouseOut = () => {
 onMounted(async () => {
   try {
     // 使用修正后的数据文件
-    const response = await fetch('/mc1_q2_1_data_fixed.json');
+    const response = await fetch('/mc1_q2_1_data_new.json');
     const rawData = await response.json();
     
     // 动态确定年份范围，并扩展到2040年
