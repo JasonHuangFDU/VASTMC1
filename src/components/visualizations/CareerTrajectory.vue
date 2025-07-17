@@ -660,8 +660,8 @@ export default {
 .career-trajectory {
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  padding: 20px;
+  gap: 10px;
+  padding: 5px;
   background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -686,7 +686,7 @@ export default {
 .selectors {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
+  gap: 10px;
   margin: 20px 0;
 }
 
