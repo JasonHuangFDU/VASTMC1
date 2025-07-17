@@ -1,7 +1,7 @@
 <template>
   <div class="container-wrapper">
     <div class="chart-header">
-      <h2 class="chart-title">Influence Over Time</h2> <!-- 标题：Oceanus Folk Influence Over Time -->
+      <h2 class="chart-title">Influence Over Time</h2> 
       <div class="view-controls">
         <button 
           :class="{ active: viewMode === 'total' }" 
@@ -61,6 +61,23 @@ const processCompleteData = (data, startYear, endYear) => {
   return { years: fullYears, totalInfluenceByYear: newTotalInfluence, genreBreakdownByYear: newGenreBreakdown, allGenres: Array.from(allGenres) };
 };
 
+// 修改：从原始数据动态确定年份范围，并扩展到2040年
+const determineYearRange = (data) => {
+  if (!data || !data.years || data.years.length === 0) {
+    return { startYear: 2017, endYear: 2040 }; // 扩展默认范围到2040年
+  }
+  
+  const years = data.years.map(year => parseInt(year));
+  const minYear = Math.min(...years);
+  const maxYear = Math.max(...years);
+  
+  // 确保至少显示到2040年，给用户看到完整的时间范围
+  return {
+    startYear: minYear,
+    endYear: Math.max(maxYear, 2040)
+  };
+};
+
 const chartOption = computed(() => {
   if (!processedData.value) return {};
   const data = processedData.value;
@@ -87,15 +104,16 @@ const chartOption = computed(() => {
     data: data.years.map(year => data.genreBreakdownByYear[data.years.indexOf(year)]?.[genre] || 0)
   }));
   
+  // 修改：调整折线图样式，使其更加美观
   const lineSeries = {
     name: '影响总数', 
     type: 'line', 
-    smooth: false, 
+    smooth: true,  // 改为平滑曲线，更加美观
     symbol: 'circle',
-    symbolSize: 8,
+    symbolSize: 6,  // 稍微减小点的大小
     z: 10,
     lineStyle: { 
-      width: 3, 
+      width: 2,  // 从3改为2，使折线更细更美观
       color: appColors.primaryAccent
     },
     itemStyle: {
@@ -108,7 +126,7 @@ const chartOption = computed(() => {
         type: 'linear', 
         x: 0, y: 0, x2: 0, y2: 1, 
         colorStops: [
-          { offset: 0, color: appColors.primaryAccent + '60' },
+          { offset: 0, color: appColors.primaryAccent + '40' }, // 降低透明度
           { offset: 1, color: appColors.primaryAccent + '00' }
         ] 
       },
@@ -189,7 +207,10 @@ const chartOption = computed(() => {
       boundaryGap: false, 
       data: data.years,
       axisLine: { lineStyle: { color: appColors.border } },
-      axisLabel: { color: appColors.textSecondary }
+      axisLabel: { 
+        color: appColors.textSecondary,
+        interval: 'auto'  // 自动调整标签间隔，避免年份标签过于密集
+      }
     },
     yAxis: { 
       type: 'value', 
@@ -218,9 +239,16 @@ const handleMouseOut = () => {
 
 onMounted(async () => {
   try {
-    const response = await fetch('/mc1_q2_1_data.json');
+    // 使用修正后的数据文件
+    const response = await fetch('/mc1_q2_1_data_fixed.json');
     const rawData = await response.json();
-    processedData.value = processCompleteData(rawData, 2017, 2034);
+    
+    // 动态确定年份范围，并扩展到2040年
+    const { startYear, endYear } = determineYearRange(rawData);
+    console.log(`Using dynamic year range: ${startYear} - ${endYear}`);
+    console.log('Raw data years:', rawData.years); // 打印原始数据年份，帮助调试
+    
+    processedData.value = processCompleteData(rawData, startYear, endYear);
   } catch (error) {
     console.error('Failed to load or process chart data:', error);
   } finally {

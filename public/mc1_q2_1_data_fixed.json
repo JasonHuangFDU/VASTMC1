@@ -1,0 +1,304 @@
+{
+  "title": "Influence of Oceanus Folk Over Time (Q2.1) - Fixed",
+  "description": "Yearly count of works influenced by the Oceanus Folk genre, with continuous timeline.",
+  "years": [
+    "1981",
+    "1982",
+    "1983",
+    "1984",
+    "1985",
+    "1986",
+    "1987",
+    "1988",
+    "1989",
+    "1990",
+    "1991",
+    "1992",
+    "1993",
+    "1994",
+    "1995",
+    "1996",
+    "1997",
+    "1998",
+    "1999",
+    "2000",
+    "2001",
+    "2002",
+    "2003",
+    "2004",
+    "2005",
+    "2006",
+    "2007",
+    "2008",
+    "2009",
+    "2010",
+    "2011",
+    "2012",
+    "2013",
+    "2014",
+    "2015",
+    "2016",
+    "2017",
+    "2018",
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026",
+    "2027",
+    "2028",
+    "2029",
+    "2030",
+    "2031"
+  ],
+  "totalInfluenceByYear": [
+    1,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    1,
+    1,
+    0,
+    5,
+    1,
+    1,
+    2,
+    0,
+    0,
+    2,
+    7,
+    1,
+    0,
+    3,
+    1,
+    1,
+    8,
+    0,
+    2,
+    13,
+    2,
+    1,
+    2,
+    10,
+    2,
+    1,
+    8,
+    2,
+    3,
+    17,
+    6,
+    3,
+    8,
+    1,
+    5,
+    3,
+    2,
+    1
+  ],
+  "genreBreakdownByYear": [
+    {
+      "Celtic Folk": 1
+    },
+    {},
+    {
+      "Americana": 1
+    },
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {
+      "Synthpop": 1,
+      "Dream Pop": 1
+    },
+    {},
+    {},
+    {
+      "Synthwave": 1
+    },
+    {
+      "Synthwave": 1
+    },
+    {},
+    {
+      "Doom Metal": 2,
+      "Synthwave": 1,
+      "Alternative Rock": 1,
+      "Avant-Garde Folk": 1
+    },
+    {
+      "Blues Rock": 1
+    },
+    {
+      "Synthwave": 1
+    },
+    {
+      "Indie Folk": 1,
+      "Emo/Pop Punk": 1
+    },
+    {},
+    {},
+    {
+      "Synthwave": 2
+    },
+    {
+      "Doom Metal": 1,
+      "Synthwave": 2,
+      "Indie Folk": 1,
+      "Southern Gothic Rock": 2,
+      "Alternative Rock": 1
+    },
+    {
+      "Doom Metal": 1
+    },
+    {},
+    {
+      "Indie Folk": 2,
+      "Symphonic Metal": 1
+    },
+    {
+      "Dream Pop": 1
+    },
+    {
+      "Psychedelic Rock": 1
+    },
+    {
+      "Indie Folk": 2,
+      "Indie Rock": 2,
+      "Synthwave": 2,
+      "Doom Metal": 1,
+      "Psychedelic Rock": 1
+    },
+    {},
+    {
+      "Alternative Rock": 1,
+      "Southern Gothic Rock": 1
+    },
+    {
+      "Synthwave": 4,
+      "Synthpop": 1,
+      "Indie Folk": 4,
+      "Doom Metal": 2,
+      "Desert Rock": 1,
+      "Americana": 1
+    },
+    {
+      "Psychedelic Rock": 1,
+      "Lo-Fi Electronica": 1
+    },
+    {
+      "Americana": 1
+    },
+    {
+      "Indie Folk": 1,
+      "Dream Pop": 1
+    },
+    {
+      "Synthpop": 1,
+      "Indie Folk": 4,
+      "Doom Metal": 1,
+      "Alternative Rock": 1,
+      "Dream Pop": 1,
+      "Indie Rock": 1,
+      "Desert Rock": 1
+    },
+    {
+      "Doom Metal": 1,
+      "Jazz Surf Rock": 1
+    },
+    {
+      "Dream Pop": 1
+    },
+    {
+      "Desert Rock": 2,
+      "Synthpop": 1,
+      "Blues Rock": 1,
+      "Indie Folk": 1,
+      "Dream Pop": 1,
+      "Indie Rock": 1,
+      "Post-Apocalyptic Folk": 1
+    },
+    {
+      "Synthwave": 1,
+      "Indie Folk": 1
+    },
+    {
+      "Psychedelic Rock": 1,
+      "Indie Rock": 1,
+      "Americana": 1
+    },
+    {
+      "Indie Folk": 4,
+      "Dream Pop": 3,
+      "Space Rock": 1,
+      "Psychedelic Rock": 1,
+      "Alternative Rock": 1,
+      "Doom Metal": 2,
+      "Americana": 1,
+      "Avant-Garde Folk": 1,
+      "Indie Rock": 1,
+      "Symphonic Metal": 2
+    },
+    {
+      "Desert Rock": 2,
+      "Dream Pop": 1,
+      "Space Rock": 1,
+      "Psychedelic Rock": 1,
+      "Southern Gothic Rock": 1
+    },
+    {
+      "Dream Pop": 1,
+      "Space Rock": 1,
+      "Alternative Rock": 1
+    },
+    {
+      "Synthwave": 1,
+      "Doom Metal": 2,
+      "Psychedelic Rock": 2,
+      "Blues Rock": 1,
+      "Indie Folk": 1,
+      "Dream Pop": 1
+    },
+    {
+      "Dream Pop": 1
+    },
+    {
+      "Desert Rock": 1,
+      "Alternative Rock": 1,
+      "Dream Pop": 2,
+      "Synthwave": 1
+    },
+    {
+      "Indie Rock": 1,
+      "Space Rock": 1,
+      "Post-Apocalyptic Folk": 1
+    },
+    {
+      "Indie Pop": 1,
+      "Desert Rock": 1
+    },
+    {
+      "Alternative Rock": 1
+    }
+  ],
+  "metadata": {
+    "total_influenced_works": 130,
+    "active_years": 36,
+    "peak_year": "2023"
+  }
+}
