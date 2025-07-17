@@ -2,17 +2,30 @@
   <div class="container-wrapper">
     <div class="chart-header">
       <h2 class="chart-title">Influence Over Time</h2> 
-      <div class="view-controls">
-        <button 
-          :class="{ active: viewMode === 'total' }" 
-          @click="setViewMode('total')">
-          Total Amount
-        </button>
-        <button 
-          :class="{ active: viewMode === 'breakdown' }" 
-          @click="setViewMode('breakdown')">
-          Genre Comparison
-        </button>
+      <div class="header-controls">
+        <div class="view-controls">
+          <button 
+            :class="{ active: viewMode === 'total' }" 
+            @click="setViewMode('total')">
+            Total Amount
+          </button>
+          <button 
+            :class="{ active: viewMode === 'breakdown' }" 
+            @click="setViewMode('breakdown')">
+            Genre Comparison
+          </button>
+        </div>
+        <div class="notable-filter">
+          <label class="notable-checkbox">
+            <input 
+              type="checkbox" 
+              v-model="showNotableOnly"
+              @change="handleNotableFilterChange"
+            />
+            <span class="checkmark"></span>
+            Notable Only
+          </label>
+        </div>
       </div>
     </div>
     
@@ -45,8 +58,10 @@ use([
 ]);
 
 const loading = ref(true);
+const rawDataRef = ref(null);
 const processedData = ref(null);
 const viewMode = ref('total');
+const showNotableOnly = ref(false);
 const hoveredGenre = ref(null);
 
 const processCompleteData = (data, startYear, endYear) => {
@@ -78,6 +93,20 @@ const determineYearRange = (data) => {
   };
 };
 
+// 处理数据筛选
+const processDataWithFilter = () => {
+  if (!rawDataRef.value) return;
+  
+  const selectedData = showNotableOnly.value ? rawDataRef.value.notable_data : rawDataRef.value.all_data;
+  const { startYear, endYear } = determineYearRange(selectedData);
+  
+  console.log(`Using dynamic year range: ${startYear} - ${endYear}`);
+  console.log(`Filter mode: ${showNotableOnly.value ? 'Notable Only' : 'All Data'}`);
+  console.log('Selected data years:', selectedData.years);
+  
+  processedData.value = processCompleteData(selectedData, startYear, endYear);
+};
+
 const chartOption = computed(() => {
   if (!processedData.value) return {};
   const data = processedData.value;
@@ -104,9 +133,9 @@ const chartOption = computed(() => {
     data: data.years.map(year => data.genreBreakdownByYear[data.years.indexOf(year)]?.[genre] || 0)
   }));
   
-  // 修改：调整折线图样式，使其更加美观
+  // 调整折线图样式，使其更加美观
   const lineSeries = {
-    name: '影响总数', 
+    name: showNotableOnly.value ? 'Notable影响总数' : '影响总数', 
     type: 'line', 
     smooth: true,  // 改为平滑曲线，更加美观
     symbol: 'circle',
@@ -153,6 +182,7 @@ const chartOption = computed(() => {
       formatter: (params) => {
         const year = params[0].name;
         const total = data.totalInfluenceByYear[params[0].dataIndex];
+        const filterText = showNotableOnly.value ? ' (Notable Only)' : '';
         let breakdownHtml = params
             .filter(p => p.seriesType === 'bar' && p.value > 0)
             .sort((a, b) => b.value - a.value)
@@ -163,7 +193,7 @@ const chartOption = computed(() => {
               return `<div style="${style}">${param.marker}${seriesName}: ${param.value}</div>`;
             })
             .join('');
-        return `<strong>${year} 年</strong><br/>影响总数: <strong>${total}</strong><br/><hr style="margin: 5px 0; border-color: ${appColors.border};"/>${breakdownHtml}`;
+        return `<strong>${year} 年${filterText}</strong><br/>影响总数: <strong>${total}</strong><br/><hr style="margin: 5px 0; border-color: ${appColors.border};"/>${breakdownHtml}`;
       }
     };
   } else {
@@ -176,7 +206,10 @@ const chartOption = computed(() => {
       textStyle: {
         color: appColors.textPrimary
       },
-      formatter: '{a}<br/>{b}年: {c}'
+      formatter: (params) => {
+        const filterText = showNotableOnly.value ? ' (Notable Only)' : '';
+        return `${params.seriesName}<br/>${params.name}年${filterText}: ${params.value}`;
+      }
     };
     legendConfig = {
       show: true,
@@ -227,6 +260,10 @@ const setViewMode = (mode) => {
   viewMode.value = mode;
 };
 
+const handleNotableFilterChange = () => {
+  processDataWithFilter();
+};
+
 const handleMouseOver = (params) => {
   if (viewMode.value === 'total' && params.seriesType === 'bar') {
     hoveredGenre.value = params.seriesName;
@@ -243,12 +280,11 @@ onMounted(async () => {
     const response = await fetch('/mc1_q2_1_data_new.json');
     const rawData = await response.json();
     
-    // 动态确定年份范围，并扩展到2040年
-    const { startYear, endYear } = determineYearRange(rawData);
-    console.log(`Using dynamic year range: ${startYear} - ${endYear}`);
-    console.log('Raw data years:', rawData.years); // 打印原始数据年份，帮助调试
+    rawDataRef.value = rawData;
     
-    processedData.value = processCompleteData(rawData, startYear, endYear);
+    // 初始处理数据（默认显示所有数据）
+    processDataWithFilter();
+    
   } catch (error) {
     console.error('Failed to load or process chart data:', error);
   } finally {
@@ -280,6 +316,12 @@ onMounted(async () => {
   color: var(--color-text-primary);
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .chart-body {
   flex-grow: 1;
   position: relative;
@@ -305,6 +347,7 @@ onMounted(async () => {
   padding: 4px;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
 }
+
 .view-controls button {
   padding: 6px 14px;
   font-size: 14px;
@@ -316,9 +359,68 @@ onMounted(async () => {
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
+
 .view-controls button.active {
   color: var(--color-surface);
   background-color: var(--color-primary-accent);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.notable-filter {
+  display: flex;
+  align-items: center;
+}
+
+.notable-checkbox {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  user-select: none;
+  position: relative;
+}
+
+.notable-checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkmark {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+
+.notable-checkbox input[type="checkbox"]:checked + .checkmark {
+  background-color: var(--color-primary-accent);
+  border-color: var(--color-primary-accent);
+}
+
+.notable-checkbox input[type="checkbox"]:checked + .checkmark::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.notable-checkbox:hover .checkmark {
+  border-color: var(--color-primary-accent);
+}
+
+.notable-checkbox:hover {
+  color: var(--color-text-primary);
 }
 </style>
