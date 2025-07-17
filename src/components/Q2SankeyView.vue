@@ -35,6 +35,8 @@ const currentView = ref('');
 const dataFiles = {
   'q2_2': 'mc1_q2_2_data.json',
   'q2_3': 'mc1_q2_3_data.json'
+  //'q2_2': 'mc1_q2_2_data_with_id.json', 
+  //'q2_3': 'mc1_q2_3_data_with_id.json',
 };
 
 const loadData = async (view) => {
