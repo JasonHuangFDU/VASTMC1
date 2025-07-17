@@ -1,21 +1,43 @@
 <template>
   <div class="q2-sankey-container">
     <header class="q2-header">
-      <h3>Influence Sankey</h3> <!-- 标题：Influence Flow Analysis -->
-      <div class="controls"> <!-- 按钮容器 -->
-        <button @click="loadData('q2_2')" :class="{ active: currentView === 'q2_2' }">
-          Outward Influence
-        </button>
-        <button @click="loadData('q2_3')" :class="{ active: currentView === 'q2_3' }">
-          Inward Inspirations
-        </button>
+      <h3>Influence Sankey</h3>
+      <div class="header-controls">
+        <div class="view-controls">
+          <button @click="loadData('q2_2')" :class="{ active: currentView === 'q2_2' }">
+            Outward Influence
+          </button>
+          <button @click="loadData('q2_3')" :class="{ active: currentView === 'q2_3' }">
+            Inward Inspirations
+          </button>
+        </div>
+        <div class="topn-control">
+          <label class="topn-label">
+            Top Artists:
+            <input 
+              type="range" 
+              v-model="topNArtists" 
+              :min="5" 
+              :max="30" 
+              :step="5"
+              class="topn-slider"
+            />
+            <span class="topn-value">{{ topNArtists }}</span>
+          </label>
+        </div>
       </div>
     </header>
 
     <main class="q2-main">
       <div v-if="loading" class="status">Loading Chart Data...</div>
       <div v-else-if="error" class="status error">{{ error }}</div>
-      <InfluenceSankey v-if="chartData" :data="chartData" :currentView="currentView" @link-clicked="handleSankeyClick" />
+      <InfluenceSankey 
+        v-if="chartData" 
+        :data="chartData" 
+        :currentView="currentView" 
+        :topNArtists="topNArtists"
+        @link-clicked="handleSankeyClick" 
+      />
     </main>
   </div>
 </template>
@@ -24,17 +46,16 @@
 import { ref, onMounted } from 'vue';
 import InfluenceSankey from './visualizations/InfluenceSankey.vue'; 
 import { useGraphStore } from '@/stores/graphStore';
-import { appColors } from '@/utils/colors'; // Import color definitions
+import { appColors } from '@/utils/colors';
 
 const store = useGraphStore();
 const loading = ref(true);
 const error = ref(null);
 const chartData = ref(null);
 const currentView = ref(''); 
+const topNArtists = ref(30); // 默认显示TOP30个艺术家
 
 const dataFiles = {
-  //'q2_2': 'mc1_q2_2_data.json',
-  //'q2_3': 'mc1_q2_3_data.json'
   'q2_2': 'mc1_q2_2_data_new.json', 
   'q2_3': 'mc1_q2_3_data_new.json'
 };
@@ -138,20 +159,25 @@ onMounted(() => {
   color: var(--color-text-primary); 
 }
 
-/* --- 按钮布局修改为横向 --- */
-.controls {
-  display: flex; /* 使用 Flexbox 实现横向布局 */
-  flex-direction: row; /* 明确设置为行方向 */
-  justify-content: center; /* 按钮居中 */
-  gap: 10px; /* 按钮之间的间距 */
+.header-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-controls {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 10px;
   background-color: var(--color-background);
   border-radius: 8px;
   padding: 4px;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-  margin-top: 10px; /* 与标题的间距 */
 }
 
-.controls button {
+.view-controls button {
   padding: 8px 16px; 
   border: none;
   background-color: transparent; 
@@ -163,15 +189,75 @@ onMounted(() => {
   transition: all 0.3s ease;
 }
 
-.controls button:hover {
+.view-controls button:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
-.controls button.active {
+.view-controls button.active {
   background-color: var(--color-primary-accent); 
   color: var(--color-surface); 
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.topn-control {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.topn-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.topn-slider {
+  width: 100px;
+  height: 6px;
+  background: var(--color-background);
+  border-radius: 3px;
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+
+.topn-slider:hover {
+  opacity: 1;
+}
+
+.topn-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary-accent);
+  cursor: pointer;
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.topn-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary-accent);
+  cursor: pointer;
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.topn-value {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-primary-accent);
+  font-size: 0.9rem;
 }
 
 .q2-main {
