@@ -52,7 +52,7 @@ async function loadVisualizationsData() {
 onMounted(() => {
   // Initialize Pinia store
   store.initializeStore();
-  
+
   // Call function to load data
   loadVisualizationsData();
 });
@@ -93,11 +93,17 @@ header {
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  /* START: Change */
+  justify-content: space-between; /* 关键：让直接子元素（标题和搜索栏）两端对齐 */
+  gap: 20px; /* 在标题和搜索栏之间增加安全间距 */
+  /* END: Change */
 }
 
 header h1 {
   margin: 0;
-  margin-right: 30px;
+  /* START: Change */
+  /* margin-right: 30px; 不再需要固定的外边距，由父元素的 justify-content 和 gap 控制间距 */
+  /* END: Change */
   font-size: 1.5em;
   white-space: nowrap;
   color: var(--color-text-primary);

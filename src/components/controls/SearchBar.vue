@@ -1,8 +1,7 @@
 <template>
   <div class="search-bar-container" v-on-click-outside="closeDropdowns">
-    <!-- 中心节点选择框 -->
     <div class="filter-group search-group">
-      <label for="search-input-field" class="search-label">中心节点:</label>
+      <label for="search-input-field" class="search-label">Center Node:</label>
       <div class="search-input-wrapper">
         <input
           id="search-input-field"
@@ -10,13 +9,13 @@
           v-model="localSearchQuery"
           @input="updateSuggestions"
           @focus="showSuggestions = true"
-          placeholder="输入以搜索..."
+          placeholder="Type to search..." 
           class="search-input"
           autocomplete="off"
         />
         <div class="search-buttons">
-          <button @click="confirmSearch" class="search-confirm-btn">确认</button>
-          <button @click="clearSearch" class="search-clear-btn">清空</button>
+          <button @click="confirmSearch" class="search-confirm-btn">Confirm</button>
+          <button @click="clearSearch" class="search-clear-btn">Clear</button>
         </div>
         <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-list">
           <div
@@ -31,9 +30,8 @@
       </div>
     </div>
 
-    <!-- 时间范围选择 -->
     <div class="filter-group time-range-group">
-      <label>时间范围:</label>
+      <label>Time Range:</label>
       <div class="time-select-wrapper">
         <select
           :value="selectedTimeRange.start"
@@ -53,10 +51,9 @@
       </div>
     </div>
 
-    <!-- 流派筛选 -->
     <div class="filter-group dropdown-group">
       <div class="dropdown">
-        <button @click="toggleDropdown('genres')" class="dropdown-toggle">流派 ({{ selectedGenres.length || '所有' }})</button>
+        <button @click="toggleDropdown('genres')" class="dropdown-toggle">Genres ({{ selectedGenres.length || 'All' }})</button>
         <div v-if="activeDropdown === 'genres'" class="dropdown-menu long-dropdown">
           <div v-for="genre in filterOptions.genres" :key="genre" class="dropdown-item">
             <input type="checkbox" :id="`genre-${genre}`" :value="genre" v-model="selectedGenres" @change="store.setGenres(selectedGenres)" />
@@ -66,10 +63,9 @@
       </div>
     </div>
 
-    <!-- 节点类型筛选 -->
     <div class="filter-group dropdown-group">
       <div class="dropdown">
-        <button @click="toggleDropdown('nodeTypes')" class="dropdown-toggle">节点类型 ({{ selectedNodeTypes.length || '所有' }})</button>
+        <button @click="toggleDropdown('nodeTypes')" class="dropdown-toggle">Node Types ({{ selectedNodeTypes.length || 'All' }})</button>
         <div v-if="activeDropdown === 'nodeTypes'" class="dropdown-menu">
           <div v-for="type in filterOptions.node_types" :key="type" class="dropdown-item">
             <input type="checkbox" :id="`node-${type}`" :value="type" v-model="selectedNodeTypes" @change="store.setNodeTypes(selectedNodeTypes)" />
@@ -79,26 +75,23 @@
       </div>
     </div>
 
-    <!-- 边类型筛选 -->
     <div class="filter-group dropdown-group">
       <div class="dropdown">
-        <button @click="toggleDropdown('edgeTypes')" class="dropdown-toggle">边类型 ({{ selectedEdgeTypes.length || '所有' }})</button>
+        <button @click="toggleDropdown('edgeTypes')" class="dropdown-toggle">Edge Types ({{ selectedEdgeTypes.length || 'All' }})</button>
         <div v-if="activeDropdown === 'edgeTypes'" class="dropdown-menu edge-type-dropdown">
-          <!-- 新增：聚合选择 -->
           <div class="dropdown-item aggregate-item">
             <input type="checkbox" id="edge-group-influence" v-model="influenceEdges" />
-            <label for="edge-group-influence">影响力边</label>
+            <label for="edge-group-influence">Influence Edges</label>
           </div>
           <div class="dropdown-item aggregate-item">
             <input type="checkbox" id="edge-group-collaboration" v-model="collaborationEdges" />
-            <label for="edge-group-collaboration">合作边</label>
+            <label for="edge-group-collaboration">Collaboration Edges</label>
           </div>
           <div class="dropdown-item aggregate-item">
             <input type="checkbox" id="edge-group-commercial" v-model="commercialEdges" />
-            <label for="edge-group-commercial">商业边</label>
+            <label for="edge-group-commercial">Commercial Edges</label>
           </div>
           <hr class="dropdown-divider" />
-          <!-- 单个边选择 -->
           <div v-for="type in filterOptions.edge_types" :key="type" class="dropdown-item">
             <input type="checkbox" :id="`edge-${type}`" :value="type" v-model="selectedEdgeTypes" @change="store.setEdgeTypes(selectedEdgeTypes)" />
             <label :for="`edge-${type}`">{{ type }}</label>
@@ -107,8 +100,7 @@
       </div>
     </div>
 
-    <!-- 重置按钮 -->
-    <button @click="store.resetView()" class="reset-button">重置视图</button>
+    <button @click="store.resetView()" class="reset-button">Reset View</button>
   </div>
 </template>
 
@@ -216,18 +208,6 @@ const clearSearch = () => {
   showSuggestions.value = false;
 };
 
-const updateSuggestions = () => {
-  if (!localSearchQuery.value) {
-    suggestions.value = [];
-    return;
-  }
-  const query = localSearchQuery.value.toLowerCase();
-  suggestions.value = filterOptions.value.person_nodes
-    .filter(node => node.name.toLowerCase().includes(query))
-    .slice(0, 20); // Limit to 20 suggestions
-  showSuggestions.value = true;
-};
-
 const selectSuggestion = (suggestion) => {
   // suggestion is now an object: { name: '...', id: '...' }
   localSearchQuery.value = `${suggestion.name} (id: ${suggestion.id})`;
@@ -245,13 +225,13 @@ onMounted(() => {
 .search-bar-container {
   display: flex;
   align-items: center;
-  gap: 4rem; /* 增加间距 */
-  padding: 1rem;
+  gap: 1rem; /* 已修改: 进一步减小了元素之间的间距 */
+  padding: 8px 1rem; /* 已修改: 显著减小了垂直方向的内边距 (padding)，使整个搜索栏高度降低。 */
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
   width: 100%;
   box-sizing: border-box;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* 关键：强制内部元素不换行 */
 }
 
 .filter-group {
@@ -261,13 +241,15 @@ onMounted(() => {
 }
 
 .search-group {
-  flex-grow: 0; /* 取消弹性增长以防止过度拉伸 */
-  width: 450px; /* 设置一个固定的、较长的宽度 */
+  flex-grow: 1;         /* 允许此元素（搜索框组）占据所有可用的额外空间。 */
+  flex-shrink: 1;       /* 允许此元素在空间不足时收缩。 */
+  min-width: 250px;     /* 设置一个最小宽度以保证可用性。 */
+  max-width: 450px;     /* 设置一个最大宽度防止过度拉伸。 */
 }
 
 .search-label {
   margin-right: 0.5rem;
-  font-size: 1rem;
+  font-size: 0.9rem; /* 已修改: 略微减小字体大小 */
   color: #4b5563;
   white-space: nowrap;
 }
@@ -279,28 +261,29 @@ onMounted(() => {
 
 .search-input {
   width: 100%;
-  padding: 10px 130px 10px 15px; /* Right padding for buttons */
-  border-radius: 8px;
+  padding: 6px 120px 6px 12px; /* 已修改: 减小垂直和水平内边距，同时调整右侧内边距以适应按钮 */
+  border-radius: 6px; /* 已修改: 减小圆角以匹配更紧凑的外观 */
   border: 1px solid #d1d5db;
-  font-size: 1.1rem;
+  font-size: 0.9rem; /* 已修改: 减小字体大小 */
   box-sizing: border-box;
 }
 
 .search-buttons {
   position: absolute;
-  right: 5px;
+  right: 4px; /* 已修改: 微调按钮位置 */
   top: 50%;
   transform: translateY(-50%);
   display: flex;
-  gap: 5px;
+  gap: 4px; /* 已修改: 减小按钮间距 */
 }
 
 .search-confirm-btn, .search-clear-btn {
-  padding: 6px 12px;
+  padding: 4px 8px; /* 已修改: 减小按钮内边距 */
   border: none;
-  border-radius: 6px;
+  border-radius: 4px; /* 已修改: 减小圆角 */
   cursor: pointer;
   font-weight: 500;
+  font-size: 0.9rem; /* 已修改: 减小字体大小 */
 }
 
 .search-confirm-btn {
@@ -334,8 +317,9 @@ onMounted(() => {
 }
 
 .suggestion-item {
-  padding: 10px 15px;
+  padding: 8px 12px; /* 已修改: 减小内边距 */
   cursor: pointer;
+  font-size: 0.9rem; /* 已修改: 减小字体大小 */
 }
 .suggestion-item:hover {
   background-color: #f3f4f6;
@@ -345,7 +329,7 @@ onMounted(() => {
   gap: 0.5rem;
 }
 .time-range-group label {
-  font-size: 1rem;
+  font-size: 0.9rem; /* 已修改: 减小字体大小 */
   color: #4b5563;
   white-space: nowrap;
 }
@@ -355,25 +339,26 @@ onMounted(() => {
   gap: 8px;
 }
 .time-select {
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 6px 8px; /* 已修改: 减小内边距 */
+  border-radius: 6px; /* 已修改: 减小圆角 */
   border: 1px solid #d1d5db;
-  font-size: 1.1rem;
+  font-size: 0.9rem; /* 已修改: 减小字体大小 */
   background-color: #f3f4f6;
 }
 
 .dropdown-group {
-  min-width: 180px;
+  /* min-width: 150px; */ /* 已移除: 移除最小宽度，改用下面的固定宽度。 */
+  width: 170px; /* 新增: 设置一个固定的宽度，让三个下拉按钮大小完全一致，实现视觉上的对齐和统一间距。 */
 }
 
 .dropdown-toggle {
   width: 100%;
-  padding: 14px 18px;
+  padding: 6px 12px; /* 已修改: 减小内边距 */
   background-color: #f3f4f6;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 6px; /* 已修改: 减小圆角 */
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 0.9rem; /* 已修改: 减小字体大小 */
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -408,11 +393,11 @@ onMounted(() => {
 .dropdown-item {
   display: flex;
   align-items: center;
-  padding: 0.75rem;
+  padding: 0.5rem; /* 已修改: 减小内边距 */
 }
 .dropdown-item label {
-  margin-left: 0.75rem;
-  font-size: 1.1rem;
+  margin-left: 0.5rem; /* 已修改: 减小间距 */
+  font-size: 0.9rem; /* 已修改: 减小字体大小 */
 }
 
 /* 新增样式 */
@@ -426,14 +411,16 @@ onMounted(() => {
 }
 
 .reset-button {
-  padding: 14px 22px;
+  padding: 6px 16px; /* 已修改: 减小内边距以匹配其他元素的高度 */
   border: none;
   background-color: #6b7280;
   color: white;
-  border-radius: 8px;
+  border-radius: 6px; /* 已修改: 减小圆角 */
   cursor: pointer;
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 0.9rem; /* 已修改: 减小字体大小 */
+  white-space: nowrap; /* 新增: 确保按钮内的文字不会换行 */
+  flex-shrink: 0;      /* 新增: 防止按钮在空间不足时被flex容器压缩变形，保证其宽度 */
 }
 .reset-button:hover {
   background-color: #4b5563;
