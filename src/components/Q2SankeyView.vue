@@ -33,10 +33,10 @@ const chartData = ref(null);
 const currentView = ref(''); 
 
 const dataFiles = {
-  'q2_2': 'mc1_q2_2_data.json',
-  'q2_3': 'mc1_q2_3_data.json'
-  //'q2_2': 'mc1_q2_2_data_with_id.json', 
-  //'q2_3': 'mc1_q2_3_data_with_id.json',
+  //'q2_2': 'mc1_q2_2_data.json',
+  //'q2_3': 'mc1_q2_3_data.json'
+  'q2_2': 'mc1_q2_2_data_new.json', 
+  'q2_3': 'mc1_q2_3_data_new.json'
 };
 
 const loadData = async (view) => {
@@ -83,7 +83,7 @@ const handleSankeyClick = (linkData) => {
         type: 'outward_genre_to_artist',
         params: { 
           genre: source.name, 
-          artist_id: target.id 
+          artist_id: target.original_id 
         }
       };
     }

@@ -163,8 +163,6 @@ const drawChart = () => {
 
         // 显示 Tooltip
         const tooltip = d3.select(tooltipRef.value);
-        console.log("value", d.value);
-        console.log(typeof d.value);
         tooltip.style('opacity', 1)
             .html(`
                 <div class="tooltip-path">
