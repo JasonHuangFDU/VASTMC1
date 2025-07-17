@@ -1,9 +1,9 @@
 <template>
   <div class="artist-prediction">
     <div class="header">
-      <h2>Oceanus Folk 艺术家潜力预测</h2>
+      <h2>Oceanus Folk Stars Prediction</h2>
       <button @click="showWeightDialog = true" :disabled="loading">
-        {{ loading ? '分析中...' : '运行潜力预测' }}
+        {{ loading ? 'Loading...' : 'Predict' }}
       </button>
     </div>
 
@@ -41,7 +41,6 @@
 
     <div v-if="report" class="results-section">
       <div class="predicted-stars">
-        <h3>未来之星分析</h3>
         <div class="stars-container">
           <div v-for="(star, index) in report.predicted_stars" :key="index" class="star-card">
             <div class="star-header">
@@ -56,12 +55,6 @@
                   <strong>优势:</strong>
                   <span v-for="(strength, sIndex) in star.strengths" :key="sIndex" class="strength-tag">
                     {{ strength }}
-                  </span>
-                </div>
-                <div class="risks">
-                  <strong>风险因素:</strong>
-                  <span v-for="(risk, rIndex) in star.risk_factors" :key="rIndex" class="risk-tag">
-                    {{ risk }}
                   </span>
                 </div>
               </div>
@@ -141,7 +134,7 @@ export default {
 
 <style scoped>
 .artist-prediction {
-  padding: 10px;
+  padding: 20px;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -153,14 +146,14 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   flex-wrap: wrap; /* 允许在小屏幕上换行 */
-  gap: 10px; /* 元素间距 */
+  gap: 0px; /* 元素间距 */
 }
 
 button {
   padding: 8px 16px;
-  background-color: #4a6cf7;
+  background-color: #3498db;
   color: white;
   border: none;
   border-radius: 4px;
@@ -184,13 +177,13 @@ button:disabled {
 }
 
 .predicted-stars {
-  margin-top: 30px;
+  margin-top: 10px;
 }
 
 .stars-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr)); /* 确保卡片不超出容器 */
-  gap: 20px;
+  gap: 10px;
   width: 100%;
 }
 
@@ -292,6 +285,11 @@ button:disabled {
   width: 220px;
   height: 220px;
   flex-shrink: 0; /* 防止图表被挤压 */
+  /* 新增代码 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto; /* 水平居中 */
 }
 
 /* 权重排序对话框样式 */

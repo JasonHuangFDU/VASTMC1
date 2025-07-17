@@ -1,6 +1,8 @@
 <!-- /components/visualizations/CareerTrajectory.vue -->
 <template>
   <div class="career-trajectory">
+    <!-- 艺术家潜力预测组件 -->
+    <ArtistPotentialPrediction @prediction-complete="handlePredictionComplete" />
     <!-- 艺术家选择面板 -->
     <div class="artist-selection">
       <h3>选择三名艺术家进行生涯轨迹对比</h3>
@@ -86,9 +88,6 @@
         <p>系统将展示他们的影响力、合作频率和受欢迎程度随时间的变化</p>
       </div>
     </div>
-
-    <!-- 艺术家潜力预测组件 -->
-    <ArtistPotentialPrediction @prediction-complete="handlePredictionComplete" />
   </div>
 </template>
 
@@ -291,16 +290,20 @@ export default {
       // 准备数据集
       const datasets = [];
 
+      // 定义水平偏移量（防止点重合）
+      const horizontalOffsets = [-1, 0, 1]; // 三位艺术家的水平偏移量
+
       // 1. 影响力折线图（累计影响力）
       comparisonData.value.forEach((artist, index) => {
         const color = getArtistColor(index);
+        const horizontalOffset = horizontalOffsets[index]; // 获取当前艺术家的水平偏移量
 
         // 使用累计影响力数据
         const cumulativeInfluenceData = sortedYears.map(year => {
           const influence = artist.data.cumulativeInfluenceByYear?.[year] || 0;
           return {
             y: year.toString(),
-            x: influence
+            x: influence + horizontalOffset
           };
         });
 
@@ -741,12 +744,12 @@ export default {
 }
 
 .compare-btn {
-  padding: 12px 25px;
+  padding: 8px 25px;
   background-color: #3498db;
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s;
   align-self: flex-end;

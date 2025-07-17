@@ -1042,12 +1042,12 @@ def predict():
                 strengths.append(f"作词作品: {feat['lyricist_count']}")
             if feat.get('producer_count', 0) > 0:
                 strengths.append(f"制作经验: {feat['producer_count']}")
-            
+            if feat.get('recent_activity', 0) < 3:
+                strengths.append(f"最近活动: {feat['recent_activity']}年前")
+            if feat.get('recent_activity', 0) > 3:
+                strengths.append(f"合作多样性: {feat['collab_diversity']}")
             risk_factors = []
-            if 'recent_activity' in feat:
-                risk_factors.append(f"最近活动: {feat['recent_activity']}年前")
-            if 'collab_diversity' in feat:
-                risk_factors.append(f"合作多样性: {feat['collab_diversity']}")
+            
             
             # 添加艺术家ID到预测结果
             predicted_stars.append({
