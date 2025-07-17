@@ -1,43 +1,73 @@
 <template>
   <div class="q2-sankey-container">
     <header class="q2-header">
-      <h3>Influence Sankey</h3>
-      <div class="header-controls">
-        <div class="view-controls">
-          <button @click="loadData('q2_2')" :class="{ active: currentView === 'q2_2' }">
-            Outward Influence
-          </button>
-          <button @click="loadData('q2_3')" :class="{ active: currentView === 'q2_3' }">
-            Inward Inspirations
-          </button>
-        </div>
-        <div class="topn-control">
-          <label class="topn-label">
-            Top Artists:
-            <input 
-              type="range" 
-              v-model="topNArtists" 
-              :min="5" 
-              :max="30" 
-              :step="5"
-              class="topn-slider"
-            />
-            <span class="topn-value">{{ topNArtists }}</span>
-          </label>
-        </div>
-      </div>
+      <h3 class="section-title">Oceanus Folk Influence Analysis</h3>
     </header>
 
     <main class="q2-main">
-      <div v-if="loading" class="status">Loading Chart Data...</div>
-      <div v-else-if="error" class="status error">{{ error }}</div>
-      <InfluenceSankey 
-        v-if="chartData" 
-        :data="chartData" 
-        :currentView="currentView" 
-        :topNArtists="topNArtists"
-        @link-clicked="handleSankeyClick" 
-      />
+      <div class="sankey-panels">
+        <!-- Outward Panel -->
+        <div class="sankey-panel">
+          <div class="panel-header">
+            <h4 class="panel-title">Outward Influence</h4>
+            <div class="panel-controls">
+              <div class="slider-group">
+                <label>Top Genres: {{ topNGenres }}</label>
+                <input 
+                  type="range" 
+                  v-model="topNGenres" 
+                  min="5" 
+                  max="15" 
+                  step="1"
+                  class="slider"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="panel-content">
+            <div v-if="loadingOutward" class="status">Loading...</div>
+            <div v-else-if="errorOutward" class="status error">{{ errorOutward }}</div>
+            <InfluenceSankey 
+              v-if="outwardData" 
+              :data="outwardData" 
+              :currentView="'q2_2'" 
+              :topNGenres="topNGenres"
+              @link-clicked="handleSankeyClick" 
+            />
+          </div>
+        </div>
+
+        <!-- Inward Panel -->
+        <div class="sankey-panel">
+          <div class="panel-header">
+            <h4 class="panel-title">Inward Influence</h4>
+            <div class="panel-controls">
+              <div class="slider-group">
+                <label>Top Artists: {{ topNArtists }}</label>
+                <input 
+                  type="range" 
+                  v-model="topNArtists" 
+                  min="10" 
+                  max="50" 
+                  step="2"
+                  class="slider"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="panel-content">
+            <div v-if="loadingInward" class="status">Loading...</div>
+            <div v-else-if="errorInward" class="status error">{{ errorInward }}</div>
+            <InfluenceSankey 
+              v-if="inwardData" 
+              :data="inwardData" 
+              :currentView="'q2_3'" 
+              :topNArtists="topNArtists"
+              @link-clicked="handleSankeyClick" 
+            />
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 </template>
@@ -46,85 +76,87 @@
 import { ref, onMounted } from 'vue';
 import InfluenceSankey from './visualizations/InfluenceSankey.vue'; 
 import { useGraphStore } from '@/stores/graphStore';
-import { appColors } from '@/utils/colors';
 
 const store = useGraphStore();
-const loading = ref(true);
-const error = ref(null);
-const chartData = ref(null);
-const currentView = ref(''); 
-const topNArtists = ref(30); // 默认显示TOP30个艺术家
 
-const dataFiles = {
-  'q2_2': 'mc1_q2_2_data_new.json', 
-  'q2_3': 'mc1_q2_3_data_new.json'
-};
+// 数据状态
+const outwardData = ref(null);
+const inwardData = ref(null);
+const loadingOutward = ref(true);
+const loadingInward = ref(true);
+const errorOutward = ref(null);
+const errorInward = ref(null);
 
-const loadData = async (view) => {
-  if (!dataFiles[view] || currentView.value === view) return;
+// 滑块控制变量
+const topNGenres = ref(10);  // Outward视图的流派数量
+const topNArtists = ref(30); // Inward视图的艺术家数量
 
-  loading.value = true;
-  error.value = null;
-  currentView.value = view; 
+const loadOutwardData = async () => {
+  loadingOutward.value = true;
+  errorOutward.value = null;
   
   try {
-    const response = await fetch(`/${dataFiles[view]}`);
-    if (!response.ok) throw new Error(`Could not load ${dataFiles[view]}`);
-    chartData.value = await response.json();
+    const response = await fetch('/mc1_q2_2_data_new.json');
+    if (!response.ok) throw new Error('Could not load outward data');
+    outwardData.value = await response.json();
   } catch (err) {
-    error.value = err.message;
-    chartData.value = null;
+    errorOutward.value = err.message;
+    outwardData.value = null;
   } finally {
-    loading.value = false;
+    loadingOutward.value = false;
   }
 };
 
-/**
- * Handle Sankey chart link click event logic
- */
+const loadInwardData = async () => {
+  loadingInward.value = true;
+  errorInward.value = null;
+  
+  try {
+    const response = await fetch('/mc1_q2_3_data_new.json');
+    if (!response.ok) throw new Error('Could not load inward data');
+    inwardData.value = await response.json();
+  } catch (err) {
+    errorInward.value = err.message;
+    inwardData.value = null;
+  } finally {
+    loadingInward.value = false;
+  }
+};
+
 const handleSankeyClick = (linkData) => {
   console.log("Sankey link clicked:", linkData);
   const { source, target } = linkData;
-  console.log(`Sankey link clicked in view '${currentView.value}':`, source, '->', target);
 
   let payload = null;
 
-  // --- Outward Influence (q2_2) ---
-  if (currentView.value === 'q2_2') {
-    // Scenario 1: Oceanus Folk -> Genre
-    if (source.name === 'Oceanus Folk' && target.type === 'Genre') {
-      payload = {
-        type: 'outward_oceanus_to_genre',
-        params: { genre: target.name }
-      };
-    }
-    // Scenario 2: Genre -> Artist
-    else if (source.type === 'Genre' && target.type === 'Artist') {
-      payload = {
-        type: 'outward_genre_to_artist',
-        params: { 
-          genre: source.name, 
-          artist_id: target.original_id 
-        }
-      };
-    }
-  }
-  // --- Inward Inspirations (q2_3) ---
-  else if (currentView.value === 'q2_3') {
-    // Scenario 3: Genre -> Artist
-    if (source.type === 'Genre' && target.type === 'Artist') {
-      payload = {
-        type: 'inward_genre_to_artist',
-        params: { genre: source.name, artist: target.name }
-      };
-    }
-    // Scenario 4: Artist -> Oceanus Folk
-    else if (source.type === 'Artist' && target.name === 'Oceanus Folk') {
-      payload = {
-        type: 'inward_artist_to_oceanus',
-        params: { artist: source.name }
-      };
-    }
+  // 根据数据结构判断是哪个视图
+  if (source.name === 'Oceanus Folk' && target.type === 'Genre') {
+    // Outward视图
+    payload = {
+      type: 'outward_oceanus_to_genre',
+      params: { genre: target.name }
+    };
+  } else if (source.type === 'Genre' && target.type === 'Artist' && source.name !== 'Oceanus Folk') {
+    // Outward视图的Genre到Artist
+    payload = {
+      type: 'outward_genre_to_artist',
+      params: { 
+        genre: source.name, 
+        artist_id: target.original_id 
+      }
+    };
+  } else if (source.type === 'Artist' && target.name === 'Oceanus Folk') {
+    // Inward视图的Artist到Oceanus Folk
+    payload = {
+      type: 'inward_artist_to_oceanus',
+      params: { artist: source.name }
+    };
+  } else if (source.type === 'Genre' && target.type === 'Artist' && !linkData.isOutward) {
+    // Inward视图的Genre到Artist
+    payload = {
+      type: 'inward_genre_to_artist',
+      params: { genre: source.name, artist: target.name }
+    };
   }
 
   if (payload) {
@@ -135,7 +167,8 @@ const handleSankeyClick = (linkData) => {
 };
 
 onMounted(() => {
-  loadData('q2_2'); 
+  loadOutwardData();
+  loadInwardData();
 });
 </script>
 
@@ -148,132 +181,128 @@ onMounted(() => {
 }
 
 .q2-header {
-  margin-bottom: 1rem;
+  margin-bottom: 8px;
+  flex-shrink: 0;
   text-align: center;
-  flex-shrink: 0; 
 }
 
-.q2-header h3 {
-  margin: 0 0 10px 0;
+.section-title {
+  font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-primary); 
-}
-
-.header-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.view-controls {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 10px;
-  background-color: var(--color-background);
-  border-radius: 8px;
-  padding: 4px;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.view-controls button {
-  padding: 8px 16px; 
-  border: none;
-  background-color: transparent; 
-  color: var(--color-text-secondary); 
-  cursor: pointer;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.view-controls button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-}
-
-.view-controls button.active {
-  background-color: var(--color-primary-accent); 
-  color: var(--color-surface); 
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.topn-control {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.topn-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  user-select: none;
-}
-
-.topn-slider {
-  width: 100px;
-  height: 6px;
-  background: var(--color-background);
-  border-radius: 3px;
-  outline: none;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-  cursor: pointer;
-}
-
-.topn-slider:hover {
-  opacity: 1;
-}
-
-.topn-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-primary-accent);
-  cursor: pointer;
-  border: 2px solid var(--color-surface);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.topn-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-primary-accent);
-  cursor: pointer;
-  border: 2px solid var(--color-surface);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.topn-value {
-  min-width: 20px;
-  text-align: center;
-  font-weight: 600;
-  color: var(--color-primary-accent);
-  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
 .q2-main {
   flex-grow: 1;
-  overflow: hidden; 
-  position: relative; 
+  overflow: hidden;
+}
+
+.sankey-panels {
+  display: flex;
+  gap: 8px;
+  height: 100%;
+}
+
+.sankey-panel {
+  flex: 1 1 50%; /* 确保各占一半 */
+  min-width: 0; /* 允许收缩 */
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: var(--color-surface);
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 8px 10px;
+  background-color: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 32px; /* 确保头部高度一致 */
+}
+
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  flex-shrink: 0; /* 防止标题被压缩 */
+}
+
+.panel-controls {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0; /* 防止控件被压缩 */
+}
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap; /* 防止换行 */
+}
+
+.slider-group label {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 65px; /* 确保标签宽度一致 */
+}
+
+.slider {
+  width: 70px; /* 固定滑块宽度 */
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-border);
+  outline: none;
+  -webkit-appearance: none;
+  flex-shrink: 0; /* 防止滑块被压缩 */
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-primary-accent);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-primary-accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.panel-content {
+  flex-grow: 1;
+  position: relative;
+  overflow: hidden;
 }
 
 .status {
-  padding: 2rem;
-  font-size: 1rem;
-  color: var(--color-text-light); 
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  color: var(--color-text-light);
   text-align: center;
 }
 
 .error {
-  color: #e74c3c; 
+  color: #e74c3c;
 }
 </style>

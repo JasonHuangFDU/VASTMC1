@@ -1,17 +1,11 @@
 <template>
   <div class="container-wrapper">
     <div class="chart-header">
-      <h2 class="chart-title">Influence Over Time</h2> 
       <div class="header-controls">
         <div class="view-controls">
           <button 
-            :class="{ active: viewMode === 'total' }" 
-            @click="setViewMode('total')">
-            Total Amount
-          </button>
-          <button 
             :class="{ active: viewMode === 'breakdown' }" 
-            @click="setViewMode('breakdown')">
+            @click="toggleViewMode">
             Genre Comparison
           </button>
         </div>
@@ -50,7 +44,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { BarChart, LineChart } from 'echarts/charts';
 import { TitleComponent, TooltipComponent, GridComponent, LegendComponent } from 'echarts/components';
 import VChart from 'vue-echarts';
-import { appColors, getGenreColor } from '@/utils/colors'; // Import color definitions
+import { appColors, getGenreColor } from '@/utils/colors';
 
 use([
   CanvasRenderer, BarChart, LineChart,
@@ -60,7 +54,7 @@ use([
 const loading = ref(true);
 const rawDataRef = ref(null);
 const processedData = ref(null);
-const viewMode = ref('total');
+const viewMode = ref('total'); // 默认显示组合图
 const showNotableOnly = ref(false);
 const hoveredGenre = ref(null);
 
@@ -76,24 +70,21 @@ const processCompleteData = (data, startYear, endYear) => {
   return { years: fullYears, totalInfluenceByYear: newTotalInfluence, genreBreakdownByYear: newGenreBreakdown, allGenres: Array.from(allGenres) };
 };
 
-// 修改：从原始数据动态确定年份范围，并扩展到2040年
 const determineYearRange = (data) => {
   if (!data || !data.years || data.years.length === 0) {
-    return { startYear: 2017, endYear: 2040 }; // 扩展默认范围到2040年
+    return { startYear: 2017, endYear: 2040 };
   }
   
   const years = data.years.map(year => parseInt(year));
   const minYear = Math.min(...years);
   const maxYear = Math.max(...years);
   
-  // 确保至少显示到2040年，给用户看到完整的时间范围
   return {
     startYear: minYear,
     endYear: Math.max(maxYear, 2040)
   };
 };
 
-// 处理数据筛选
 const processDataWithFilter = () => {
   if (!rawDataRef.value) return;
   
@@ -133,16 +124,15 @@ const chartOption = computed(() => {
     data: data.years.map(year => data.genreBreakdownByYear[data.years.indexOf(year)]?.[genre] || 0)
   }));
   
-  // 调整折线图样式，使其更加美观
   const lineSeries = {
     name: showNotableOnly.value ? 'Notable影响总数' : '影响总数', 
     type: 'line', 
-    smooth: true,  // 改为平滑曲线，更加美观
+    smooth: true,
     symbol: 'circle',
-    symbolSize: 6,  // 稍微减小点的大小
+    symbolSize: 6,
     z: 10,
     lineStyle: { 
-      width: 2,  // 从3改为2，使折线更细更美观
+      width: 2,
       color: appColors.primaryAccent
     },
     itemStyle: {
@@ -155,7 +145,7 @@ const chartOption = computed(() => {
         type: 'linear', 
         x: 0, y: 0, x2: 0, y2: 1, 
         colorStops: [
-          { offset: 0, color: appColors.primaryAccent + '40' }, // 降低透明度
+          { offset: 0, color: appColors.primaryAccent + '40' },
           { offset: 1, color: appColors.primaryAccent + '00' }
         ] 
       },
@@ -229,7 +219,7 @@ const chartOption = computed(() => {
     tooltip: tooltipConfig,
     legend: legendConfig,
     grid: { 
-      top: viewMode.value === 'total' ? '10%' : '15%',
+      top: viewMode.value === 'total' ? '5%' : '10%',
       left: '3%', 
       right: '4%', 
       bottom: viewMode.value === 'total' ? '3%' : '15%',
@@ -242,7 +232,7 @@ const chartOption = computed(() => {
       axisLine: { lineStyle: { color: appColors.border } },
       axisLabel: { 
         color: appColors.textSecondary,
-        interval: 'auto'  // 自动调整标签间隔，避免年份标签过于密集
+        interval: 'auto'
       }
     },
     yAxis: { 
@@ -256,8 +246,8 @@ const chartOption = computed(() => {
   };
 });
 
-const setViewMode = (mode) => {
-  viewMode.value = mode;
+const toggleViewMode = () => {
+  viewMode.value = viewMode.value === 'total' ? 'breakdown' : 'total';
 };
 
 const handleNotableFilterChange = () => {
@@ -276,13 +266,10 @@ const handleMouseOut = () => {
 
 onMounted(async () => {
   try {
-    // 使用修正后的数据文件
     const response = await fetch('/mc1_q2_1_data_new.json');
     const rawData = await response.json();
     
     rawDataRef.value = rawData;
-    
-    // 初始处理数据（默认显示所有数据）
     processDataWithFilter();
     
   } catch (error) {
@@ -303,23 +290,16 @@ onMounted(async () => {
 
 .chart-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 10px 20px;
+  padding: 8px 16px;
   flex-shrink: 0;
-}
-
-.chart-title {
-  margin: 0;
-  font-size: 1.2em;
-  font-weight: 600;
-  color: var(--color-text-primary);
 }
 
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .chart-body {

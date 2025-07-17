@@ -72,1402 +72,526 @@
     },
     {
       "id": 12,
-      "name": "Xiuying Cai",
-      "type": "Artist",
-      "original_id": 4303
-    },
-    {
-      "id": 13,
-      "name": "Jun Liu",
-      "type": "Artist",
-      "original_id": 4304
-    },
-    {
-      "id": 14,
-      "name": "Jun Guo",
-      "type": "Artist",
-      "original_id": 3033
-    },
-    {
-      "id": 15,
-      "name": "Yang Yi",
-      "type": "Artist",
-      "original_id": 3034
-    },
-    {
-      "id": 16,
-      "name": "Yan Cai",
-      "type": "Artist",
-      "original_id": 3035
-    },
-    {
-      "id": 17,
-      "name": "Na Qian",
-      "type": "Artist",
-      "original_id": 3036
-    },
-    {
-      "id": 18,
-      "name": "Christopher Conway",
-      "type": "Artist",
-      "original_id": 4946
-    },
-    {
-      "id": 19,
-      "name": "Samantha Mcneil",
-      "type": "Artist",
-      "original_id": 4947
-    },
-    {
-      "id": 20,
-      "name": "Isaac Brown",
-      "type": "Artist",
-      "original_id": 4948
-    },
-    {
-      "id": 21,
-      "name": "Wei Liao",
-      "type": "Artist",
-      "original_id": 3276
-    },
-    {
-      "id": 22,
-      "name": "Fang Zheng",
-      "type": "Artist",
-      "original_id": 3277
-    },
-    {
-      "id": 23,
-      "name": "Tao Yuan",
-      "type": "Artist",
-      "original_id": 3278
-    },
-    {
-      "id": 24,
-      "name": "Ming Lai",
-      "type": "Artist",
-      "original_id": 3279
-    },
-    {
-      "id": 25,
-      "name": "Xiuying Xue",
-      "type": "Artist",
-      "original_id": 3280
-    },
-    {
-      "id": 26,
-      "name": "Allison Curtis",
-      "type": "Artist",
-      "original_id": 9632
-    },
-    {
-      "id": 27,
-      "name": "Bryan Smith",
-      "type": "Artist",
-      "original_id": 9633
-    },
-    {
-      "id": 28,
-      "name": "Kevin Ross",
-      "type": "Artist",
-      "original_id": 9634
-    },
-    {
-      "id": 29,
-      "name": "Ronald Kennedy",
-      "type": "Artist",
-      "original_id": 9635
-    },
-    {
-      "id": 30,
-      "name": "Electric Twist",
-      "type": "Artist",
-      "original_id": 16869
-    },
-    {
-      "id": 31,
-      "name": "Qiang Deng",
-      "type": "Artist",
-      "original_id": 2895
-    },
-    {
-      "id": 32,
-      "name": "Scott Sanders",
-      "type": "Artist",
-      "original_id": 2896
-    },
-    {
-      "id": 33,
-      "name": "Juan Liu",
-      "type": "Artist",
-      "original_id": 5902
-    },
-    {
-      "id": 34,
-      "name": "Yan Shi",
-      "type": "Artist",
-      "original_id": 10174
-    },
-    {
-      "id": 35,
-      "name": "Qiang Fang",
-      "type": "Artist",
-      "original_id": 959
-    },
-    {
-      "id": 36,
-      "name": "Fang Xiong",
-      "type": "Artist",
-      "original_id": 5781
-    },
-    {
-      "id": 37,
-      "name": "Yan Liu",
-      "type": "Artist",
-      "original_id": 7442
-    },
-    {
-      "id": 38,
-      "name": "Wei Gu",
-      "type": "Artist",
-      "original_id": 7443
-    },
-    {
-      "id": 39,
-      "name": "Lei Shi",
-      "type": "Artist",
-      "original_id": 7444
-    },
-    {
-      "id": 40,
-      "name": "Xiuying Guo",
-      "type": "Artist",
-      "original_id": 7445
-    },
-    {
-      "id": 41,
-      "name": "Jing Guo",
-      "type": "Artist",
-      "original_id": 7446
-    },
-    {
-      "id": 42,
-      "name": "Nath Henry",
-      "type": "Artist",
-      "original_id": 1630
-    },
-    {
-      "id": 43,
-      "name": "Odette Dupuy",
-      "type": "Artist",
-      "original_id": 1631
-    },
-    {
-      "id": 44,
-      "name": "Xavier Baron",
-      "type": "Artist",
-      "original_id": 1632
-    },
-    {
-      "id": 45,
-      "name": "Guillaume Petitjean",
-      "type": "Artist",
-      "original_id": 1633
-    },
-    {
-      "id": 46,
-      "name": "Li Li",
-      "type": "Artist",
-      "original_id": 6570
-    },
-    {
-      "id": 47,
-      "name": "Jie Tao",
-      "type": "Artist",
-      "original_id": 6571
-    },
-    {
-      "id": 48,
-      "name": "Gang Dai",
-      "type": "Artist",
-      "original_id": 6572
-    },
-    {
-      "id": 49,
-      "name": "Lei Sun",
-      "type": "Artist",
-      "original_id": 6573
-    },
-    {
-      "id": 50,
-      "name": "Xia Tang",
-      "type": "Artist",
-      "original_id": 6574
-    },
-    {
-      "id": 51,
-      "name": "Miki Hayashi",
-      "type": "Artist",
-      "original_id": 99
-    },
-    {
-      "id": 52,
-      "name": "Xiuying Yi",
-      "type": "Artist",
-      "original_id": 8293
-    },
-    {
-      "id": 53,
-      "name": "Qiang Han",
-      "type": "Artist",
-      "original_id": 8294
-    },
-    {
-      "id": 54,
-      "name": "Na Ren",
-      "type": "Artist",
-      "original_id": 4185
-    },
-    {
-      "id": 55,
-      "name": "Ronald Johnson",
-      "type": "Artist",
-      "original_id": 9862
-    },
-    {
-      "id": 56,
-      "name": "Qiang Gao",
-      "type": "Artist",
-      "original_id": 9863
-    },
-    {
-      "id": 57,
-      "name": "Ping Qian",
-      "type": "Artist",
-      "original_id": 9864
-    },
-    {
-      "id": 58,
-      "name": "Ping Guo",
-      "type": "Artist",
-      "original_id": 9865
-    },
-    {
-      "id": 59,
-      "name": "Ping Wan",
-      "type": "Artist",
-      "original_id": 9866
-    },
-    {
-      "id": 60,
-      "name": "Guiying Liao",
-      "type": "Artist",
-      "original_id": 1180
-    },
-    {
-      "id": 61,
-      "name": "Yan Zou",
-      "type": "Artist",
-      "original_id": 1182
-    },
-    {
-      "id": 62,
-      "name": "Fang Zheng",
-      "type": "Artist",
-      "original_id": 9215
-    },
-    {
-      "id": 63,
-      "name": "Jun Yang",
-      "type": "Artist",
-      "original_id": 9217
-    },
-    {
-      "id": 64,
-      "name": "Crimson Theorem",
-      "type": "Artist",
-      "original_id": 16753
-    },
-    {
-      "id": 65,
-      "name": "Dream Pop",
-      "type": "Genre"
-    },
-    {
-      "id": 66,
-      "name": "Ping Jin",
-      "type": "Artist",
-      "original_id": 10904
-    },
-    {
-      "id": 67,
-      "name": "Tao Wen",
-      "type": "Artist",
-      "original_id": 10905
-    },
-    {
-      "id": 68,
-      "name": "Guiying Ren",
-      "type": "Artist",
-      "original_id": 10906
-    },
-    {
-      "id": 69,
-      "name": "Lei Shi",
-      "type": "Artist",
-      "original_id": 10907
-    },
-    {
-      "id": 70,
-      "name": "Wei Liang",
-      "type": "Artist",
-      "original_id": 10908
-    },
-    {
-      "id": 71,
-      "name": "Yang Zou",
-      "type": "Artist",
-      "original_id": 15938
-    },
-    {
-      "id": 72,
-      "name": "Gang Kong",
-      "type": "Artist",
-      "original_id": 15939
-    },
-    {
-      "id": 73,
-      "name": "Gang Lin",
-      "type": "Artist",
-      "original_id": 15940
-    },
-    {
-      "id": 74,
-      "name": "Jie Shao",
-      "type": "Artist",
-      "original_id": 15941
-    },
-    {
-      "id": 75,
-      "name": "Na Peng",
-      "type": "Artist",
-      "original_id": 15942
-    },
-    {
-      "id": 76,
-      "name": "Min Yu",
-      "type": "Artist",
-      "original_id": 15943
-    },
-    {
-      "id": 77,
-      "name": "Jun Yu",
-      "type": "Artist",
-      "original_id": 13137
-    },
-    {
-      "id": 78,
-      "name": "Yang Kong",
-      "type": "Artist",
-      "original_id": 13138
-    },
-    {
-      "id": 79,
-      "name": "Yan Liu",
-      "type": "Artist",
-      "original_id": 3866
-    },
-    {
-      "id": 80,
-      "name": "Li Mo",
-      "type": "Artist",
-      "original_id": 13405
-    },
-    {
-      "id": 81,
-      "name": "Jing Han",
-      "type": "Artist",
-      "original_id": 13406
-    },
-    {
-      "id": 82,
-      "name": "Wei Xiong",
-      "type": "Artist",
-      "original_id": 13407
-    },
-    {
-      "id": 83,
-      "name": "Yang Sun",
-      "type": "Artist",
-      "original_id": 13408
-    },
-    {
-      "id": 84,
-      "name": "Xia Fang",
-      "type": "Artist",
-      "original_id": 13409
-    },
-    {
-      "id": 85,
-      "name": "Jun Meng",
-      "type": "Artist",
-      "original_id": 13410
-    },
-    {
-      "id": 86,
-      "name": "Yong Liang",
-      "type": "Artist",
-      "original_id": 13411
-    },
-    {
-      "id": 87,
-      "name": "Tao Zou",
-      "type": "Artist",
-      "original_id": 273
-    },
-    {
-      "id": 88,
-      "name": "Jing Ding",
-      "type": "Artist",
-      "original_id": 1875
-    },
-    {
-      "id": 89,
-      "name": "Ming Dai",
-      "type": "Artist",
-      "original_id": 1876
-    },
-    {
-      "id": 90,
-      "name": "Xiulan Yi",
-      "type": "Artist",
-      "original_id": 1877
-    },
-    {
-      "id": 91,
-      "name": "Wei Gao",
-      "type": "Artist",
-      "original_id": 1878
-    },
-    {
-      "id": 92,
-      "name": "Qiang Cui",
-      "type": "Artist",
-      "original_id": 2355
-    },
-    {
-      "id": 93,
-      "name": "Qiang Yuan",
-      "type": "Artist",
-      "original_id": 4298
-    },
-    {
-      "id": 94,
-      "name": "Jun Qiao",
-      "type": "Artist",
-      "original_id": 6066
-    },
-    {
-      "id": 95,
-      "name": "Yong Wen",
-      "type": "Artist",
-      "original_id": 6067
-    },
-    {
-      "id": 96,
-      "name": "Tao Liang",
-      "type": "Artist",
-      "original_id": 6068
-    },
-    {
-      "id": 97,
-      "name": "Jun Yao",
-      "type": "Artist",
-      "original_id": 6069
-    },
-    {
-      "id": 98,
-      "name": "Yang Zhang",
-      "type": "Artist",
-      "original_id": 9094
-    },
-    {
-      "id": 99,
-      "name": "Symphonic Metal",
-      "type": "Genre"
-    },
-    {
-      "id": 100,
-      "name": "Fang Wu",
-      "type": "Artist",
-      "original_id": 13090
-    },
-    {
-      "id": 101,
-      "name": "Sherry Powell",
-      "type": "Artist",
-      "original_id": 13091
-    },
-    {
-      "id": 102,
-      "name": "Debra Wolfe",
-      "type": "Artist",
-      "original_id": 15990
-    },
-    {
-      "id": 103,
       "name": "Indie Folk",
       "type": "Genre"
     },
     {
-      "id": 104,
-      "name": "Yan Tang",
-      "type": "Artist",
-      "original_id": 2400
-    },
-    {
-      "id": 105,
+      "id": 13,
       "name": "Xiuying Li",
       "type": "Artist",
       "original_id": 4394
     },
     {
-      "id": 106,
+      "id": 14,
       "name": "Xia Cui",
       "type": "Artist",
       "original_id": 4395
     },
     {
-      "id": 107,
+      "id": 15,
       "name": "Lei Shen",
       "type": "Artist",
       "original_id": 4397
     },
     {
-      "id": 108,
+      "id": 16,
       "name": "Cosmic Drift",
       "type": "Artist",
       "original_id": 16802
     },
     {
-      "id": 109,
+      "id": 17,
+      "name": "Yan Tang",
+      "type": "Artist",
+      "original_id": 2400
+    },
+    {
+      "id": 18,
       "name": "Lei Zeng",
       "type": "Artist",
       "original_id": 13281
     },
     {
-      "id": 110,
+      "id": 19,
       "name": "Min Fu",
       "type": "Artist",
       "original_id": 2850
     },
     {
-      "id": 111,
+      "id": 20,
       "name": "Yang Pan",
       "type": "Artist",
       "original_id": 12155
     },
     {
-      "id": 112,
+      "id": 21,
       "name": "Craig Lewis",
       "type": "Artist",
       "original_id": 13692
     },
     {
-      "id": 113,
+      "id": 22,
       "name": "Xiuying Huang",
       "type": "Artist",
       "original_id": 13693
     },
     {
-      "id": 114,
-      "name": "Ming Mao",
-      "type": "Artist",
-      "original_id": 13694
+      "id": 23,
+      "name": "Dream Pop",
+      "type": "Genre"
     },
     {
-      "id": 115,
-      "name": "Xia Mao",
+      "id": 24,
+      "name": "Ping Jin",
       "type": "Artist",
-      "original_id": 13695
+      "original_id": 10904
     },
     {
-      "id": 116,
-      "name": "Jing Gao",
+      "id": 25,
+      "name": "Tao Wen",
       "type": "Artist",
-      "original_id": 13696
+      "original_id": 10905
     },
     {
-      "id": 117,
-      "name": "Fang Cui",
+      "id": 26,
+      "name": "Guiying Ren",
       "type": "Artist",
-      "original_id": 7214
+      "original_id": 10906
     },
     {
-      "id": 118,
-      "name": "Jing Mao",
+      "id": 27,
+      "name": "Lei Shi",
       "type": "Artist",
-      "original_id": 7215
+      "original_id": 10907
     },
     {
-      "id": 119,
-      "name": "Lei Qiu",
-      "type": "Artist",
-      "original_id": 7216
-    },
-    {
-      "id": 120,
-      "name": "Min Kong",
-      "type": "Artist",
-      "original_id": 7217
-    },
-    {
-      "id": 121,
-      "name": "Li Song",
-      "type": "Artist",
-      "original_id": 7218
-    },
-    {
-      "id": 122,
-      "name": "Hannah Richards",
-      "type": "Artist",
-      "original_id": 7219
-    },
-    {
-      "id": 123,
-      "name": "Li Sun",
-      "type": "Artist",
-      "original_id": 7220
-    },
-    {
-      "id": 124,
-      "name": "Lunar Drift",
-      "type": "Artist",
-      "original_id": 16857
-    },
-    {
-      "id": 125,
-      "name": "Xia Zhu",
-      "type": "Artist",
-      "original_id": 8726
-    },
-    {
-      "id": 126,
-      "name": "Guiying Pan",
-      "type": "Artist",
-      "original_id": 10407
-    },
-    {
-      "id": 127,
-      "name": "Xiuying Duan",
-      "type": "Artist",
-      "original_id": 10408
-    },
-    {
-      "id": 128,
-      "name": "Na Zhong",
-      "type": "Artist",
-      "original_id": 10410
-    },
-    {
-      "id": 129,
-      "name": "Guiying Fan",
-      "type": "Artist",
-      "original_id": 14445
-    },
-    {
-      "id": 130,
-      "name": "Lei Jia",
-      "type": "Artist",
-      "original_id": 8397
-    },
-    {
-      "id": 131,
-      "name": "Guiying Dai",
-      "type": "Artist",
-      "original_id": 10161
-    },
-    {
-      "id": 132,
-      "name": "Tao Xu",
-      "type": "Artist",
-      "original_id": 10162
-    },
-    {
-      "id": 133,
-      "name": "Qiang Gong",
-      "type": "Artist",
-      "original_id": 10163
-    },
-    {
-      "id": 134,
-      "name": "Jing Gong",
-      "type": "Artist",
-      "original_id": 10164
-    },
-    {
-      "id": 135,
-      "name": "April Mills",
-      "type": "Artist",
-      "original_id": 11809
-    },
-    {
-      "id": 136,
-      "name": "Dominique Delacruz",
-      "type": "Artist",
-      "original_id": 11810
-    },
-    {
-      "id": 137,
-      "name": "Stephanie Fowler",
-      "type": "Artist",
-      "original_id": 11811
-    },
-    {
-      "id": 138,
-      "name": "David Maddox",
-      "type": "Artist",
-      "original_id": 11812
-    },
-    {
-      "id": 139,
-      "name": "Xiulan Gong",
-      "type": "Artist",
-      "original_id": 1073
-    },
-    {
-      "id": 140,
-      "name": "Jun Fang",
-      "type": "Artist",
-      "original_id": 4418
-    },
-    {
-      "id": 141,
-      "name": "Min Shao",
-      "type": "Artist",
-      "original_id": 6807
-    },
-    {
-      "id": 142,
-      "name": "Min Wen",
-      "type": "Artist",
-      "original_id": 10914
-    },
-    {
-      "id": 143,
-      "name": "Chao Shao",
-      "type": "Artist",
-      "original_id": 13261
-    },
-    {
-      "id": 144,
-      "name": "Jun Qiu",
-      "type": "Artist",
-      "original_id": 11915
-    },
-    {
-      "id": 145,
-      "name": "Thomas Le",
-      "type": "Artist",
-      "original_id": 11916
-    },
-    {
-      "id": 146,
-      "name": "Calvin Cooper",
-      "type": "Artist",
-      "original_id": 11917
-    },
-    {
-      "id": 147,
-      "name": "Guiying Gong",
-      "type": "Artist",
-      "original_id": 11918
-    },
-    {
-      "id": 148,
-      "name": "Xiuying Xu",
-      "type": "Artist",
-      "original_id": 11919
-    },
-    {
-      "id": 149,
+      "id": 28,
       "name": "Wei Liang",
       "type": "Artist",
-      "original_id": 11920
+      "original_id": 10908
     },
     {
-      "id": 150,
-      "name": "Lei Jin",
+      "id": 29,
+      "name": "Yang Zou",
       "type": "Artist",
-      "original_id": 11921
+      "original_id": 15938
     },
     {
-      "id": 151,
-      "name": "Lei Liao",
+      "id": 30,
+      "name": "Gang Kong",
       "type": "Artist",
-      "original_id": 13034
+      "original_id": 15939
     },
     {
-      "id": 152,
-      "name": "Jazz Surf Rock",
-      "type": "Genre"
-    },
-    {
-      "id": 153,
-      "name": "Ming Xue",
+      "id": 31,
+      "name": "Gang Lin",
       "type": "Artist",
-      "original_id": 1302
+      "original_id": 15940
     },
     {
-      "id": 154,
-      "name": "Min Duan",
+      "id": 32,
+      "name": "Jie Shao",
       "type": "Artist",
-      "original_id": 1303
+      "original_id": 15941
     },
     {
-      "id": 155,
-      "name": "Gang Yang",
+      "id": 33,
+      "name": "Na Peng",
       "type": "Artist",
-      "original_id": 7895
+      "original_id": 15942
     },
     {
-      "id": 156,
-      "name": "Gang He",
-      "type": "Artist",
-      "original_id": 13170
-    },
-    {
-      "id": 157,
-      "name": "Min Kong",
-      "type": "Artist",
-      "original_id": 14751
-    },
-    {
-      "id": 158,
-      "name": "Yong Deng",
-      "type": "Artist",
-      "original_id": 14752
-    },
-    {
-      "id": 159,
-      "name": "Meagan Hendrix",
-      "type": "Artist",
-      "original_id": 4078
-    },
-    {
-      "id": 160,
-      "name": "Chao Wan",
-      "type": "Artist",
-      "original_id": 4079
-    },
-    {
-      "id": 161,
-      "name": "Yan Lu",
-      "type": "Artist",
-      "original_id": 4080
-    },
-    {
-      "id": 162,
-      "name": "Yan Xiao",
-      "type": "Artist",
-      "original_id": 4081
-    },
-    {
-      "id": 163,
-      "name": "Ming Hu",
-      "type": "Artist",
-      "original_id": 4082
-    },
-    {
-      "id": 164,
-      "name": "Min Yi",
-      "type": "Artist",
-      "original_id": 4083
-    },
-    {
-      "id": 165,
-      "name": "Ping Liao",
-      "type": "Artist",
-      "original_id": 3089
-    },
-    {
-      "id": 166,
-      "name": "Ming Zhong",
-      "type": "Artist",
-      "original_id": 10637
-    },
-    {
-      "id": 167,
-      "name": "Juan Dong",
-      "type": "Artist",
-      "original_id": 10638
-    },
-    {
-      "id": 168,
-      "name": "Min Mo",
-      "type": "Artist",
-      "original_id": 10639
-    },
-    {
-      "id": 169,
-      "name": "Tao Deng",
-      "type": "Artist",
-      "original_id": 10640
-    },
-    {
-      "id": 170,
-      "name": "Chao Xiao",
-      "type": "Artist",
-      "original_id": 3714
-    },
-    {
-      "id": 171,
-      "name": "Xiuying Kong",
-      "type": "Artist",
-      "original_id": 6578
-    },
-    {
-      "id": 172,
-      "name": "Lei Qian",
-      "type": "Artist",
-      "original_id": 6579
-    },
-    {
-      "id": 173,
-      "name": "Jun Su",
-      "type": "Artist",
-      "original_id": 6580
-    },
-    {
-      "id": 174,
-      "name": "Synthwave",
-      "type": "Genre"
-    },
-    {
-      "id": 175,
-      "name": "Ming Xiao",
-      "type": "Artist",
-      "original_id": 11338
-    },
-    {
-      "id": 176,
-      "name": "Juan Lu",
-      "type": "Artist",
-      "original_id": 12745
-    },
-    {
-      "id": 177,
-      "name": "Ming Shi",
-      "type": "Artist",
-      "original_id": 12746
-    },
-    {
-      "id": 178,
-      "name": "Gang Chen",
-      "type": "Artist",
-      "original_id": 12747
-    },
-    {
-      "id": 179,
-      "name": "Na Han",
-      "type": "Artist",
-      "original_id": 12748
-    },
-    {
-      "id": 180,
-      "name": "Yan Luo",
-      "type": "Artist",
-      "original_id": 12749
-    },
-    {
-      "id": 181,
-      "name": "Jun Wen",
-      "type": "Artist",
-      "original_id": 1436
-    },
-    {
-      "id": 182,
-      "name": "Ping Sun",
-      "type": "Artist",
-      "original_id": 1437
-    },
-    {
-      "id": 183,
-      "name": "Jie Cui",
-      "type": "Artist",
-      "original_id": 1438
-    },
-    {
-      "id": 184,
-      "name": "Heather Kennedy",
-      "type": "Artist",
-      "original_id": 12214
-    },
-    {
-      "id": 185,
-      "name": "Eric Armstrong",
-      "type": "Artist",
-      "original_id": 12215
-    },
-    {
-      "id": 186,
-      "name": "Tina Spencer",
-      "type": "Artist",
-      "original_id": 12216
-    },
-    {
-      "id": 187,
-      "name": "Charles Jacobs",
-      "type": "Artist",
-      "original_id": 5621
-    },
-    {
-      "id": 188,
-      "name": "Ping Mo",
-      "type": "Artist",
-      "original_id": 5622
-    },
-    {
-      "id": 189,
-      "name": "Min Yao",
-      "type": "Artist",
-      "original_id": 5623
-    },
-    {
-      "id": 190,
-      "name": "Jing Tao",
-      "type": "Artist",
-      "original_id": 5624
-    },
-    {
-      "id": 191,
-      "name": "Indie Rock",
-      "type": "Genre"
-    },
-    {
-      "id": 192,
-      "name": "Imelda Zaguri",
-      "type": "Artist",
-      "original_id": 3751
-    },
-    {
-      "id": 193,
-      "name": "Nanni Telesio",
-      "type": "Artist",
-      "original_id": 3752
-    },
-    {
-      "id": 194,
-      "name": "Annetta Passalacqua",
-      "type": "Artist",
-      "original_id": 3754
-    },
-    {
-      "id": 195,
-      "name": "Sawyer and the Frontiers",
-      "type": "Artist",
-      "original_id": 16911
-    },
-    {
-      "id": 196,
+      "id": 34,
       "name": "Space Rock",
       "type": "Genre"
     },
     {
-      "id": 197,
+      "id": 35,
       "name": "Qiang Qian",
       "type": "Artist",
       "original_id": 5036
     },
     {
-      "id": 198,
+      "id": 36,
       "name": "Xiuying Qian",
       "type": "Artist",
       "original_id": 5037
     },
     {
-      "id": 199,
+      "id": 37,
       "name": "Min He",
       "type": "Artist",
       "original_id": 5038
     },
     {
-      "id": 200,
+      "id": 38,
       "name": "Na Jia",
       "type": "Artist",
       "original_id": 7791
     },
     {
-      "id": 201,
+      "id": 39,
       "name": "Xiulan Dong",
       "type": "Artist",
       "original_id": 8108
     },
     {
-      "id": 202,
+      "id": 40,
       "name": "Xiuying Fan",
       "type": "Artist",
       "original_id": 8109
     },
     {
-      "id": 203,
+      "id": 41,
       "name": "Xiuying Zhang",
       "type": "Artist",
       "original_id": 8110
     },
     {
-      "id": 204,
+      "id": 42,
       "name": "Xiuying Deng",
       "type": "Artist",
       "original_id": 8111
     },
     {
-      "id": 205,
+      "id": 43,
       "name": "Xiuying Lin",
       "type": "Artist",
       "original_id": 3266
     },
     {
-      "id": 206,
+      "id": 44,
       "name": "Chao Qiao",
       "type": "Artist",
       "original_id": 6490
     },
     {
-      "id": 207,
-      "name": "Lei He",
-      "type": "Artist",
-      "original_id": 6491
-    },
-    {
-      "id": 208,
-      "name": "Chao Peng",
-      "type": "Artist",
-      "original_id": 6492
-    },
-    {
-      "id": 209,
-      "name": "Wei Gao",
-      "type": "Artist",
-      "original_id": 578
-    },
-    {
-      "id": 210,
-      "name": "Lei Fu",
-      "type": "Artist",
-      "original_id": 579
-    },
-    {
-      "id": 211,
-      "name": "Li Yang",
-      "type": "Artist",
-      "original_id": 11131
-    },
-    {
-      "id": 212,
-      "name": "Xia Shao",
-      "type": "Artist",
-      "original_id": 11132
-    },
-    {
-      "id": 213,
-      "name": "Tao Sun",
-      "type": "Artist",
-      "original_id": 11133
-    },
-    {
-      "id": 214,
-      "name": "Fang Tang",
-      "type": "Artist",
-      "original_id": 11134
-    },
-    {
-      "id": 215,
-      "name": "Xiulan Yi",
-      "type": "Artist",
-      "original_id": 11135
-    },
-    {
-      "id": 216,
-      "name": "Bartek Krężołek",
-      "type": "Artist",
-      "original_id": 4753
-    },
-    {
-      "id": 217,
-      "name": "Mikołaj Rosłoń",
-      "type": "Artist",
-      "original_id": 4755
-    },
-    {
-      "id": 218,
-      "name": "Stefan Berus",
-      "type": "Artist",
-      "original_id": 4756
-    },
-    {
-      "id": 219,
-      "name": "Radosław Duszkiewicz",
-      "type": "Artist",
-      "original_id": 9544
-    },
-    {
-      "id": 220,
-      "name": "Undetected",
-      "type": "Artist",
-      "original_id": 16771
-    },
-    {
-      "id": 221,
-      "name": "Alternative Rock",
+      "id": 45,
+      "name": "Jazz Surf Rock",
       "type": "Genre"
     },
     {
-      "id": 222,
-      "name": "Yan Qiu",
+      "id": 46,
+      "name": "Ming Xue",
       "type": "Artist",
-      "original_id": 8296
+      "original_id": 1302
     },
     {
-      "id": 223,
-      "name": "Juan Xiong",
+      "id": 47,
+      "name": "Min Duan",
       "type": "Artist",
-      "original_id": 8297
+      "original_id": 1303
     },
     {
-      "id": 224,
-      "name": "Wei Chang",
+      "id": 48,
+      "name": "Gang Yang",
       "type": "Artist",
-      "original_id": 8298
+      "original_id": 7895
     },
     {
-      "id": 225,
-      "name": "Qiang Fang",
+      "id": 49,
+      "name": "Gang He",
       "type": "Artist",
-      "original_id": 8299
+      "original_id": 13170
     },
     {
-      "id": 226,
+      "id": 50,
+      "name": "Min Kong",
+      "type": "Artist",
+      "original_id": 14751
+    },
+    {
+      "id": 51,
+      "name": "Yong Deng",
+      "type": "Artist",
+      "original_id": 14752
+    },
+    {
+      "id": 52,
+      "name": "Meagan Hendrix",
+      "type": "Artist",
+      "original_id": 4078
+    },
+    {
+      "id": 53,
+      "name": "Chao Wan",
+      "type": "Artist",
+      "original_id": 4079
+    },
+    {
+      "id": 54,
+      "name": "Yan Lu",
+      "type": "Artist",
+      "original_id": 4080
+    },
+    {
+      "id": 55,
+      "name": "Yan Xiao",
+      "type": "Artist",
+      "original_id": 4081
+    },
+    {
+      "id": 56,
+      "name": "Synthwave",
+      "type": "Genre"
+    },
+    {
+      "id": 57,
+      "name": "Ming Xiao",
+      "type": "Artist",
+      "original_id": 11338
+    },
+    {
+      "id": 58,
+      "name": "Juan Lu",
+      "type": "Artist",
+      "original_id": 12745
+    },
+    {
+      "id": 59,
+      "name": "Ming Shi",
+      "type": "Artist",
+      "original_id": 12746
+    },
+    {
+      "id": 60,
+      "name": "Gang Chen",
+      "type": "Artist",
+      "original_id": 12747
+    },
+    {
+      "id": 61,
+      "name": "Na Han",
+      "type": "Artist",
+      "original_id": 12748
+    },
+    {
+      "id": 62,
+      "name": "Yan Luo",
+      "type": "Artist",
+      "original_id": 12749
+    },
+    {
+      "id": 63,
+      "name": "Guiying Liao",
+      "type": "Artist",
+      "original_id": 1180
+    },
+    {
+      "id": 64,
+      "name": "Yan Zou",
+      "type": "Artist",
+      "original_id": 1182
+    },
+    {
+      "id": 65,
+      "name": "Jun Wen",
+      "type": "Artist",
+      "original_id": 1436
+    },
+    {
+      "id": 66,
+      "name": "Ping Sun",
+      "type": "Artist",
+      "original_id": 1437
+    },
+    {
+      "id": 67,
       "name": "Post-Apocalyptic Folk",
       "type": "Genre"
     },
     {
-      "id": 227,
+      "id": 68,
       "name": "The Hollow Monarchs",
       "type": "Artist",
       "original_id": 17110
     },
     {
-      "id": 228,
+      "id": 69,
       "name": "N.V. Blake",
       "type": "Artist",
       "original_id": 17402
     },
     {
-      "id": 229,
+      "id": 70,
       "name": "Ivy Steele",
       "type": "Artist",
       "original_id": 17406
     },
     {
-      "id": 230,
+      "id": 71,
       "name": "Nate Wild",
       "type": "Artist",
       "original_id": 17407
     },
     {
-      "id": 231,
+      "id": 72,
       "name": "Scarlett Moon",
       "type": "Artist",
       "original_id": 17408
     },
     {
-      "id": 232,
+      "id": 73,
       "name": "Xiuying Xie",
       "type": "Artist",
       "original_id": 3363
     },
     {
-      "id": 233,
+      "id": 74,
       "name": "Xiuying Yao",
       "type": "Artist",
       "original_id": 3366
     },
     {
-      "id": 234,
+      "id": 75,
       "name": "Tao Xu",
       "type": "Artist",
       "original_id": 10271
     },
     {
-      "id": 235,
+      "id": 76,
       "name": "Xiulan Duan",
       "type": "Artist",
       "original_id": 10272
     },
     {
-      "id": 236,
+      "id": 77,
       "name": "Tao Li",
       "type": "Artist",
       "original_id": 10273
     },
     {
-      "id": 237,
-      "name": "Qiang Gu",
-      "type": "Artist",
-      "original_id": 10274
-    },
-    {
-      "id": 238,
-      "name": "Synthpop",
+      "id": 78,
+      "name": "Indie Rock",
       "type": "Genre"
     },
     {
-      "id": 239,
-      "name": "Bruce Hernandez",
+      "id": 79,
+      "name": "Imelda Zaguri",
       "type": "Artist",
-      "original_id": 5560
+      "original_id": 3751
     },
     {
-      "id": 240,
-      "name": "Donna Ellison",
+      "id": 80,
+      "name": "Nanni Telesio",
       "type": "Artist",
-      "original_id": 5561
+      "original_id": 3752
     },
     {
-      "id": 241,
-      "name": "Mitchell Mcdonald",
+      "id": 81,
+      "name": "Annetta Passalacqua",
       "type": "Artist",
-      "original_id": 5562
+      "original_id": 3754
     },
     {
-      "id": 242,
+      "id": 82,
+      "name": "Sawyer and the Frontiers",
+      "type": "Artist",
+      "original_id": 16911
+    },
+    {
+      "id": 83,
+      "name": "Alternative Rock",
+      "type": "Genre"
+    },
+    {
+      "id": 84,
+      "name": "Yan Qiu",
+      "type": "Artist",
+      "original_id": 8296
+    },
+    {
+      "id": 85,
+      "name": "Juan Xiong",
+      "type": "Artist",
+      "original_id": 8297
+    },
+    {
+      "id": 86,
+      "name": "Wei Chang",
+      "type": "Artist",
+      "original_id": 8298
+    },
+    {
+      "id": 87,
+      "name": "Qiang Fang",
+      "type": "Artist",
+      "original_id": 8299
+    },
+    {
+      "id": 88,
       "name": "Doom Metal",
       "type": "Genre"
     },
     {
-      "id": 243,
+      "id": 89,
       "name": "Jun Cui",
       "type": "Artist",
       "original_id": 1976
     },
     {
-      "id": 244,
+      "id": 90,
       "name": "Gang Yu",
       "type": "Artist",
       "original_id": 6662
     },
     {
-      "id": 245,
+      "id": 91,
       "name": "Jun Zhao",
       "type": "Artist",
       "original_id": 6663
     },
     {
-      "id": 246,
+      "id": 92,
       "name": "Jason Mckenzie",
       "type": "Artist",
       "original_id": 6664
+    },
+    {
+      "id": 93,
+      "name": "Symphonic Metal",
+      "type": "Genre"
+    },
+    {
+      "id": 94,
+      "name": "Fang Wu",
+      "type": "Artist",
+      "original_id": 13090
+    },
+    {
+      "id": 95,
+      "name": "Sherry Powell",
+      "type": "Artist",
+      "original_id": 13091
+    },
+    {
+      "id": 96,
+      "name": "Debra Wolfe",
+      "type": "Artist",
+      "original_id": 15990
+    },
+    {
+      "id": 97,
+      "name": "Synthpop",
+      "type": "Genre"
+    },
+    {
+      "id": 98,
+      "name": "Bruce Hernandez",
+      "type": "Artist",
+      "original_id": 5560
+    },
+    {
+      "id": 99,
+      "name": "Donna Ellison",
+      "type": "Artist",
+      "original_id": 5561
+    },
+    {
+      "id": 100,
+      "name": "Mitchell Mcdonald",
+      "type": "Artist",
+      "original_id": 5562
     }
   ],
   "links": [
@@ -1572,57 +696,47 @@
       "value": 1
     },
     {
-      "source": 1,
-      "target": 12,
-      "value": 1
-    },
-    {
       "source": 12,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 1,
       "target": 13,
-      "value": 1
+      "value": 2
     },
     {
       "source": 13,
       "target": 0,
-      "value": 1
+      "value": 2
     },
     {
-      "source": 1,
+      "source": 12,
       "target": 14,
-      "value": 1
+      "value": 2
     },
     {
       "source": 14,
       "target": 0,
-      "value": 1
+      "value": 2
     },
     {
-      "source": 1,
+      "source": 12,
       "target": 15,
-      "value": 1
+      "value": 2
     },
     {
       "source": 15,
       "target": 0,
-      "value": 1
+      "value": 2
     },
     {
-      "source": 1,
+      "source": 12,
       "target": 16,
-      "value": 1
+      "value": 2
     },
     {
       "source": 16,
       "target": 0,
-      "value": 1
+      "value": 2
     },
     {
-      "source": 1,
+      "source": 12,
       "target": 17,
       "value": 1
     },
@@ -1632,7 +746,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 12,
       "target": 18,
       "value": 1
     },
@@ -1642,7 +756,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 12,
       "target": 19,
       "value": 1
     },
@@ -1652,7 +766,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 12,
       "target": 20,
       "value": 1
     },
@@ -1662,7 +776,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 12,
       "target": 21,
       "value": 1
     },
@@ -1672,7 +786,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 12,
       "target": 22,
       "value": 1
     },
@@ -1682,17 +796,7 @@
       "value": 1
     },
     {
-      "source": 1,
-      "target": 23,
-      "value": 1
-    },
-    {
       "source": 23,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 1,
       "target": 24,
       "value": 1
     },
@@ -1702,7 +806,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 23,
       "target": 25,
       "value": 1
     },
@@ -1712,7 +816,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 23,
       "target": 26,
       "value": 1
     },
@@ -1722,7 +826,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 23,
       "target": 27,
       "value": 1
     },
@@ -1732,7 +836,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 23,
       "target": 28,
       "value": 1
     },
@@ -1742,7 +846,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 23,
       "target": 29,
       "value": 1
     },
@@ -1752,7 +856,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 23,
       "target": 30,
       "value": 1
     },
@@ -1762,7 +866,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 23,
       "target": 31,
       "value": 1
     },
@@ -1772,7 +876,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 23,
       "target": 32,
       "value": 1
     },
@@ -1782,7 +886,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 23,
       "target": 33,
       "value": 1
     },
@@ -1792,17 +896,7 @@
       "value": 1
     },
     {
-      "source": 1,
-      "target": 34,
-      "value": 1
-    },
-    {
       "source": 34,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 1,
       "target": 35,
       "value": 1
     },
@@ -1812,7 +906,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 34,
       "target": 36,
       "value": 1
     },
@@ -1822,7 +916,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 34,
       "target": 37,
       "value": 1
     },
@@ -1832,7 +926,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 34,
       "target": 38,
       "value": 1
     },
@@ -1842,7 +936,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 34,
       "target": 39,
       "value": 1
     },
@@ -1852,7 +946,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 34,
       "target": 40,
       "value": 1
     },
@@ -1862,7 +956,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 34,
       "target": 41,
       "value": 1
     },
@@ -1872,7 +966,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 34,
       "target": 42,
       "value": 1
     },
@@ -1882,7 +976,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 34,
       "target": 43,
       "value": 1
     },
@@ -1892,7 +986,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 34,
       "target": 44,
       "value": 1
     },
@@ -1902,17 +996,7 @@
       "value": 1
     },
     {
-      "source": 1,
-      "target": 45,
-      "value": 1
-    },
-    {
       "source": 45,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 1,
       "target": 46,
       "value": 1
     },
@@ -1922,7 +1006,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 45,
       "target": 47,
       "value": 1
     },
@@ -1932,7 +1016,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 45,
       "target": 48,
       "value": 1
     },
@@ -1942,7 +1026,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 45,
       "target": 49,
       "value": 1
     },
@@ -1952,7 +1036,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 45,
       "target": 50,
       "value": 1
     },
@@ -1962,7 +1046,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 45,
       "target": 51,
       "value": 1
     },
@@ -1972,7 +1056,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 45,
       "target": 52,
       "value": 1
     },
@@ -1982,7 +1066,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 45,
       "target": 53,
       "value": 1
     },
@@ -1992,7 +1076,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 45,
       "target": 54,
       "value": 1
     },
@@ -2002,7 +1086,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 45,
       "target": 55,
       "value": 1
     },
@@ -2012,17 +1096,7 @@
       "value": 1
     },
     {
-      "source": 1,
-      "target": 56,
-      "value": 1
-    },
-    {
       "source": 56,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 1,
       "target": 57,
       "value": 1
     },
@@ -2032,7 +1106,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 56,
       "target": 58,
       "value": 1
     },
@@ -2042,7 +1116,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 56,
       "target": 59,
       "value": 1
     },
@@ -2052,7 +1126,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 56,
       "target": 60,
       "value": 1
     },
@@ -2062,7 +1136,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 56,
       "target": 61,
       "value": 1
     },
@@ -2072,7 +1146,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 56,
       "target": 62,
       "value": 1
     },
@@ -2082,7 +1156,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 56,
       "target": 63,
       "value": 1
     },
@@ -2092,7 +1166,7 @@
       "value": 1
     },
     {
-      "source": 1,
+      "source": 56,
       "target": 64,
       "value": 1
     },
@@ -2102,7 +1176,17 @@
       "value": 1
     },
     {
+      "source": 56,
+      "target": 65,
+      "value": 1
+    },
+    {
       "source": 65,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 56,
       "target": 66,
       "value": 1
     },
@@ -2112,17 +1196,7 @@
       "value": 1
     },
     {
-      "source": 65,
-      "target": 67,
-      "value": 1
-    },
-    {
       "source": 67,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 65,
       "target": 68,
       "value": 1
     },
@@ -2132,7 +1206,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 67,
       "target": 69,
       "value": 1
     },
@@ -2142,7 +1216,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 67,
       "target": 70,
       "value": 1
     },
@@ -2152,7 +1226,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 67,
       "target": 71,
       "value": 1
     },
@@ -2162,7 +1236,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 67,
       "target": 72,
       "value": 1
     },
@@ -2172,7 +1246,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 67,
       "target": 73,
       "value": 1
     },
@@ -2182,7 +1256,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 67,
       "target": 74,
       "value": 1
     },
@@ -2192,7 +1266,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 67,
       "target": 75,
       "value": 1
     },
@@ -2202,7 +1276,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 67,
       "target": 76,
       "value": 1
     },
@@ -2212,7 +1286,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 67,
       "target": 77,
       "value": 1
     },
@@ -2222,17 +1296,7 @@
       "value": 1
     },
     {
-      "source": 65,
-      "target": 78,
-      "value": 1
-    },
-    {
       "source": 78,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 65,
       "target": 79,
       "value": 1
     },
@@ -2242,7 +1306,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 78,
       "target": 80,
       "value": 1
     },
@@ -2252,7 +1316,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 78,
       "target": 81,
       "value": 1
     },
@@ -2262,7 +1326,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 78,
       "target": 82,
       "value": 1
     },
@@ -2272,17 +1336,7 @@
       "value": 1
     },
     {
-      "source": 65,
-      "target": 83,
-      "value": 1
-    },
-    {
       "source": 83,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 65,
       "target": 84,
       "value": 1
     },
@@ -2292,7 +1346,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 83,
       "target": 85,
       "value": 1
     },
@@ -2302,7 +1356,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 83,
       "target": 86,
       "value": 1
     },
@@ -2312,7 +1366,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 83,
       "target": 87,
       "value": 1
     },
@@ -2322,17 +1376,7 @@
       "value": 1
     },
     {
-      "source": 65,
-      "target": 88,
-      "value": 1
-    },
-    {
       "source": 88,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 65,
       "target": 89,
       "value": 1
     },
@@ -2342,7 +1386,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 88,
       "target": 90,
       "value": 1
     },
@@ -2352,7 +1396,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 88,
       "target": 91,
       "value": 1
     },
@@ -2362,7 +1406,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 88,
       "target": 92,
       "value": 1
     },
@@ -2372,17 +1416,7 @@
       "value": 1
     },
     {
-      "source": 65,
-      "target": 93,
-      "value": 1
-    },
-    {
       "source": 93,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 65,
       "target": 94,
       "value": 1
     },
@@ -2392,7 +1426,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 93,
       "target": 95,
       "value": 1
     },
@@ -2402,7 +1436,7 @@
       "value": 1
     },
     {
-      "source": 65,
+      "source": 93,
       "target": 96,
       "value": 1
     },
@@ -2412,17 +1446,7 @@
       "value": 1
     },
     {
-      "source": 65,
-      "target": 97,
-      "value": 1
-    },
-    {
       "source": 97,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 65,
       "target": 98,
       "value": 1
     },
@@ -2432,7 +1456,17 @@
       "value": 1
     },
     {
+      "source": 97,
+      "target": 99,
+      "value": 1
+    },
+    {
       "source": 99,
+      "target": 0,
+      "value": 1
+    },
+    {
+      "source": 97,
       "target": 100,
       "value": 1
     },
@@ -2440,1406 +1474,24 @@
       "source": 100,
       "target": 0,
       "value": 1
-    },
-    {
-      "source": 99,
-      "target": 101,
-      "value": 1
-    },
-    {
-      "source": 101,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 99,
-      "target": 102,
-      "value": 1
-    },
-    {
-      "source": 102,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 104,
-      "value": 1
-    },
-    {
-      "source": 104,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 105,
-      "value": 2
-    },
-    {
-      "source": 105,
-      "target": 0,
-      "value": 2
-    },
-    {
-      "source": 103,
-      "target": 106,
-      "value": 2
-    },
-    {
-      "source": 106,
-      "target": 0,
-      "value": 2
-    },
-    {
-      "source": 103,
-      "target": 107,
-      "value": 2
-    },
-    {
-      "source": 107,
-      "target": 0,
-      "value": 2
-    },
-    {
-      "source": 103,
-      "target": 108,
-      "value": 2
-    },
-    {
-      "source": 108,
-      "target": 0,
-      "value": 2
-    },
-    {
-      "source": 103,
-      "target": 109,
-      "value": 1
-    },
-    {
-      "source": 109,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 110,
-      "value": 1
-    },
-    {
-      "source": 110,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 111,
-      "value": 1
-    },
-    {
-      "source": 111,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 112,
-      "value": 1
-    },
-    {
-      "source": 112,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 113,
-      "value": 1
-    },
-    {
-      "source": 113,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 114,
-      "value": 1
-    },
-    {
-      "source": 114,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 115,
-      "value": 1
-    },
-    {
-      "source": 115,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 116,
-      "value": 1
-    },
-    {
-      "source": 116,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 117,
-      "value": 1
-    },
-    {
-      "source": 117,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 118,
-      "value": 1
-    },
-    {
-      "source": 118,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 119,
-      "value": 1
-    },
-    {
-      "source": 119,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 120,
-      "value": 1
-    },
-    {
-      "source": 120,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 121,
-      "value": 1
-    },
-    {
-      "source": 121,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 122,
-      "value": 1
-    },
-    {
-      "source": 122,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 123,
-      "value": 1
-    },
-    {
-      "source": 123,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 124,
-      "value": 1
-    },
-    {
-      "source": 124,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 125,
-      "value": 1
-    },
-    {
-      "source": 125,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 126,
-      "value": 1
-    },
-    {
-      "source": 126,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 127,
-      "value": 1
-    },
-    {
-      "source": 127,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 128,
-      "value": 1
-    },
-    {
-      "source": 128,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 129,
-      "value": 1
-    },
-    {
-      "source": 129,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 130,
-      "value": 1
-    },
-    {
-      "source": 130,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 131,
-      "value": 1
-    },
-    {
-      "source": 131,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 132,
-      "value": 1
-    },
-    {
-      "source": 132,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 133,
-      "value": 1
-    },
-    {
-      "source": 133,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 134,
-      "value": 1
-    },
-    {
-      "source": 134,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 135,
-      "value": 1
-    },
-    {
-      "source": 135,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 136,
-      "value": 1
-    },
-    {
-      "source": 136,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 137,
-      "value": 1
-    },
-    {
-      "source": 137,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 138,
-      "value": 1
-    },
-    {
-      "source": 138,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 139,
-      "value": 1
-    },
-    {
-      "source": 139,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 140,
-      "value": 1
-    },
-    {
-      "source": 140,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 141,
-      "value": 1
-    },
-    {
-      "source": 141,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 142,
-      "value": 1
-    },
-    {
-      "source": 142,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 143,
-      "value": 1
-    },
-    {
-      "source": 143,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 144,
-      "value": 1
-    },
-    {
-      "source": 144,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 145,
-      "value": 1
-    },
-    {
-      "source": 145,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 146,
-      "value": 1
-    },
-    {
-      "source": 146,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 147,
-      "value": 1
-    },
-    {
-      "source": 147,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 148,
-      "value": 1
-    },
-    {
-      "source": 148,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 149,
-      "value": 1
-    },
-    {
-      "source": 149,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 150,
-      "value": 1
-    },
-    {
-      "source": 150,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 103,
-      "target": 151,
-      "value": 1
-    },
-    {
-      "source": 151,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 153,
-      "value": 1
-    },
-    {
-      "source": 153,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 154,
-      "value": 1
-    },
-    {
-      "source": 154,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 155,
-      "value": 1
-    },
-    {
-      "source": 155,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 156,
-      "value": 1
-    },
-    {
-      "source": 156,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 157,
-      "value": 1
-    },
-    {
-      "source": 157,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 158,
-      "value": 1
-    },
-    {
-      "source": 158,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 159,
-      "value": 1
-    },
-    {
-      "source": 159,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 160,
-      "value": 1
-    },
-    {
-      "source": 160,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 161,
-      "value": 1
-    },
-    {
-      "source": 161,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 162,
-      "value": 1
-    },
-    {
-      "source": 162,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 163,
-      "value": 1
-    },
-    {
-      "source": 163,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 164,
-      "value": 1
-    },
-    {
-      "source": 164,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 165,
-      "value": 1
-    },
-    {
-      "source": 165,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 166,
-      "value": 1
-    },
-    {
-      "source": 166,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 167,
-      "value": 1
-    },
-    {
-      "source": 167,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 168,
-      "value": 1
-    },
-    {
-      "source": 168,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 169,
-      "value": 1
-    },
-    {
-      "source": 169,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 170,
-      "value": 1
-    },
-    {
-      "source": 170,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 171,
-      "value": 1
-    },
-    {
-      "source": 171,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 172,
-      "value": 1
-    },
-    {
-      "source": 172,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 152,
-      "target": 173,
-      "value": 1
-    },
-    {
-      "source": 173,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 175,
-      "value": 1
-    },
-    {
-      "source": 175,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 176,
-      "value": 1
-    },
-    {
-      "source": 176,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 177,
-      "value": 1
-    },
-    {
-      "source": 177,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 178,
-      "value": 1
-    },
-    {
-      "source": 178,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 179,
-      "value": 1
-    },
-    {
-      "source": 179,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 180,
-      "value": 1
-    },
-    {
-      "source": 180,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 60,
-      "value": 1
-    },
-    {
-      "source": 60,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 61,
-      "value": 1
-    },
-    {
-      "source": 61,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 181,
-      "value": 1
-    },
-    {
-      "source": 181,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 182,
-      "value": 1
-    },
-    {
-      "source": 182,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 183,
-      "value": 1
-    },
-    {
-      "source": 183,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 64,
-      "value": 1
-    },
-    {
-      "source": 64,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 184,
-      "value": 1
-    },
-    {
-      "source": 184,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 185,
-      "value": 1
-    },
-    {
-      "source": 185,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 186,
-      "value": 1
-    },
-    {
-      "source": 186,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 187,
-      "value": 1
-    },
-    {
-      "source": 187,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 188,
-      "value": 1
-    },
-    {
-      "source": 188,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 189,
-      "value": 1
-    },
-    {
-      "source": 189,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 174,
-      "target": 190,
-      "value": 1
-    },
-    {
-      "source": 190,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 191,
-      "target": 192,
-      "value": 1
-    },
-    {
-      "source": 192,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 191,
-      "target": 193,
-      "value": 1
-    },
-    {
-      "source": 193,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 191,
-      "target": 194,
-      "value": 1
-    },
-    {
-      "source": 194,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 191,
-      "target": 195,
-      "value": 1
-    },
-    {
-      "source": 195,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 197,
-      "value": 1
-    },
-    {
-      "source": 197,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 198,
-      "value": 1
-    },
-    {
-      "source": 198,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 199,
-      "value": 1
-    },
-    {
-      "source": 199,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 200,
-      "value": 1
-    },
-    {
-      "source": 200,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 201,
-      "value": 1
-    },
-    {
-      "source": 201,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 202,
-      "value": 1
-    },
-    {
-      "source": 202,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 203,
-      "value": 1
-    },
-    {
-      "source": 203,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 204,
-      "value": 1
-    },
-    {
-      "source": 204,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 205,
-      "value": 1
-    },
-    {
-      "source": 205,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 206,
-      "value": 1
-    },
-    {
-      "source": 206,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 207,
-      "value": 1
-    },
-    {
-      "source": 207,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 208,
-      "value": 1
-    },
-    {
-      "source": 208,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 209,
-      "value": 1
-    },
-    {
-      "source": 209,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 210,
-      "value": 1
-    },
-    {
-      "source": 210,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 211,
-      "value": 1
-    },
-    {
-      "source": 211,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 212,
-      "value": 1
-    },
-    {
-      "source": 212,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 213,
-      "value": 1
-    },
-    {
-      "source": 213,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 214,
-      "value": 1
-    },
-    {
-      "source": 214,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 215,
-      "value": 1
-    },
-    {
-      "source": 215,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 216,
-      "value": 1
-    },
-    {
-      "source": 216,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 217,
-      "value": 1
-    },
-    {
-      "source": 217,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 218,
-      "value": 1
-    },
-    {
-      "source": 218,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 219,
-      "value": 1
-    },
-    {
-      "source": 219,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 196,
-      "target": 220,
-      "value": 1
-    },
-    {
-      "source": 220,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 221,
-      "target": 222,
-      "value": 1
-    },
-    {
-      "source": 222,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 221,
-      "target": 223,
-      "value": 1
-    },
-    {
-      "source": 223,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 221,
-      "target": 224,
-      "value": 1
-    },
-    {
-      "source": 224,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 221,
-      "target": 225,
-      "value": 1
-    },
-    {
-      "source": 225,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 227,
-      "value": 1
-    },
-    {
-      "source": 227,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 228,
-      "value": 1
-    },
-    {
-      "source": 228,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 229,
-      "value": 1
-    },
-    {
-      "source": 229,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 230,
-      "value": 1
-    },
-    {
-      "source": 230,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 231,
-      "value": 1
-    },
-    {
-      "source": 231,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 232,
-      "value": 1
-    },
-    {
-      "source": 232,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 233,
-      "value": 1
-    },
-    {
-      "source": 233,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 234,
-      "value": 1
-    },
-    {
-      "source": 234,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 235,
-      "value": 1
-    },
-    {
-      "source": 235,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 236,
-      "value": 1
-    },
-    {
-      "source": 236,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 226,
-      "target": 237,
-      "value": 1
-    },
-    {
-      "source": 237,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 238,
-      "target": 239,
-      "value": 1
-    },
-    {
-      "source": 239,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 238,
-      "target": 240,
-      "value": 1
-    },
-    {
-      "source": 240,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 238,
-      "target": 241,
-      "value": 1
-    },
-    {
-      "source": 241,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 242,
-      "target": 243,
-      "value": 1
-    },
-    {
-      "source": 243,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 242,
-      "target": 244,
-      "value": 1
-    },
-    {
-      "source": 244,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 242,
-      "target": 245,
-      "value": 1
-    },
-    {
-      "source": 245,
-      "target": 0,
-      "value": 1
-    },
-    {
-      "source": 242,
-      "target": 246,
-      "value": 1
-    },
-    {
-      "source": 246,
-      "target": 0,
-      "value": 1
     }
-  ]
+  ],
+  "config": {
+    "top_genres": {
+      "default": 12,
+      "min": 5,
+      "max": 25
+    },
+    "top_artists_per_genre": {
+      "default": 10,
+      "min": 3,
+      "max": 20
+    }
+  },
+  "stats": {
+    "total_genres": 12,
+    "selected_genres": 12,
+    "total_artists": 237,
+    "selected_artists": 88
+  }
 }

@@ -11,7 +11,6 @@ import * as d3 from 'd3';
 import { sankey, sankeyLinkHorizontal, sankeyLeft, sankeyRight } from 'd3-sankey'; 
 import { appColors, getSankeyNodeColor } from '@/utils/colors';
 
-// --- Define events that the component can emit ---
 const emit = defineEmits(['link-clicked']);
 
 const props = defineProps({
@@ -25,83 +24,141 @@ const props = defineProps({
   },
   topNArtists: {
     type: Number,
-    default: 15,
+    default: 40,
+  },
+  topNGenres: {
+    type: Number,
+    default: 12,
   },
 });
 
 const svgRef = ref(null);
 const tooltipRef = ref(null);
 const containerRef = ref(null);
-
-// 用于存储当前高亮的链接信息，以便在mouseout时恢复
 const hoveredLink = ref(null);
 
-// 数据过滤函数：只保留TOP N艺术家
-const filterTopNArtists = (originalData) => {
+const filterData = (originalData) => {
   if (!originalData || !originalData.nodes || !originalData.links) {
     return originalData;
   }
 
   const { nodes, links } = JSON.parse(JSON.stringify(originalData));
 
-  // 找到所有艺术家节点
-  const artistNodes = nodes.filter(node => node.type === 'Artist');
-  
-  if (artistNodes.length <= props.topNArtists) {
-    // 如果艺术家数量不超过限制，直接返回原数据
-    return { nodes, links };
+  if (props.currentView === 'q2_2') {
+    // Outward视图：筛选top N genres，每个genre下的所有artists
+    return filterOutwardData(nodes, links);
+  } else if (props.currentView === 'q2_3') {
+    // Inward视图：筛选top N artists
+    return filterInwardData(nodes, links);
   }
 
-  // 计算每个艺术家的总影响力
-  const artistInfluence = new Map();
-  
-  artistNodes.forEach(artist => {
-    artistInfluence.set(artist.id, 0);
-  });
+  return { nodes, links };
+};
 
-  // 计算每个艺术家的总影响力（所有指向该艺术家的链接的value之和）
+const filterOutwardData = (nodes, links) => {
+  // 1. 计算每个Genre的影响值（从Oceanus Folk到Genre的link value）
+  const genreInfluence = new Map();
+  
   links.forEach(link => {
+    const sourceNode = nodes.find(n => n.id === link.source);
     const targetNode = nodes.find(n => n.id === link.target);
-    if (targetNode && targetNode.type === 'Artist') {
-      const currentInfluence = artistInfluence.get(link.target) || 0;
-      artistInfluence.set(link.target, currentInfluence + link.value);
+    
+    if (sourceNode && targetNode && 
+        sourceNode.name === 'Oceanus Folk' && targetNode.type === 'Genre') {
+      genreInfluence.set(link.target, link.value);
     }
   });
 
-  // 按影响力排序，选择TOP N
-  const sortedArtists = Array.from(artistInfluence.entries())
+  // 2. 选择top N genres
+  const topGenreIds = Array.from(genreInfluence.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, props.topNGenres)
+    .map(([id]) => id);
+
+  const topGenreIdSet = new Set(topGenreIds);
+
+  // 3. 筛选节点：保留Oceanus Folk、top genres和这些genres下的所有artists
+  const filteredNodes = nodes.filter(node => {
+    if (node.name === 'Oceanus Folk') return true;
+    if (node.type === 'Genre') return topGenreIdSet.has(node.id);
+    if (node.type === 'Artist') {
+      // 检查这个artist是否连接到选中的genre
+      return links.some(link => 
+        topGenreIdSet.has(link.source) && link.target === node.id
+      );
+    }
+    return false;
+  });
+
+  const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
+  const filteredLinks = links.filter(link => 
+    filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
+  );
+
+  console.log(`Outward: Filtered from ${genreInfluence.size} to ${topGenreIds.length} genres`);
+  console.log(`Filtered from ${nodes.length} to ${filteredNodes.length} nodes`);
+  console.log(`Filtered from ${links.length} to ${filteredLinks.length} links`);
+
+  return { nodes: filteredNodes, links: filteredLinks };
+};
+
+const filterInwardData = (nodes, links) => {
+  // 1. 计算每个Artist的影响值（从Artist到Oceanus Folk的link value）
+  const artistInfluence = new Map();
+  
+  links.forEach(link => {
+    const sourceNode = nodes.find(n => n.id === link.source);
+    const targetNode = nodes.find(n => n.id === link.target);
+    
+    if (sourceNode && targetNode && 
+        sourceNode.type === 'Artist' && targetNode.name === 'Oceanus Folk') {
+      artistInfluence.set(link.source, link.value);
+    }
+  });
+
+  // 2. 选择top N artists
+  const topArtistIds = Array.from(artistInfluence.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, props.topNArtists)
     .map(([id]) => id);
 
-  const topArtistIds = new Set(sortedArtists);
+  const topArtistIdSet = new Set(topArtistIds);
 
-  // 过滤节点：保留非艺术家节点和TOP N艺术家
-  const filteredNodes = nodes.filter(node => {
-    if (node.type === 'Artist') {
-      return topArtistIds.has(node.id);
+  // 3. 筛选节点：保留Oceanus Folk、top artists和这些artists的source genres
+  const connectedGenreIds = new Set();
+  
+  // 找到连接到选中artists的genres
+  links.forEach(link => {
+    const sourceNode = nodes.find(n => n.id === link.source);
+    const targetNode = nodes.find(n => n.id === link.target);
+    
+    if (sourceNode && targetNode && 
+        sourceNode.type === 'Genre' && topArtistIdSet.has(link.target)) {
+      connectedGenreIds.add(link.source);
     }
-    return true;
   });
 
-  // 过滤链接：移除指向被过滤掉的艺术家的链接
+  const filteredNodes = nodes.filter(node => {
+    if (node.name === 'Oceanus Folk') return true;
+    if (node.type === 'Genre') return connectedGenreIds.has(node.id);
+    if (node.type === 'Artist') return topArtistIdSet.has(node.id);
+    return false;
+  });
+
   const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-  const filteredLinks = links.filter(link => {
-    return filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target);
-  });
+  const filteredLinks = links.filter(link => 
+    filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
+  );
 
-  console.log(`Filtered from ${artistNodes.length} to ${topArtistIds.size} artists`);
+  console.log(`Inward: Filtered from ${artistInfluence.size} to ${topArtistIds.length} artists`);
+  console.log(`Filtered from ${nodes.length} to ${filteredNodes.length} nodes`);
   console.log(`Filtered from ${links.length} to ${filteredLinks.length} links`);
 
-  return {
-    nodes: filteredNodes,
-    links: filteredLinks
-  };
+  return { nodes: filteredNodes, links: filteredLinks };
 };
 
-// 计算过滤后的数据
 const processedData = computed(() => {
-  return filterTopNArtists(props.data);
+  return filterData(props.data);
 });
 
 const drawChart = () => {
@@ -113,28 +170,24 @@ const drawChart = () => {
   const containerWidth = containerRef.value.clientWidth;
   const containerHeight = containerRef.value.clientHeight;
 
-  // --- 桑基图尺寸计算：充分利用宽度，纵向紧凑且美观 ---
+  // 优化尺寸计算，适应并列布局
   const nodeCount = processedData.value.nodes.length;
-  const minNodeHeight = 16;
-  const paddingPerNode = 4;
+  const minNodeHeight = 8;
+  const paddingPerNode = 1;
 
-  const contentRequiredHeight = nodeCount * (minNodeHeight + paddingPerNode) + 80;
-  const idealHeightFromWidth = containerWidth * 2;
+  // 并列布局下的尺寸适配
+  let width = Math.max(containerWidth * 0.92, 180);
+  let height = Math.max(containerHeight * 0.90, 250);
 
-  let height = Math.max(contentRequiredHeight, idealHeightFromWidth);
-  if (height > containerHeight) {
-      height = containerHeight;
+  // 根据节点数量调整高度
+  const requiredHeight = Math.max(nodeCount * (minNodeHeight + paddingPerNode) + 40, 250);
+  if (requiredHeight > height) {
+    height = Math.min(requiredHeight, containerHeight * 0.95);
   }
 
-  let width = height / 2;
-  const minDisplayWidth = 250;
-  if (width < minDisplayWidth) {
-      width = minDisplayWidth;
-      height = minDisplayWidth * 2;
-  }
-  if (width > containerWidth) {
-      width = containerWidth;
-      height = containerWidth * 2;
+  // 确保合理的宽高比
+  if (width > height * 0.8) {
+    width = height * 0.8;
   }
 
   d3.select(svgRef.value).selectAll('*').remove();
@@ -147,23 +200,20 @@ const drawChart = () => {
   const sankeyLayout = sankey()
     .nodeId(d => d.id)
     .nodeAlign(props.currentView === 'q2_2' ? sankeyLeft : sankeyRight) 
-    .nodeWidth(15)
+    .nodeWidth(8)
     .nodePadding(paddingPerNode)
-    .extent([[10, 10], [width - 10, height - 10]])
-    .iterations(100); 
+    .extent([[4, 4], [width - 4, height - 4]])
+    .iterations(80); 
 
   const graph = JSON.parse(JSON.stringify(processedData.value));
   const { nodes, links } = sankeyLayout(graph);
   
-  // 用于存储当前高亮的节点ID
   let highlightedNodeIds = new Set(); 
-  // 用于存储当前高亮的链接ID
   let highlightedLinkIds = new Set();
 
-  // --- 链接渲染 ---
   const linkPaths = svg.append('g')
     .attr('fill', 'none')
-    .attr('stroke-opacity', 0.55)
+    .attr('stroke-opacity', 0.65)
     .selectAll('path')
     .data(links)
     .join('path')
@@ -171,21 +221,16 @@ const drawChart = () => {
     .style('cursor', 'pointer')
     .attr('d', sankeyLinkHorizontal())
     .attr('stroke', appColors.sankeyLinkBase) 
-    .attr('stroke-width', d => Math.max(1.5, d.width));
+    .attr('stroke-width', d => Math.max(1, d.width * 0.8));
 
-  // --- 鼠标悬停事件处理 ---
   linkPaths
     .on('mouseover', function(event, d) {
-        // 高亮当前悬停的链接
         d3.select(this).attr('stroke', appColors.sankeyLinkHighlight).attr('stroke-opacity', 0.8);
         
-        // 清除之前的高亮状态
         highlightedNodeIds.clear();
         highlightedLinkIds.clear();
 
-        // 如果是 Outward Influence (q2_2) 并且是 Oceanus Folk 到 Genre 的链接
         if (props.currentView === 'q2_2' && d.source.name === 'Oceanus Folk' && d.target.type === 'Genre') {
-            // 高亮从该流派出发的所有链接
             highlightedLinkIds.add(d.index);
             links.forEach(link => {
                 if (link.source.id === d.target.id && link.target.type === 'Artist') {
@@ -196,17 +241,14 @@ const drawChart = () => {
             highlightedNodeIds.add(d.source.id);
             highlightedNodeIds.add(d.target.id);
         } else {
-            // 默认高亮当前链接及其源/目标节点
             highlightedLinkIds.add(d.index);
             highlightedNodeIds.add(d.source.id);
             highlightedNodeIds.add(d.target.id);
         }
 
-        // 更新所有链接的透明度
         linkPaths.attr('stroke-opacity', linkD => highlightedLinkIds.has(linkD.index) ? 0.8 : 0.1);
         linkPaths.attr('stroke', linkD => highlightedLinkIds.has(linkD.index) ? appColors.sankeyLinkHighlight : appColors.sankeyLinkBase);
 
-        // 更新所有节点的文本透明度
         svg.selectAll('.node-text')
            .attr('opacity', nodeD => {
                if (props.currentView === 'q2_2' && nodeD.layer === 2 && nodeD.type === 'Artist') {
@@ -215,11 +257,9 @@ const drawChart = () => {
                return 1;
            });
         
-        // 更新所有节点的矩形透明度
         svg.selectAll('.sankey-node-rect')
            .attr('fill-opacity', nodeD => highlightedNodeIds.has(nodeD.id) ? 1 : 0.5);
 
-        // 显示 Tooltip
         const tooltip = d3.select(tooltipRef.value);
         tooltip.style('opacity', 1)
             .html(`
@@ -237,8 +277,7 @@ const drawChart = () => {
             .style('top', `${event.pageY}px`);
     })
     .on('mouseout', function() {
-        // 恢复所有链接和节点的默认状态
-        linkPaths.attr('stroke-opacity', 0.55).attr('stroke', appColors.sankeyLinkBase);
+        linkPaths.attr('stroke-opacity', 0.65).attr('stroke', appColors.sankeyLinkBase);
         svg.selectAll('.node-text')
            .attr('opacity', nodeD => {
                if (props.currentView === 'q2_2' && nodeD.layer === 2 && nodeD.type === 'Artist') {
@@ -256,7 +295,6 @@ const drawChart = () => {
       emit('link-clicked', { source: d.source, target: d.target });
     });
 
-  // --- 节点渲染 ---
   const nodeGroups = svg.append('g')
     .selectAll('g')
     .data(nodes)
@@ -270,16 +308,16 @@ const drawChart = () => {
     .attr('width', d => d.x1 - d.x0)
     .attr('fill', d => getSankeyNodeColor(d)) 
     .attr('stroke', appColors.textSecondary)
-    .attr('stroke-width', 0.5);
+    .attr('stroke-width', 0.3);
 
   nodeGroups.append('text')
     .attr('class', 'node-text')
-    .attr('x', d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
+    .attr('x', d => d.x0 < width / 2 ? d.x1 + 4 : d.x0 - 4)
     .attr('y', d => (d.y1 + d.y0) / 2)
     .attr('dy', '0.35em')
     .attr('text-anchor', d => d.x0 < width / 2 ? 'start' : 'end')
     .attr('font-family', 'Inter, sans-serif')
-    .attr('font-size', '12px')
+    .attr('font-size', '9px')
     .attr('font-weight', '500')
     .attr('fill', appColors.textPrimary)
     .attr('opacity', d => {
@@ -292,15 +330,16 @@ const drawChart = () => {
         if (d.name === 'Oceanus Folk') return d.name;
         if (d.type === 'Genre') return d.name;
 
-        const maxTextWidth = (d.x0 < width / 2 ? width - d.x1 - 10 : d.x0 - 10);
+        const maxTextWidth = (d.x0 < width / 2 ? width - d.x1 - 8 : d.x0 - 8);
         const text = d.name;
-        const estimatedCharWidth = 7;
+        const estimatedCharWidth = 5;
+        const minNodeHeight = 8;
         
         if ((d.y1 - d.y0) < minNodeHeight) {
             return '';
         }
 
-        if (text.length * estimatedCharWidth > maxTextWidth && text.length > 5) {
+        if (text.length * estimatedCharWidth > maxTextWidth && text.length > 3) {
             return text.substring(0, Math.floor(maxTextWidth / estimatedCharWidth) - 3) + '...';
         }
         return text;
@@ -322,8 +361,7 @@ onUnmounted(() => {
     }
 });
 
-// 监听 data、currentView 和 topNArtists 变化时重新绘制图表
-watch([() => props.data, () => props.currentView, () => props.topNArtists], () => {
+watch([() => props.data, () => props.currentView, () => props.topNArtists, () => props.topNGenres], () => {
     drawChart();
 }, { deep: true });
 </script>
@@ -335,30 +373,30 @@ watch([() => props.data, () => props.currentView, () => props.topNArtists], () =
   height: 100%;
   background-color: var(--color-surface);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  overflow-y: auto;
-  overflow-x: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow: hidden;
 }
 
 .tooltip {
   position: fixed;
   background-color: rgba(44, 62, 80, 0.9);
   color: white;
-  padding: 12px 16px;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 11px;
   font-family: 'Inter', sans-serif;
   pointer-events: none;
   transition: opacity 0.2s ease;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   white-space: nowrap;
+  max-width: 200px;
 }
 
 .tooltip-path {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .tooltip-source, .tooltip-target {
@@ -366,13 +404,13 @@ watch([() => props.data, () => props.currentView, () => props.topNArtists], () =
 }
 
 .tooltip-arrow {
-  margin: 0 8px;
+  margin: 0 4px;
   opacity: 0.8;
 }
 
 .tooltip-value .label {
   opacity: 0.8;
-  margin-right: 6px;
+  margin-right: 4px;
 }
 
 .tooltip-value .value {
