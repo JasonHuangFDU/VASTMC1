@@ -141,11 +141,11 @@ export default {
 
 <style scoped>
 .artist-prediction {
-  padding: 20px;
+  padding: 10px;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
+  margin-top: 0px;
   overflow: hidden; /* 防止内容溢出 */
 }
 

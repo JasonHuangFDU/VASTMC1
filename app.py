@@ -882,6 +882,12 @@ def prepare_hetero_graph_data(G, artist_features_dict, node_mapping, weights):
 
 # 8. 训练与预测 (基于训练损失早停)
 def train_and_predict(data, node_mapping, artist_features_dict):
+    # 设置所有随机种子确保结果可复现
+    torch.manual_seed(123)  # PyTorch随机种子
+    torch.cuda.manual_seed_all(123)  # CUDA随机种子
+    np.random.seed(123)  # Numpy随机种子
+    torch.backends.cudnn.deterministic = True  # 确保CUDA操作确定性
+    torch.backends.cudnn.benchmark = False  # 禁用CUDA优化器
     if data['artist'].num_nodes == 0:
         return []
     
@@ -950,7 +956,7 @@ def train_and_predict(data, node_mapping, artist_features_dict):
         artist_id = data['artist'].node_id[i]
         artist_data = node_mapping.get(artist_id, {'name': 'Unknown', 'stage_name': 'Unknown'})
         
-        name = artist_data.get('stage_name', artist_data.get('name', 'Unknown'))
+        name = artist_data.get('name', artist_data.get('stage_name', 'Unknown'))
         feat = artist_features_dict.get(artist_id, {})
         
         # 双重验证：只包含最近5年有活动的艺术家
