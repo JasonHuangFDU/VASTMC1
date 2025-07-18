@@ -296,21 +296,21 @@ export default {
 
       sortedYears = Array.from(allYears).sort((a, b) => a - b);
 
-      // 计算图表高度 - 最大高度限制
-      const minHeight = 625;
-      const maxHeight = 800;
-      const height = Math.min(maxHeight, Math.max(minHeight, sortedYears.length * 30));
+      // 计算图表宽度 - 最大宽度限制
+      const minWidth = 480;
+      const maxWidth = 1000;
+      const width = Math.min(maxWidth, Math.max(minWidth, sortedYears.length * 40));
 
-      // 设置图表容器高度
+      // 设置图表容器宽度
       const chartWrapper = document.querySelector('.chart-wrapper');
       if (chartWrapper) {
-        chartWrapper.style.height = `${height}px`;
+        chartWrapper.style.width = `${width}px`;
       }
 
-      // 设置主图表尺寸（使用容器宽度）
-      const containerWidth = chartWrapper.clientWidth;
-      mainChart.value.width = containerWidth;
-      mainChart.value.height = height;
+      // 设置主图表尺寸（使用容器高度）
+      const containerHeight = chartWrapper.clientHeight;
+      mainChart.value.width = width;
+      mainChart.value.height = containerHeight;
 
       // 渲染主图表
       renderMainChart();
@@ -321,20 +321,20 @@ export default {
       // 准备数据集
       const datasets = [];
 
-      // 定义水平偏移量（防止点重合）
-      const horizontalOffsets = [0, 0.2, 0.4]; // 三位艺术家的水平偏移量
+      // 定义垂直偏移量（防止点重合）
+      const verticalOffsets = [0, 0.2, 0.4]; // 三位艺术家的垂直偏移量
 
       // 1. 影响力折线图（累计影响力）
       comparisonData.value.forEach((artist, index) => {
         const color = getArtistColor(index);
-        const horizontalOffset = horizontalOffsets[index]; // 获取当前艺术家的水平偏移量
+        const verticalOffset = verticalOffsets[index]; // 获取当前艺术家的垂直偏移量
 
         // 使用累计影响力数据
         const cumulativeInfluenceData = sortedYears.map(year => {
           const influence = artist.data.cumulativeInfluenceByYear?.[year] || 0;
           return {
-            y: year.toString(),
-            x: influence + horizontalOffset
+            x: year.toString(),
+            y: influence + verticalOffset
           };
         });
 
@@ -349,7 +349,7 @@ export default {
           xAxisID: 'x',
           yAxisID: 'y',
           pointRadius: 0,
-          borderWidth: 2, // 减小线宽
+          borderWidth: 2,
         });
 
         // 2. 添加作品发布事件标记
@@ -358,24 +358,24 @@ export default {
           sortedYears.forEach(year => {
             if (artist.data.yearlyStats[year]) {
               const releaseCount = artist.data.yearlyStats[year].workCount || 0;
-              const notableCount = artist.data.yearlyStats[year].notableCount || 0; // 获取重要作品数
+              const notableCount = artist.data.yearlyStats[year].notableCount || 0;
 
               if (releaseCount > 0) {
                 // 查找该年份的累计影响力值
-                const influenceEntry = cumulativeInfluenceData.find(d => d.y === year.toString());
+                const influenceEntry = cumulativeInfluenceData.find(d => d.x === year.toString());
 
                 eventPoints.push({
-                  y: year.toString(),
-                  x: influenceEntry ? influenceEntry.x : 0,
+                  x: year.toString(),
+                  y: influenceEntry ? influenceEntry.y : 0,
                   count: releaseCount,
-                  notableCount: notableCount // 存储重要作品数
+                  notableCount: notableCount
                 });
               }
             }
           });
         }
 
-        // 计算点半径范围 (减小点的大小)
+        // 计算点半径范围
         const maxCount = Math.max(...eventPoints.map(p => p.count), 1);
         const minRadius = 3;
         const maxRadius = 8;
@@ -390,10 +390,10 @@ export default {
           backgroundColor: color,
           // 根据重要作品数设置样式
           borderColor: eventPoints.map(p =>
-            p.notableCount > 0 ? '#00CED1' : 'white' // 重要作品
+            p.notableCount > 0 ? '#00CED1' : 'white'
           ),
           borderWidth: eventPoints.map(p =>
-            p.notableCount > 0 ? 2 : 1 // 重要作品边框加粗
+            p.notableCount > 0 ? 2 : 1
           ),
           xAxisID: 'x',
           yAxisID: 'y'
@@ -411,8 +411,8 @@ export default {
             value = Object.values(roles).reduce((sum, count) => sum + count, 0);
           }
           return {
-            y: year.toString(),
-            x: value
+            x: year.toString(),
+            y: value
           };
         });
 
@@ -422,12 +422,12 @@ export default {
           data: collabData,
           backgroundColor: `${color}80`,
           borderColor: color,
-          borderWidth: 0.2,
-          xAxisID: 'x1',
-          yAxisID: 'y',
+          borderWidth: 0.5,
+          xAxisID: 'x',
+          yAxisID: 'y1',
           barPercentage: 0.4,
           categoryPercentage: 0.6,
-          barThickness: 8 // 减小条的高度
+          barThickness: 8
         });
       });
 
@@ -439,7 +439,7 @@ export default {
         options: {
           responsive: false,
           maintainAspectRatio: false,
-          indexAxis: 'y', // 关键修改：设置为纵向图表
+          indexAxis: 'x', // 关键修改：设置为横向图表
           interaction: {
             mode: 'index',
             intersect: false
@@ -455,7 +455,7 @@ export default {
                   return item.text.includes('Influence') || item.text.includes('New Work');
                 },
                 font: {
-                  size: 11 // 减小图例字体
+                  size: 11
                 },
                 usePointStyle: true,
                 padding: 15
@@ -466,54 +466,54 @@ export default {
             }
           },
           scales: {
-            y: {
+            x: {
               title: {
                 display: true,
                 text: 'YEAR',
                 font: {
-                  size: 11, // 减小坐标轴标题字体
+                  size: 11,
                   weight: 'bold'
                 }
               },
               ticks: {
                 font: {
-                  size: 10 // 减小坐标轴刻度字体
+                  size: 10
                 }
               },
               grid: {
                 display: false
               }
             },
-            x: {
-              position: 'top',
+            y: {
+              position: 'left',
               title: {
                 display: true,
                 text: 'Influence Score',
                 font: {
-                  size: 11, // 减小坐标轴标题字体
+                  size: 11,
                   weight: 'bold'
                 }
               },
               ticks: {
                 font: {
-                  size: 10 // 减小坐标轴刻度字体
+                  size: 10
                 }
               },
               beginAtZero: true
             },
-            x1: {
-              position: 'bottom',
+            y1: {
+              position: 'right',
               title: {
                 display: true,
                 text: 'Collaboration Frequency',
                 font: {
-                  size: 11, // 减小坐标轴标题字体
+                  size: 11,
                   weight: 'bold'
                 }
               },
               ticks: {
                 font: {
-                  size: 10 // 减小坐标轴刻度字体
+                  size: 10
                 }
               },
               beginAtZero: true,
@@ -523,20 +523,20 @@ export default {
             }
           }
         },
-        // 添加插件绘制水平参考线
+        // 添加插件绘制垂直参考线（改为水平参考线）
         plugins: [{
           id: 'hoverLinePlugin',
           afterDraw: (chart) => {
             if (!hoverLine.value.show) return;
 
             const ctx = chart.ctx;
-            const yPos = hoverLine.value.position;
+            const xPos = hoverLine.value.position;
 
             ctx.save();
             ctx.beginPath();
             ctx.setLineDash([5, 3]);
-            ctx.moveTo(0, yPos);
-            ctx.lineTo(chart.width, yPos);
+            ctx.moveTo(xPos, 0);
+            ctx.lineTo(xPos, chart.height);
             ctx.strokeStyle = '#555';
             ctx.lineWidth = 1;
             ctx.stroke();
@@ -548,26 +548,26 @@ export default {
 
     // 为不同艺术家分配颜色
     const getArtistColor = (index) => {
-      const colors = ['#4e79a7', '#f28e2c', '#e15759']; // 蓝、橙、红
+      const colors = ['#90b6e2ff', '#ebc676ff', '#f5695cff']; // 蓝、橙、红
       return colors[index % colors.length];
     };
 
-    // 处理图表悬停事件 - 修改后版本
+    // 处理图表悬停事件 - 修改后版本（适配横向图表）
     const handleChartHover = (event) => {
       if (!mainChartInstance || !comparisonData.value.length) return;
 
       // 获取canvas位置和鼠标坐标
       const canvas = event.currentTarget;
       const rect = canvas.getBoundingClientRect();
-      const mouseY = event.clientY - rect.top;
+      const mouseX = event.clientX - rect.left;
 
-      // 获取Y轴比例尺
-      const yAxis = mainChartInstance.scales.y;
-      if (!yAxis) return;
+      // 获取X轴比例尺
+      const xAxis = mainChartInstance.scales.x;
+      if (!xAxis) return;
 
       // 计算年份索引
       const yearIndex = Math.round(
-        (mouseY - yAxis.top) / (yAxis.bottom - yAxis.top) * (sortedYears.length - 1)
+        (mouseX - xAxis.left) / (xAxis.right - xAxis.left) * (sortedYears.length - 1)
       );
 
       // 确保索引在有效范围内
@@ -579,12 +579,12 @@ export default {
 
       const year = sortedYears[yearIndex];
 
-      // 更新水平线位置
-      const yPos = yAxis.getPixelForValue(year.toString());
+      // 更新垂直线位置
+      const xPos = xAxis.getPixelForValue(year.toString());
       hoverLine.value = {
         show: true,
         year,
-        position: yPos
+        position: xPos
       };
 
       // 收集该年份所有艺术家的数据
@@ -593,7 +593,7 @@ export default {
         return {
           id: artist.id,
           name: artist.name,
-          cumulativeInfluence: artist.data.cumulativeInfluenceByYear?.[year] || 0, // 累计影响力
+          cumulativeInfluence: artist.data.cumulativeInfluenceByYear?.[year] || 0,
           workCount: yearStats.workCount || 0,
           collabCount: yearStats.collabRoles
             ? Object.values(yearStats.collabRoles).reduce((sum, count) => sum + count, 0)
@@ -607,25 +607,26 @@ export default {
       hoverData.value = artistData;
 
       // 定位工具提示 - 优化定位逻辑
-      const tooltipWidth = 260; // 减小工具提示宽度
-      const tooltipHeight = artistData.length * 60 + 40; // 减小高度
+      const tooltipWidth = 260;
+      const tooltipHeight = artistData.length * 60 + 40;
       let left = event.clientX + 20;
-      let top;
+      let top = event.clientY - tooltipHeight / 2;
 
-      // 判断鼠标位置是否在图表下半部分
-      const isBottomHalf = mouseY > rect.height / 2;
+      // 判断鼠标位置是否在图表右半部分
+      const isRightHalf = mouseX > rect.width / 2;
 
-      if (isBottomHalf) {
-        // 如果在图表下半部分，则在光标上方显示
-        top = event.clientY - tooltipHeight - 20;
-      } else {
-        // 否则在光标下方显示
-        top = event.clientY + 20;
+      if (isRightHalf) {
+        // 如果在图表右半部分，则在光标左侧显示
+        left = event.clientX - tooltipWidth - 20;
       }
 
       // 确保工具提示不会超出屏幕
       if (left + tooltipWidth > window.innerWidth) {
-        left = event.clientX - tooltipWidth - 20;
+        left = window.innerWidth - tooltipWidth - 10;
+      }
+      // 确保工具提示不会超出屏幕左侧
+      else if (left < 10) {
+        left = 10;
       }
 
       // 确保工具提示不会超出屏幕顶部
@@ -875,14 +876,14 @@ export default {
   border-radius: 8px;
   padding: 15px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  overflow: hidden;
+  overflow: auto; /* 添加滚动条以防图表过宽 */
 }
 
 .chart-wrapper {
   position: relative;
-  height: 800px;
+  height: 500px; /* 固定高度 */
   width: 100%;
-  max-height: 800px;
+  min-width: 625px; /* 最小宽度 */
 }
 
 /* 自定义工具提示样式 */
@@ -905,23 +906,20 @@ export default {
 .custom-tooltip::before {
   content: '';
   position: absolute;
-  left: 20px;
-  border-width: 0 10px 10px 10px;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 10px 10px 10px 0;
   border-style: solid;
-  border-color: transparent transparent white transparent;
+  border-color: transparent white transparent transparent;
 }
 
-/* 根据工具提示位置动态调整箭头 */
-.custom-tooltip[style*="bottom"]::before {
-  top: -10px;
-  border-width: 0 10px 10px 10px;
-  border-color: transparent transparent white transparent;
-}
-
-.custom-tooltip[style*="top"]::before {
-  bottom: -10px;
-  border-width: 10px 10px 0 10px;
-  border-color: white transparent transparent transparent;
+/* 右侧工具提示箭头 */
+.custom-tooltip[style*="left: calc(100%"]::before {
+  left: auto;
+  right: -10px;
+  border-width: 10px 0 10px 10px;
+  border-color: transparent transparent transparent white;
 }
 
 .tooltip-header {
