@@ -1379,17 +1379,35 @@ def get_subgraph_for_node(graph, center_node_id, hop_level=1):
 def format_graph_for_d3(graph, highlighted_nodes=None):
     """
     将NetworkX图对象转换为D3.js兼容的JSON格式。
-    新增功能：为指定的节点添加 'highlight' 属性。
-    新增功能：为Song/Album节点预计算并嵌入贡献者信息。
+    V2: 实现边聚合、高亮、以及为作品节点添加贡献者信息。
     """
     if highlighted_nodes is None:
         highlighted_nodes = set()
 
     if graph is None:
         return {"nodes": [], "links": []}
+
+    # --- 边聚合逻辑 ---
+    bundled_links = {}
+    for u, v, data in graph.edges(data=True):
+        # 使用排序后的元组作为key，确保(u,v)和(v,u)被视为不同的连接
+        key = (u, v)
+        if key not in bundled_links:
+            bundled_links[key] = {
+                "source": u,
+                "target": v,
+                "relations": [],
+                "count": 0
+            }
+        bundled_links[key]["relations"].append(data.get('Edge Type', 'Unknown'))
+        bundled_links[key]["count"] += 1
     
-    graph_data = nx.node_link_data(graph)
-    
+    final_links = list(bundled_links.values())
+
+    # --- 节点处理逻辑 ---
+    final_nodes = []
+    node_ids_in_graph = set(graph.nodes())
+
     # 定义贡献者角色
     CONTRIBUTOR_ROLES = {
         'PerformerOf': 'Performers',
@@ -1398,21 +1416,17 @@ def format_graph_for_d3(graph, highlighted_nodes=None):
         'LyricistOf': 'Lyricists',
     }
 
-    # 为需要高亮的节点添加属性，并为作品节点添加贡献者信息
-    for node in graph_data.get('nodes', []):
+    for node_id in node_ids_in_graph:
+        node_data = graph.nodes[node_id]
+        new_node_data = node_data.copy()
+
         # 添加高亮属性
-        if node['id'] in highlighted_nodes:
-            node['highlight'] = True
+        if new_node_data['id'] in highlighted_nodes:
+            new_node_data['highlight'] = True
         
         # 如果是Song或Album，从完整图中查找贡献者
-        if node.get('Node Type') in ['Song', 'Album']:
-            node_id = node['id']
-            contributors = {
-                'Performers': [],
-                'Composers': [],
-                'Producers': [],
-                'Lyricists': [],
-            }
+        if new_node_data.get('Node Type') in ['Song', 'Album']:
+            contributors = defaultdict(list)
             # 在完整图上查找所有指向该作品的入边
             if FULL_NETWORKX_GRAPH.has_node(node_id):
                 for u, _, data in FULL_NETWORKX_GRAPH.in_edges(node_id, data=True):
@@ -1424,9 +1438,11 @@ def format_graph_for_d3(graph, highlighted_nodes=None):
                             'id': artist_node['id'],
                             'name': artist_node.get('name', 'Unknown')
                         })
-            node['contributors'] = contributors
-            
-    return graph_data
+            new_node_data['contributors'] = contributors
+        
+        final_nodes.append(new_node_data)
+
+    return {"nodes": final_nodes, "links": final_links}
 
 
 # --- 新增：桑基图交互的API端点 ---
