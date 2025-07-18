@@ -1,92 +1,114 @@
-<!-- /components/visualizations/CareerTrajectory.vue -->
 <template>
   <div class="career-trajectory">
-    <!-- 艺术家潜力预测组件 -->
-    <ArtistPotentialPrediction @prediction-complete="handlePredictionComplete" />
-    <!-- 艺术家选择面板 -->
-    <div class="artist-selection">
-      <h3>选择三名艺术家进行生涯轨迹对比</h3>
-      <div class="selectors">
-        <div v-for="(artist, index) in selectedArtists" :key="index" class="selector">
-          <label>艺术家 {{ index + 1 }}:</label>
-          <select v-model="selectedArtists[index]">
-            <option value="">请选择艺术家</option>
-            <option
-              v-for="person in artistList"
-              :key="person.id"
-              :value="person.id"
-              :disabled="selectedArtists.includes(person.id) && selectedArtists[index] !== person.id"
-            >
-              {{ person.name }}
-            </option>
-          </select>
-          <button
-            v-if="selectedArtists[index]"
-            class="clear-btn"
-            @click="clearArtist(index)"
-          >
-            ×
-          </button>
-        </div>
-      </div>
+
+    <!-- 视图切换按钮 -->
+    <div class="view-toggle">
       <button
-        class="compare-btn"
-        :disabled="!canCompare"
-        @click="loadComparisonData"
+        class="toggle-btn"
+        @click="toggleView"
       >
-        开始对比
+        {{ showPrediction ? '查看生涯轨迹' : '查看潜力预测' }}
       </button>
     </div>
 
-    <!-- 主图表容器 -->
-    <div v-if="comparisonData.length" class="chart-container">
-      <div class="chart-wrapper" ref="chartWrapper">
-        <canvas ref="mainChart" @mousemove="handleChartHover" @mouseleave="hideTooltip"></canvas>
-      </div>
-    </div>
+    <!-- 生涯轨迹视图 -->
+    <div v-show="!showPrediction" class="career-view">
+      <!-- 艺术家选择面板 -->
+      <div class="artist-selection">
 
-    <!-- 自定义工具提示 -->
-    <div v-if="showTooltip" class="custom-tooltip" :style="tooltipStyle">
-      <div class="tooltip-header">
-        <span class="year">{{ hoverYear }}</span> 年
+        <!-- 修改部分：将标题和按钮放在同一行 -->
+        <div class="selection-header">
+          <h3>Select Three Artists to Compare Their Career Trajectories</h3>
+          <button
+            class="compare-btn"
+            :disabled="!canCompare"
+            @click="loadComparisonData"
+          >
+            COMPARE
+          </button>
+        </div>
+
+        <div class="selectors">
+          <div v-for="(artist, index) in selectedArtists" :key="index" class="selector">
+            <label>Artist {{ index + 1 }}:</label>
+            <select v-model="selectedArtists[index]">
+              <option value="">SELECT</option>
+              <option
+                v-for="person in artistList"
+                :key="person.id"
+                :value="person.id"
+                :disabled="selectedArtists.includes(person.id) && selectedArtists[index] !== person.id"
+              >
+                {{ person.name }}
+              </option>
+            </select>
+            <button
+              v-if="selectedArtists[index]"
+              class="clear-btn"
+              @click="clearArtist(index)"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
       </div>
-      <div class="tooltip-content">
-        <div v-for="(artist, index) in hoverData" :key="index" class="artist-info">
-          <div class="artist-color" :style="{ backgroundColor: getArtistColor(index) }"></div>
-          <div class="artist-details">
-            <div class="artist-name">{{ artist.name }}</div>
-            <div class="artist-stats">
-              <div class="stat-item">
-                <span class="stat-label">累计影响力:</span>
-                <span class="stat-value">{{ artist.cumulativeInfluence.toFixed(1) }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">新作品:</span>
-                <span class="stat-value">{{ artist.workCount }} 首</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">合作:</span>
-                <span class="stat-value">{{ artist.collabCount }} 次</span>
+
+      <!-- 主图表容器 -->
+      <div v-if="comparisonData.length" class="chart-container">
+        <div class="chart-wrapper" ref="chartWrapper">
+          <canvas ref="mainChart" @mousemove="handleChartHover" @mouseleave="hideTooltip"></canvas>
+        </div>
+      </div>
+
+      <!-- 自定义工具提示 -->
+      <div v-if="showTooltip" class="custom-tooltip" :style="tooltipStyle">
+        <div class="tooltip-header">
+          Year <span class="year">{{ hoverYear }}</span>
+        </div>
+        <div class="tooltip-content">
+          <div v-for="(artist, index) in hoverData" :key="index" class="artist-info">
+            <div class="artist-color" :style="{ backgroundColor: getArtistColor(index) }"></div>
+            <div class="artist-details">
+              <div class="artist-name">{{ artist.name }}</div>
+              <div class="artist-stats">
+                <div class="stat-item">
+                  <span class="stat-label">Influence:</span>
+                  <span class="stat-value">{{ artist.cumulativeInfluence.toFixed(1) }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">New Work:</span>
+                  <span class="stat-value">{{ artist.workCount }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Collaboration:</span>
+                  <span class="stat-value">{{ artist.collabCount }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 数据加载状态 -->
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div>
-      <p>加载艺术家生涯数据中...</p>
-    </div>
-
-    <!-- 空状态提示 -->
-    <div v-if="!loading && !comparisonData.length" class="empty-state">
-      <div class="placeholder">
-        <div class="icon">📊</div>
-        <p>请选择三位艺术家进行生涯轨迹对比</p>
-        <p>系统将展示他们的影响力、合作频率和受欢迎程度随时间的变化</p>
+      <!-- 数据加载状态 -->
+      <div v-if="loading" class="loading">
+        <div class="spinner"></div>
+        <p>LOADING...</p>
       </div>
+
+      <!-- 空状态提示 -->
+      <div v-if="!loading && !comparisonData.length" class="empty-state">
+        <div class="placeholder">
+          <div class="icon">📊</div>
+          <p>Please select three artists for career trajectory comparison.</p>
+          <p>The system will display the changes in their influence, collaboration frequency, and popularity over time.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 艺术家潜力预测视图 -->
+    <div v-show="showPrediction" class="prediction-view">
+      <ArtistPotentialPrediction @prediction-complete="handlePredictionComplete" />
     </div>
   </div>
 </template>
@@ -115,6 +137,9 @@ export default {
     let mainChartInstance = null;
     let sortedYears = [];
 
+    // 视图切换状态
+    const showPrediction = ref(false);
+
     // 悬停交互状态
     const showTooltip = ref(false);
     const tooltipStyle = ref({ left: '0px', top: '0px' });
@@ -140,6 +165,11 @@ export default {
     const canCompare = computed(() => {
       return selectedArtists.value.filter(id => id !== null).length === 3;
     });
+
+    // 切换视图
+    const toggleView = () => {
+      showPrediction.value = !showPrediction.value;
+    };
 
     // 清除选中的艺术家
     const clearArtist = (index) => {
@@ -266,11 +296,12 @@ export default {
 
       sortedYears = Array.from(allYears).sort((a, b) => a - b);
 
-      // 计算图表高度 - 每1年50px
-      const minHeight = 500;
-      const height = Math.max(minHeight, sortedYears.length * 50);
+      // 计算图表高度 - 最大高度限制
+      const minHeight = 625;
+      const maxHeight = 800;
+      const height = Math.min(maxHeight, Math.max(minHeight, sortedYears.length * 30));
 
-      // 设置图表容器高度（不再设置固定宽度）
+      // 设置图表容器高度
       const chartWrapper = document.querySelector('.chart-wrapper');
       if (chartWrapper) {
         chartWrapper.style.height = `${height}px`;
@@ -318,7 +349,7 @@ export default {
           xAxisID: 'x',
           yAxisID: 'y',
           pointRadius: 0,
-          borderWidth: 3,
+          borderWidth: 2, // 减小线宽
         });
 
         // 2. 添加作品发布事件标记
@@ -344,10 +375,10 @@ export default {
           });
         }
 
-        // 计算点半径范围
+        // 计算点半径范围 (减小点的大小)
         const maxCount = Math.max(...eventPoints.map(p => p.count), 1);
-        const minRadius = 4;
-        const maxRadius = 12;
+        const minRadius = 3;
+        const maxRadius = 8;
 
         datasets.push({
           type: 'scatter',
@@ -355,14 +386,14 @@ export default {
           data: eventPoints,
           pointStyle: 'rectRot',
           pointRadius: eventPoints.map(p => minRadius + (p.count / maxCount) * (maxRadius - minRadius)),
-          pointHoverRadius: eventPoints.map(p => minRadius + (p.count / maxCount) * (maxRadius - minRadius) + 5),
+          pointHoverRadius: eventPoints.map(p => minRadius + (p.count / maxCount) * (maxRadius - minRadius) + 3),
           backgroundColor: color,
           // 根据重要作品数设置样式
           borderColor: eventPoints.map(p =>
             p.notableCount > 0 ? '#00CED1' : 'white' // 重要作品
           ),
           borderWidth: eventPoints.map(p =>
-            p.notableCount > 0 ? 3 : 2 // 重要作品边框加粗
+            p.notableCount > 0 ? 2 : 1 // 重要作品边框加粗
           ),
           xAxisID: 'x',
           yAxisID: 'y'
@@ -391,11 +422,12 @@ export default {
           data: collabData,
           backgroundColor: `${color}80`,
           borderColor: color,
-          borderWidth: 1,
+          borderWidth: 0.2,
           xAxisID: 'x1',
           yAxisID: 'y',
-          barPercentage: 0.6,
-          categoryPercentage: 0.8
+          barPercentage: 0.4,
+          categoryPercentage: 0.6,
+          barThickness: 8 // 减小条的高度
         });
       });
 
@@ -423,10 +455,10 @@ export default {
                   return item.text.includes('影响力') || item.text.includes('作品发布');
                 },
                 font: {
-                  size: 14
+                  size: 11 // 减小图例字体
                 },
                 usePointStyle: true,
-                padding: 20
+                padding: 15
               }
             },
             tooltip: {
@@ -439,13 +471,13 @@ export default {
                 display: true,
                 text: '年份',
                 font: {
-                  size: 14,
+                  size: 11, // 减小坐标轴标题字体
                   weight: 'bold'
                 }
               },
               ticks: {
                 font: {
-                  size: 12
+                  size: 10 // 减小坐标轴刻度字体
                 }
               },
               grid: {
@@ -458,13 +490,13 @@ export default {
                 display: true,
                 text: '累计影响力分数',
                 font: {
-                  size: 14,
+                  size: 11, // 减小坐标轴标题字体
                   weight: 'bold'
                 }
               },
               ticks: {
                 font: {
-                  size: 12
+                  size: 10 // 减小坐标轴刻度字体
                 }
               },
               beginAtZero: true
@@ -475,13 +507,13 @@ export default {
                 display: true,
                 text: '合作次数',
                 font: {
-                  size: 14,
+                  size: 11, // 减小坐标轴标题字体
                   weight: 'bold'
                 }
               },
               ticks: {
                 font: {
-                  size: 12
+                  size: 10 // 减小坐标轴刻度字体
                 }
               },
               beginAtZero: true,
@@ -575,17 +607,33 @@ export default {
       hoverData.value = artistData;
 
       // 定位工具提示 - 优化定位逻辑
-      const tooltipWidth = 300;
-      const tooltipHeight = artistData.length * 70 + 50;
+      const tooltipWidth = 260; // 减小工具提示宽度
+      const tooltipHeight = artistData.length * 60 + 40; // 减小高度
       let left = event.clientX + 20;
-      let top = event.clientY + 20;
+      let top;
+
+      // 判断鼠标位置是否在图表下半部分
+      const isBottomHalf = mouseY > rect.height / 2;
+
+      if (isBottomHalf) {
+        // 如果在图表下半部分，则在光标上方显示
+        top = event.clientY - tooltipHeight - 20;
+      } else {
+        // 否则在光标下方显示
+        top = event.clientY + 20;
+      }
 
       // 确保工具提示不会超出屏幕
       if (left + tooltipWidth > window.innerWidth) {
         left = event.clientX - tooltipWidth - 20;
       }
 
-      if (top + tooltipHeight > window.innerHeight) {
+      // 确保工具提示不会超出屏幕顶部
+      if (top < 10) {
+        top = 10;
+      }
+      // 确保工具提示不会超出屏幕底部
+      else if (top + tooltipHeight > window.innerHeight) {
         top = window.innerHeight - tooltipHeight - 10;
       }
 
@@ -614,6 +662,7 @@ export default {
       // 确保有3个艺术家ID
       if (artistIds.length === 3) {
         selectedArtists.value = artistIds;
+        showPrediction.value = false; // 切换回生涯轨迹视图
         loadComparisonData();
       }
     };
@@ -653,17 +702,33 @@ export default {
       handleChartHover,
       hideTooltip,
       getArtistColor,
-      handlePredictionComplete
+      handlePredictionComplete,
+      showPrediction,
+      toggleView
     };
   }
 };
 </script>
 
 <style scoped>
+/* 新增选择器头部样式 */
+.selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0px;
+}
+
+.selection-header h3 {
+  margin: 0;
+  font-size: 12px;
+  color: #2c3e50;
+}
+
 .career-trajectory {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 5px;
   background-color: #f8f9fa;
   border-radius: 8px;
@@ -672,25 +737,63 @@ export default {
   position: relative;
 }
 
-.artist-selection {
+.view-toggle {
+  display: flex;
+  justify-content: flex-end;
+  padding: 5px;
+}
+
+.toggle-btn {
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.career-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prediction-view {
+  height: 100%;
   background-color: white;
   border-radius: 8px;
   padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.artist-selection {
+  background-color: white;
+  border-radius: 8px;
+  padding: 15px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .artist-selection h3 {
   margin-top: 0;
   color: #2c3e50;
-  font-size: 18px;
-  margin-bottom: 15px;
+  font-size: 16px;
+  margin-bottom: 0px;
 }
 
 .selectors {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 20px 0;
+  gap: 8px;
+  margin: 5px 0;
 }
 
 .selector {
@@ -700,18 +803,18 @@ export default {
 }
 
 .selector label {
-  margin-bottom: 8px;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 13px;
   color: #555;
   font-weight: bold;
 }
 
 .selector select {
-  padding: 10px;
+  padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
   background-color: white;
-  font-size: 14px;
+  font-size: 13px;
   appearance: none;
   cursor: pointer;
   width: 100%;
@@ -725,15 +828,15 @@ export default {
 
 .clear-btn {
   position: absolute;
-  top: 30px;
-  right: 10px;
+  top: 26px;
+  right: 8px;
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
   color: #aaa;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -744,15 +847,14 @@ export default {
 }
 
 .compare-btn {
-  padding: 8px 25px;
+  padding: 7px 20px;
   background-color: #3498db;
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   transition: background-color 0.2s;
-  align-self: flex-end;
   font-weight: bold;
 }
 
@@ -763,23 +865,24 @@ export default {
 
 .compare-btn:not(:disabled):hover {
   background-color: #2980b9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
 }
 
 .chart-container {
   position: relative;
   background-color: white;
   border-radius: 8px;
-  padding: 20px;
+  padding: 15px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   overflow: hidden;
 }
 
 .chart-wrapper {
   position: relative;
-  height: 500px;
-  width: 100%; /* 宽度设置为100%自适应 */
+  height: 800px;
+  width: 100%;
+  max-height: 800px;
 }
 
 /* 自定义工具提示样式 */
@@ -789,48 +892,61 @@ export default {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  padding: 15px;
-  width: 300px;
+  padding: 12px;
+  width: 260px;
   pointer-events: none;
   opacity: 0.95;
   backdrop-filter: blur(4px);
   transform: translateY(-10px);
   transition: opacity 0.2s ease, transform 0.2s ease;
+  font-size: 13px;
 }
 
 .custom-tooltip::before {
   content: '';
   position: absolute;
-  top: -10px;
   left: 20px;
   border-width: 0 10px 10px 10px;
   border-style: solid;
   border-color: transparent transparent white transparent;
 }
 
+/* 根据工具提示位置动态调整箭头 */
+.custom-tooltip[style*="bottom"]::before {
+  top: -10px;
+  border-width: 0 10px 10px 10px;
+  border-color: transparent transparent white transparent;
+}
+
+.custom-tooltip[style*="top"]::before {
+  bottom: -10px;
+  border-width: 10px 10px 0 10px;
+  border-color: white transparent transparent transparent;
+}
+
 .tooltip-header {
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #eee;
-  margin-bottom: 10px;
-  font-size: 16px;
+  margin-bottom: 8px;
+  font-size: 10px;
   font-weight: bold;
   color: #2c3e50;
 }
 
 .tooltip-header .year {
   color: #3498db;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .tooltip-content {
-  max-height: 300px;
+  max-height: 260px;
   overflow-y: auto;
 }
 
 .artist-info {
   display: flex;
   align-items: center;
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #f5f5f5;
 }
 
@@ -839,10 +955,10 @@ export default {
 }
 
 .artist-color {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  margin-right: 12px;
+  margin-right: 10px;
   flex-shrink: 0;
 }
 
@@ -852,33 +968,35 @@ export default {
 
 .artist-name {
   font-weight: bold;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   color: #333;
+  font-size: 13px;
 }
 
 .artist-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .stat-item {
   background-color: #f8f9fa;
   border-radius: 4px;
-  padding: 5px 8px;
+  padding: 4px 6px;
   text-align: center;
+  font-size: 12px;
 }
 
 .stat-label {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   color: #7f8c8d;
 }
 
 .stat-value {
   display: block;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 12px;
   color: #2c3e50;
 }
 
@@ -887,18 +1005,18 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  min-height: 300px;
+  padding: 30px;
+  min-height: 260px;
 }
 
 .spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid rgba(0, 0, 0, 0.1);
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
   border-left-color: #3498db;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 @keyframes spin {
@@ -909,10 +1027,10 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 400px;
+  min-height: 340px;
   background-color: white;
   border-radius: 8px;
-  padding: 20px;
+  padding: 15px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
@@ -923,33 +1041,33 @@ export default {
 }
 
 .placeholder .icon {
-  font-size: 80px;
-  margin-bottom: 25px;
+  font-size: 60px;
+  margin-bottom: 20px;
   opacity: 0.6;
 }
 
 .placeholder p {
-  margin: 10px 0;
-  font-size: 18px;
+  margin: 8px 0;
+  font-size: 16px;
 }
 
 /* 响应式调整 */
 @media (max-width: 1200px) {
   .selectors {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 15px;
   }
 
   .selector select {
-    padding: 12px;
+    padding: 10px;
   }
 
   .clear-btn {
-    top: 35px;
+    top: 32px;
   }
 
   .custom-tooltip {
-    width: 260px;
+    width: 240px;
   }
 
   .artist-stats {
@@ -966,6 +1084,11 @@ export default {
 @media (max-width: 700px) {
   .selectors {
     grid-template-columns: 1fr;
+  }
+
+  .toggle-btn {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 </style>
