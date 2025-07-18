@@ -7,37 +7,37 @@
           @click="setHopLevel(1)" 
           :class="['hop-toggle-button', 'left-button', { active: store.hopLevel === 1 }]"
         >
-          一跳连接
+          One Hop
         </button>
         <button 
           @click="setHopLevel(2)" 
           :class="['hop-toggle-button', 'right-button', { active: store.hopLevel === 2 }]"
         >
-          二跳连接
+          Two Hops
         </button>
       </div>
     </div>
 
-    <div v-if="store.isLoading" class="loading-indicator">正在计算布局...</div>
+    <div v-if="store.isLoading" class="loading-indicator">Calculating layout...</div>
     <div v-if="!store.isLoading && (!store.graphData || store.graphData.nodes.length === 0)" class="empty-state">
-      没有匹配当前筛选条件的数据。
+      No data matches the current filter criteria.
     </div>
     <div ref="tooltipRef" class="tooltip" style="opacity: 0;"></div>
     
     <!-- 图例部分 -->
-    <button @click="toggleNodeEdgeLegend" class="legend-toggle-button node-edge-toggle-button">{{ showNodeEdgeLegend ? '隐藏节点/边图例' : '显示节点/边图例' }}</button>
-    <div v-if="showNodeEdgeLegend" class="legend-container node-edge-legend-container">
-      <h3>节点与边图例</h3>
+    <button @click="toggleNodeEdgeLegend" class="legend-toggle-button node-edge-toggle-button">{{ showNodeEdgeLegend ? 'Hide Node/Edge Legend' : 'Show Node/Edge Legend' }}</button>
+    <div v-if="showNodeEdgeLegend" :key="`node-edge-${legendKey}`" class="legend-container node-edge-legend-container">
+      <h3>Node & Edge Legend</h3>
       <div class="legend-section">
-        <h4>节点类型</h4>
+        <h4>Node Types</h4>
         <!-- 修改：使用动态的 displayedNodeTypes -->
         <div v-for="nodeType in displayedNodeTypes" :key="nodeType.name" class="legend-item">
-          <svg width="30" height="30"><path :d="nodeType.symbol" :fill="nodeType.color" :stroke="nodeType.stroke" :stroke-width="nodeType.strokeWidth" transform="translate(15,15)"></path></svg>
+          <svg width="30" height="30"><path :d="getSymbolPath(nodeType.symbol)" :fill="nodeType.color" :stroke="nodeType.stroke" :stroke-width="nodeType.strokeWidth" transform="translate(15,15)"></path></svg>
           <span>{{ nodeType.name }}</span>
         </div>
       </div>
       <div class="legend-section">
-        <h4>边类型</h4>
+        <h4>Edge Types</h4>
         <!-- 修改：使用动态的 displayedEdgeTypes -->
         <div v-for="edgeType in displayedEdgeTypes" :key="edgeType.name" class="legend-item">
           <svg width="30" height="30"><line x1="0" y1="15" x2="30" y2="15" :stroke="edgeType.color" :stroke-dasharray="edgeType.dasharray" stroke-width="2"></line></svg>
@@ -46,9 +46,9 @@
       </div>
     </div>
 
-    <button @click="toggleGenreLegend" class="legend-toggle-button genre-toggle-button">{{ showGenreLegend ? '隐藏流派图例' : '显示流派图例' }}</button>
-    <div v-if="showGenreLegend" class="legend-container genre-legend-container">
-      <h3>流派颜色图例</h3>
+    <button @click="toggleGenreLegend" class="legend-toggle-button genre-toggle-button">{{ showGenreLegend ? 'Hide Genre Legend' : 'Show Genre Legend' }}</button>
+    <div v-if="showGenreLegend" :key="`genre-${legendKey}`" class="legend-container genre-legend-container">
+      <h3>Genre Color Legend</h3>
       <div class="legend-section">
         <!-- 修改：使用动态的 displayedGenres -->
         <div v-for="genre in displayedGenres" :key="genre.name" class="legend-item">
@@ -70,6 +70,7 @@ import { debounce } from 'lodash-es';
 const store = useGraphStore();
 const containerRef = ref(null);
 const tooltipRef = ref(null);
+const legendKey = ref(0);
 
 // --- 图例控制 ---
 const showNodeEdgeLegend = ref(false);
@@ -119,18 +120,22 @@ const displayedGenres = ref([]);
 
 // --- 静态图例定义 (作为查找表) ---
 const ALL_NODE_LEGEND_INFO = {
-  'Person': { name: '人', symbol: d3.symbol().type(d3.symbolCircle).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
-  'MusicalGroup': { name: '乐队', symbol: d3.symbol().type(d3.symbolDiamond).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
-  'Song': { name: '歌曲', symbol: d3.symbol().type(d3.symbolTriangle).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
-  'Album': { name: '专辑', symbol: d3.symbol().type(d3.symbolSquare).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
-  'RecordLabel': { name: '唱片公司', symbol: d3.symbol().type(d3.symbolWye).size(100)(), color: '#999999', stroke: '#333', strokeWidth: 1.5 },
-  'Notable': { name: '知名节点', symbol: d3.symbol().type(d3.symbolCircle).size(100)(), color: '#cccccc', stroke: 'gold', strokeWidth: 3 },
+  'Person': { name: 'Person', symbol: d3.symbolCircle, color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  'MusicalGroup': { name: 'Musical Group', symbol: d3.symbolDiamond, color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  'Song': { name: 'Song', symbol: d3.symbolTriangle, color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  'Album': { name: 'Album', symbol: d3.symbolSquare, color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  'RecordLabel': { name: 'RecordLabel', symbol: d3.symbolWye, color: '#999999', stroke: '#333', strokeWidth: 1.5 },
+  'Notable': { name: 'notable node', symbol: d3.symbolCircle, color: '#cccccc', stroke: 'gold', strokeWidth: 3 },
+};
+
+const getSymbolPath = (symbolType, size = 100) => {
+  return d3.symbol().type(symbolType).size(size)();
 };
 
 const ALL_EDGE_LEGEND_INFO = {
-  'influence': { name: '影响力', color: '#007bff', dasharray: '6, 3' },
-  'collaboration': { name: '合作', color: '#28a745', dasharray: '0' },
-  'membership': { name: '商业', color: '#6c757d', dasharray: '2, 2' },
+  'influence': { name: 'Influence Edge', color: '#007bff', dasharray: '6, 3' },
+  'collaboration': { name: 'Collaborations Edge', color: '#28a745', dasharray: '0' },
+  'membership': { name: 'Commercial Edges', color: '#6c757d', dasharray: '2, 2' },
 };
 
 const getLinkClass = (edgeType) => {
@@ -254,16 +259,30 @@ function renderGraph(data) {
     .attr('class', d => `link link-${getLinkClass(d['Edge Type'])}`)
     .attr('marker-end', d => `url(#arrow-${getLinkClass(d['Edge Type'])}`);
   
-  const nodeElements = zoomGroup.append('g').selectAll('path').data(nodes, d => d.id).join('path')
-    .attr('d', d => {
-      const radius = getNodeRadius(d);
-      const symbolSize = Math.PI * Math.pow(radius, 2);
-      return d3.symbol().type(getSymbol(d['Node Type'])).size(symbolSize)();
+  const nodeElements = zoomGroup.append('g')
+    .selectAll('path.node')
+    .data(nodes, d => d.id)
+    .join(
+      enter => enter.append('path')
+        .attr('class', 'node')
+        .attr('d', d => {
+          const radius = getNodeRadius(d);
+          const symbolSize = Math.PI * Math.pow(radius, 2);
+          return d3.symbol().type(getSymbol(d['Node Type'])).size(symbolSize)();
+        })
+        .call(node => node.transition().duration(300).attr('opacity', 1)),
+      update => update,
+      exit => exit.call(node => node.transition().duration(300).attr('opacity', 0).remove())
+    )
+    .attr('fill', d => {
+      // Diagnostic log to check the genre of specific nodes at render time.
+      if (d.genre === 'Oceanus Folk' || d.genre === 'Desert rock') {
+        console.log(`Rendering node: ID=${d.id}, Name=${d.name}, Genre=${d.genre}`);
+      }
+      return d.highlight ? '#ffc107' : (d.genre ? getGenreColor(d.genre) : '#cccccc');
     })
-    .attr('fill', d => d.highlight ? '#ffc107' : (d.genre ? getGenreColor(d.genre) : '#cccccc'))
     .attr('stroke', d => d.highlight ? '#e85a19' : (d.notable ? 'gold' : '#fff'))
-    .attr('stroke-width', d => d.highlight || d.notable ? 3 : 1.5)
-    .attr('class', 'node');
+    .attr('stroke-width', d => d.highlight || d.notable ? 3 : 1.5);
 
   const tooltip = d3.select(tooltipRef.value);
 
@@ -271,7 +290,7 @@ function renderGraph(data) {
     d3.select(this)
       .style('stroke-opacity', 1)
       .style('stroke-width', '4px'); // 加粗高亮
-    const content = `<strong>边信息</strong><br/>源: ${d.source.name}<br/>目标: ${d.target.name}<br/>类型: ${d['Edge Type']}`;
+    const content = `<strong>Edge Info</strong><br/>Source: ${d.source.name}<br/>Target: ${d.target.name}<br/>Type: ${d['Edge Type']}`;
     const containerRect = containerRef.value.getBoundingClientRect();
     const tooltipX = event.clientX - containerRect.left + 10;
     const tooltipY = event.clientY - containerRect.top - 28;
@@ -285,15 +304,15 @@ function renderGraph(data) {
 
   nodeElements.on('mouseover', function(event, d) { 
     d3.select(this).attr('stroke', 'black').attr('stroke-width', 3); 
-    let content = `<strong>${d.name}</strong><br/>类型: ${d['Node Type']}`;
+    let content = `<strong>${d.name}</strong><br/>Type: ${d['Node Type']}`;
     if (d['Node Type'] === 'Person' || d['Node Type'] === 'MusicalGroup') {
-      if (d.max_genre) content += `<br/>主导流派: ${d.max_genre}`;
-      if (typeof d.influence_score === 'number') content += `<br/>影响力: ${d.influence_score.toFixed(2)}`;
-      if (d.notable !== undefined) content += `<br/>是否出名: ${d.notable ? '是' : '否'}`;
+      if (d.max_genre) content += `<br/>Main Genre: ${d.max_genre}`;
+      if (typeof d.influence_score === 'number') content += `<br/>Influence Score: ${d.influence_score.toFixed(2)}`;
+      if (d.notable !== undefined) content += `<br/>Notable: ${d.notable ? 'Yes' : 'No'}`;
     } else if (d['Node Type'] === 'RecordLabel') {
-      if (typeof d.influence_score === 'number') content += `<br/>影响力: ${d.influence_score.toFixed(2)}`;
+      if (typeof d.influence_score === 'number') content += `<br/>Influence Score: ${d.influence_score.toFixed(2)}`;
     } else if (d.genre) {
-      content += `<br/>流派: ${d.genre}`;
+      content += `<br/>Genre: ${d.genre}`;
     }
     const containerRect = containerRef.value.getBoundingClientRect();
     const tooltipX = event.clientX - containerRect.left + 10;
@@ -350,6 +369,7 @@ watch(() => store.graphData, (newGraphData) => {
     nextTick(() => {
       showNodeEdgeLegend.value = true;
       showGenreLegend.value = true;
+      legendKey.value += 1; // 核心修复：更新key来强制重新渲染图例
     });
   }
 }, { deep: true });
