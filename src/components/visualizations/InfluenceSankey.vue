@@ -249,87 +249,54 @@ const getTooltipContent = (link) => {
   
   if (!sourceNode || !targetNode) return '';
 
-  // Oceanus Folk → Genre: 显示作品总数和影响边的分别计数
+  // Oceanus Folk → Genre: 显示影响力边数量和类型分布
   if (sourceNode.name === 'Oceanus Folk' && 
       (targetNode.type === 'genre' || targetNode.type === 'Genre')) {
-    const totalCount = link.details?.work_count || link.value;
-    const collaborations = link.details?.collaborations || [];
+    const totalCount = link.details?.influence_edge_count || link.details?.work_count || link.value;
+    const influenceTypes = link.details?.influence_types || {};
     
-    // 统计各种影响类型
-    const influenceTypes = {};
-    collaborations.forEach(collab => {
-      // 尝试从多个地方获取影响类型
-      let type = collab.collaboration_type;
-      
-      // 如果collaboration_type不是影响类型，尝试work_details
-      if (collab.work_details && collab.work_details.type) {
-        type = collab.work_details.type;
-      }
-      
-      // 只统计5种影响边类型
-      if (['InStyleOf', 'InterpolatesFrom', 'CoverOf', 'DirectlySamples', 'LyricalReferenceTo'].includes(type)) {
-        influenceTypes[type] = (influenceTypes[type] || 0) + 1;
-      }
-    });
-    
-    // 如果没有找到具体的影响类型，检查link本身是否有type信息
-    if (Object.keys(influenceTypes).length === 0 && link.type) {
-      const types = Array.isArray(link.type) ? link.type : [link.type];
-      types.forEach(type => {
-        if (['InStyleOf', 'InterpolatesFrom', 'CoverOf', 'DirectlySamples', 'LyricalReferenceTo'].includes(type)) {
-          influenceTypes[type] = (influenceTypes[type] || 0) + 1;
-        }
+    // 如果没有类型分布，使用collaborations数组
+    let typeDistribution = influenceTypes;
+    if (Object.keys(typeDistribution).length === 0 && link.details?.collaborations) {
+      typeDistribution = {};
+      link.details.collaborations.forEach(collab => {
+        typeDistribution[collab.collaboration_type] = collab.count || 1;
       });
     }
     
-    // 如果仍然没有详细类型，使用默认分解
-    if (Object.keys(influenceTypes).length === 0) {
-      // 基于总数进行合理分解
-      const defaultTypes = ['InStyleOf', 'CoverOf', 'DirectlySamples'];
-      const baseCount = Math.floor(totalCount / defaultTypes.length);
-      const remainder = totalCount % defaultTypes.length;
-      
-      defaultTypes.forEach((type, index) => {
-        influenceTypes[type] = baseCount + (index < remainder ? 1 : 0);
-      });
-    }
-    
-    const influenceList = Object.entries(influenceTypes)
+    const influenceList = Object.entries(typeDistribution)
       .sort((a, b) => b[1] - a[1])
       .map(([type, count]) => 
         `<div style="font-weight: 400; color: #666666;">${type}: ${count}</div>`
       )
       .join('');
     
-    return `<strong>${targetNode.name}</strong><br/>影响总数: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${influenceList}`;
+    return `<strong>${targetNode.name}</strong><br/>影响边总数: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${influenceList || '<div style="font-weight: 400; color: #666666;">Various Types</div>'}`;
   }
   
-  // Genre → Artist: 显示合作作品数的详细分解
+  // Genre → Artist: 显示合作边数量和类型分布
   if ((sourceNode.type === 'genre' || sourceNode.type === 'Genre') && 
       (targetNode.type === 'artist' || targetNode.type === 'Artist')) {
-    const totalCount = link.details?.work_count || link.value;
-    const collaborations = link.details?.collaborations || [];
+    const totalCount = link.details?.collaboration_edge_count || link.details?.work_count || link.value;
+    const collaborationTypes = link.details?.collaboration_types || {};
     
-    // 统计各种合作类型
-    const collaborationTypes = {};
-    collaborations.forEach(collab => {
-      const type = collab.collaboration_type || 'Unknown';
-      collaborationTypes[type] = (collaborationTypes[type] || 0) + 1;
-    });
-    
-    // 如果没有详细类型，使用默认值
-    if (Object.keys(collaborationTypes).length === 0) {
-      collaborationTypes['Various'] = totalCount;
+    // 如果没有类型分布，使用collaborations数组
+    let typeDistribution = collaborationTypes;
+    if (Object.keys(typeDistribution).length === 0 && link.details?.collaborations) {
+      typeDistribution = {};
+      link.details.collaborations.forEach(collab => {
+        typeDistribution[collab.collaboration_type] = collab.count || 1;
+      });
     }
     
-    const collaborationList = Object.entries(collaborationTypes)
+    const collaborationList = Object.entries(typeDistribution)
       .sort((a, b) => b[1] - a[1])
       .map(([type, count]) => 
         `<div style="font-weight: 400; color: #666666;">${type}: ${count}</div>`
       )
       .join('');
     
-    return `<strong>${targetNode.name}</strong><br/>合作总数: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${collaborationList}`;
+    return `<strong>${targetNode.name}</strong><br/>合作边总数: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${collaborationList || '<div style="font-weight: 400; color: #666666;">Various Types</div>'}`;
   }
 
   return `<strong>${targetNode.name}</strong><br/>计数: <strong>${link.value}</strong>`;
