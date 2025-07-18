@@ -317,7 +317,7 @@ export default {
       sortedYears = Array.from(allYears).sort((a, b) => a - b);
 
       // 计算图表宽度 - 最大宽度限制
-      const minWidth = 480;
+      const minWidth = 300;
       const maxWidth = 800;
       const width = Math.min(maxWidth, Math.max(minWidth, sortedYears.length * 30));
 
@@ -792,8 +792,9 @@ export default {
 .selectors {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 5px 0;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .selector {
@@ -810,14 +811,15 @@ export default {
 }
 
 .selector select {
-  padding: 8px;
+  padding: 1px;
   border: 1px solid #ddd;
   border-radius: 4px;
   background-color: white;
   font-size: 13px;
   appearance: none;
   cursor: pointer;
-  width: 100%;
+  width: 80%;
+  box-sizing: border-box;
 }
 
 .selector select:focus {
