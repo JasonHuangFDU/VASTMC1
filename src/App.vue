@@ -226,12 +226,12 @@ main {
 }
 
 .top-view {
-  height: 75%;
+  flex: 1;
   min-height: 0; /* 允许flex item收缩 */
 }
 
 .bottom-view {
-  height: 25%;
+  flex: 7;
   min-height: 0; /* 允许flex item收缩 */
   border-top: 2px solid var(--color-border);
   padding: 10px;
@@ -242,7 +242,7 @@ main {
 
 /* 弹性布局设计 - 响应式高度分配 */
 .left-column .genre-line-graph {
-  flex: 1;
+  flex: 3;
   min-height: 200px;
   max-height: 320px;
   margin-bottom: 8px;
