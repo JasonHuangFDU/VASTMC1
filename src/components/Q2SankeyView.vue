@@ -149,13 +149,13 @@ const handleSankeyClick = (linkData) => {
     // Inward视图的Artist到Oceanus Folk
     payload = {
       type: 'inward_artist_to_oceanus',
-      params: { artist: source.name }
+      params: { artist_id: source.original_id } // <-- 已修正
     };
   } else if (source.type === 'Genre' && target.type === 'Artist' && !linkData.isOutward) {
-    // Inward视图的Genre到Artist
+    // Inward��图的Genre到Artist
     payload = {
       type: 'inward_genre_to_artist',
-      params: { genre: source.name, artist: target.name }
+      params: { genre: source.name, artist_id: target.original_id } // <-- 已修正
     };
   }
 
