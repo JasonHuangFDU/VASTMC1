@@ -63,8 +63,10 @@ import * as d3 from 'd3';
 import { useGraphStore } from '@/stores/graphStore';
 import { getGenreColor } from '@/utils/colors';
 import { debounce } from 'lodash-es';
+import { storeToRefs } from 'pinia';
 
 const store = useGraphStore();
+const { selectedTimeRange } = storeToRefs(store); // 引入 selectedTimeRange
 const containerRef = ref(null);
 const tooltipRef = ref(null);
 const legendKey = ref(0);
@@ -237,6 +239,7 @@ function renderGraph(data) {
   });
 
   nodeElements.on('mouseover', function(event, d) {
+    //console.log("Node hovered:", d);
     const connectedIds = new Set([d.id]);
     links.forEach(link => {
       if (link.source.id === d.id) connectedIds.add(link.target.id);
@@ -248,6 +251,11 @@ function renderGraph(data) {
     d3.select(this).classed('dimmed', false);
 
     let content = `<strong>${d.name}</strong><br/>Type: ${d['Node Type']}`;
+    if (d['Node Type'] === 'Person' || d['Node Type'] === 'MusicalGroup' || d['Node Type'] === 'RecordLabel') {
+      if (d.influence_score !== undefined) {
+        content += `<br/>Notability Score: ${d.influence_score.toFixed(2)}`;
+      }
+    }
     if (d['Node Type'] === 'Song' || d['Node Type'] === 'Album') {
       if (d.genre) content += `<br/>Genre: ${d.genre}`;
       if (d.contributors) {
@@ -260,6 +268,7 @@ function renderGraph(data) {
         }
       }
     }
+    
     const containerRect = containerRef.value.getBoundingClientRect();
     const tooltipX = event.clientX - containerRect.left + 10;
     const tooltipY = event.clientY - containerRect.top - 28;

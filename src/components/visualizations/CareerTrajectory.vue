@@ -1,22 +1,10 @@
 <template>
   <div class="career-trajectory">
-
-    <!-- 视图切换按钮 -->
-    <div class="view-toggle">
-      <button
-        class="toggle-btn"
-        @click="toggleView"
-      >
-        {{ showPrediction ? 'Career Trajectory' : 'Artist Prediction' }}
-      </button>
-    </div>
-
     <!-- 生涯轨迹视图 -->
-    <div v-show="!showPrediction" class="career-view">
+    <div class="career-view">
       <!-- 艺术家选择面板 -->
       <div class="artist-selection">
-
-        <!-- 修改部分：将标题和按钮放在同一行 -->
+        <!-- 将标题和按钮放在同一行 -->
         <div class="selection-header">
           <h3>Select Three Artists to Compare Their Career Trajectories</h3>
           <button
@@ -31,17 +19,26 @@
         <div class="selectors">
           <div v-for="(artist, index) in selectedArtists" :key="index" class="selector">
             <label>Artist {{ index + 1 }}:</label>
-            <select v-model="selectedArtists[index]">
-              <option value="">SELECT</option>
-              <option
-                v-for="person in artistList"
+            <!-- 将select改为input，并添加搜索功能 -->
+            <input
+              type="text"
+              v-model="artistSearchInputs[index]"
+              @input="filterArtists(index)"
+              @focus="showSuggestions[index] = true"
+              @blur="handleBlur(index)"
+              placeholder="Search artist..."
+            />
+            <!-- 搜索结果建议框 -->
+            <div v-if="showSuggestions[index] && filteredArtistLists[index].length > 0" class="suggestions">
+              <div
+                v-for="person in filteredArtistLists[index]"
                 :key="person.id"
-                :value="person.id"
-                :disabled="selectedArtists.includes(person.id) && selectedArtists[index] !== person.id"
+                @mousedown="selectArtist(person, index)"
+                class="suggestion-item"
               >
                 {{ person.name }}
-              </option>
-            </select>
+              </div>
+            </div>
             <button
               v-if="selectedArtists[index]"
               class="clear-btn"
@@ -51,7 +48,6 @@
             </button>
           </div>
         </div>
-
       </div>
 
       <!-- 主图表容器 -->
@@ -106,8 +102,8 @@
       </div>
     </div>
 
-    <!-- 艺术家潜力预测视图 -->
-    <div v-show="showPrediction" class="prediction-view">
+    <!-- 艺术家潜力预测视图（显示在生涯轨迹图下方） -->
+    <div class="prediction-view">
       <ArtistPotentialPrediction @prediction-complete="handlePredictionComplete" />
     </div>
   </div>
@@ -131,14 +127,14 @@ export default {
   setup() {
     const graphData = ref(null);
     const selectedArtists = ref([null, null, null]);
+    const artistSearchInputs = ref(['', '', '']); // 新增：存储每个输入框的搜索词
+    const filteredArtistLists = ref([[], [], []]); // 新增：存储每个输入框的过滤结果
+    const showSuggestions = ref([false, false, false]); // 新增：控制建议框显示
     const comparisonData = ref([]);
     const loading = ref(false);
     const mainChart = ref(null);
     let mainChartInstance = null;
     let sortedYears = [];
-
-    // 视图切换状态
-    const showPrediction = ref(false);
 
     // 悬停交互状态
     const showTooltip = ref(false);
@@ -166,17 +162,41 @@ export default {
       return selectedArtists.value.filter(id => id !== null).length === 3;
     });
 
-    // 切换视图
-    const toggleView = () => {
-      showPrediction.value = !showPrediction.value;
-    };
-
     // 清除选中的艺术家
     const clearArtist = (index) => {
       selectedArtists.value[index] = null;
       comparisonData.value = [];
       destroyCharts();
       hideTooltip();
+    };
+
+    // 过滤艺术家列表（前缀匹配）
+    const filterArtists = (index) => {
+      const searchTerm = artistSearchInputs.value[index].toLowerCase();
+      if (!searchTerm) {
+        filteredArtistLists.value[index] = [];
+        return;
+      }
+
+      // 过滤以搜索词开头的艺术家（不区分大小写）
+      filteredArtistLists.value[index] = artistList.value.filter(person =>
+        person.name.toLowerCase().startsWith(searchTerm)
+      );
+    };
+
+    // 选择艺术家
+    const selectArtist = (person, index) => {
+      selectedArtists.value[index] = person.id;
+      artistSearchInputs.value[index] = person.name;
+      filteredArtistLists.value[index] = [];
+      showSuggestions.value[index] = false;
+    };
+
+    // 处理输入框失去焦点
+    const handleBlur = (index) => {
+      setTimeout(() => {
+        showSuggestions.value[index] = false;
+      }, 200);
     };
 
     // 加载图数据
@@ -297,9 +317,9 @@ export default {
       sortedYears = Array.from(allYears).sort((a, b) => a - b);
 
       // 计算图表宽度 - 最大宽度限制
-      const minWidth = 480;
-      const maxWidth = 1000;
-      const width = Math.min(maxWidth, Math.max(minWidth, sortedYears.length * 40));
+      const minWidth = 300;
+      const maxWidth = 800;
+      const width = Math.min(maxWidth, Math.max(minWidth, sortedYears.length * 30));
 
       // 设置图表容器宽度
       const chartWrapper = document.querySelector('.chart-wrapper');
@@ -663,7 +683,6 @@ export default {
       // 确保有3个艺术家ID
       if (artistIds.length === 3) {
         selectedArtists.value = artistIds;
-        showPrediction.value = false; // 切换回生涯轨迹视图
         loadComparisonData();
       }
     };
@@ -689,12 +708,18 @@ export default {
 
     return {
       selectedArtists,
+      artistSearchInputs,
+      filteredArtistLists,
+      showSuggestions,
       comparisonData,
       loading,
       artistList,
       canCompare,
       mainChart,
       clearArtist,
+      filterArtists,
+      selectArtist,
+      handleBlur,
       loadComparisonData,
       showTooltip,
       tooltipStyle,
@@ -703,9 +728,7 @@ export default {
       handleChartHover,
       hideTooltip,
       getArtistColor,
-      handlePredictionComplete,
-      showPrediction,
-      toggleView
+      handlePredictionComplete
     };
   }
 };
@@ -738,30 +761,6 @@ export default {
   position: relative;
 }
 
-.view-toggle {
-  display: flex;
-  justify-content: flex-end;
-  padding: 5px;
-}
-
-.toggle-btn {
-  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
-}
-
-.toggle-btn:hover {
-  background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-}
-
 .career-view {
   display: flex;
   flex-direction: column;
@@ -769,11 +768,11 @@ export default {
 }
 
 .prediction-view {
-  height: 100%;
   background-color: white;
   border-radius: 8px;
   padding: 0px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  margin-top: 0px; /* 添加上边距以分隔两个部分 */
 }
 
 .artist-selection {
@@ -793,8 +792,9 @@ export default {
 .selectors {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 5px 0;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .selector {
@@ -811,20 +811,47 @@ export default {
 }
 
 .selector select {
-  padding: 8px;
+  padding: 1px;
   border: 1px solid #ddd;
   border-radius: 4px;
   background-color: white;
   font-size: 13px;
   appearance: none;
   cursor: pointer;
-  width: 100%;
+  width: 80%;
+  box-sizing: border-box;
 }
 
 .selector select:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* 新增：搜索建议框样式 */
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 100;
+  margin-top: 2px;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.suggestion-item:hover {
+  background-color: #f0f8ff;
 }
 
 .clear-btn {
@@ -881,9 +908,9 @@ export default {
 
 .chart-wrapper {
   position: relative;
-  height: 500px; /* 固定高度 */
+  height: 300px; /* 固定高度 */
   width: 100%;
-  min-width: 625px; /* 最小宽度 */
+  min-width: 450px; /* 最小宽度 */
 }
 
 /* 自定义工具提示样式 */
@@ -1082,11 +1109,6 @@ export default {
 @media (max-width: 700px) {
   .selectors {
     grid-template-columns: 1fr;
-  }
-
-  .toggle-btn {
-    padding: 6px 12px;
-    font-size: 12px;
   }
 }
 </style>
