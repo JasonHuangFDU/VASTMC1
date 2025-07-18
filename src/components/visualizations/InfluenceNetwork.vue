@@ -276,9 +276,9 @@ function renderGraph(data) {
     )
     .attr('fill', d => {
       // Diagnostic log to check the genre of specific nodes at render time.
-      if (d.genre === 'Oceanus Folk' || d.genre === 'Desert rock') {
-        console.log(`Rendering node: ID=${d.id}, Name=${d.name}, Genre=${d.genre}`);
-      }
+      //if (d.genre === 'Oceanus Folk' || d.genre === 'Desert rock') {
+      //  console.log(`Rendering node: ID=${d.id}, Name=${d.name}, Genre=${d.genre}`);
+      //}
       return d.highlight ? '#ffc107' : (d.genre ? getGenreColor(d.genre) : '#cccccc');
     })
     .attr('stroke', d => d.highlight ? '#e85a19' : (d.notable ? 'gold' : '#fff'))

@@ -1500,7 +1500,10 @@ def get_graph_meta():
     node_types = sorted(list(set(d['Node Type'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True) if 'Node Type' in d)))
     edge_types = sorted(list(set(d['Edge Type'] for _, _, d in FULL_NETWORKX_GRAPH.edges(data=True) if 'Edge Type' in d)))
     genres = sorted(list(set(d['genre'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre'))))
-    node_names = sorted([d['name'] for _, d in FULL_NETWORKX_GRAPH.nodes(data=True)])
+    node_names = sorted(
+        [{'name': d['name'], 'id': n} for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if 'name' in d],
+        key=lambda x: x['name']
+    )
     person_nodes = sorted(
         [{'name': d['name'], 'id': n} for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('Node Type') == 'Person'],
         key=lambda x: x['name']

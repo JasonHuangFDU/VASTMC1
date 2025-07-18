@@ -12,6 +12,7 @@
           placeholder="Type to search..." 
           class="search-input"
           autocomplete="off"
+          :disabled="!store.isInitialized"
         />
         <div class="search-buttons">
           <button @click="confirmSearch" class="search-confirm-btn">Confirm</button>
@@ -180,6 +181,21 @@ const availableYears = computed(() => {
 });
 
 // --- Methods ---
+const updateSuggestions = () => {
+  if (!localSearchQuery.value) {
+    suggestions.value = [];
+    return;
+  }
+
+  const query = localSearchQuery.value.toLowerCase();
+  // Access the full list of nodes from filterOptions
+  const allNodes = store.filterOptions.node_names || [];
+  
+  suggestions.value = allNodes.filter(node => 
+    node && node.name && node.name.toLowerCase().includes(query)
+  );
+};
+
 const toggleDropdown = (dropdownName) => {
   activeDropdown.value = activeDropdown.value === dropdownName ? null : dropdownName;
 };

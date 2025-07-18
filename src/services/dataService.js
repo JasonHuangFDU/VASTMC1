@@ -69,17 +69,6 @@ export async function loadYearlyData() {
   return yearlyData;
 }
 
-/**
- * Loads the available filter options (genres, node types, edge types).
- * @returns {Promise<Object>} A promise that resolves to the filter options.
- */
-export async function loadFilterOptions() {
-  console.log("Loading filter options...");
-  const filterOptions = await d3.json('/filter_options.json');
-  console.log("Filter options loaded:", filterOptions);
-  return filterOptions;
-}
-
 
 // 修改函数以接受权重偏好参数
 export async function loadOceanusDataAndPredict(weightPreferences = null) {

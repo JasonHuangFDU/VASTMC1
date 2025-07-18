@@ -74,7 +74,7 @@ export const useGraphStore = defineStore('graph', {
       }
 
       // Fetch filter options first, as they are needed for the UI.
-      await this.loadFilterOptions();
+      await this.fetchFilterOptions();
 
       // Set initial state for the first graph request.
       this.searchQuery = 17255; // ID for "Sailor Shift"
@@ -99,7 +99,7 @@ export const useGraphStore = defineStore('graph', {
     /**
      * Fetches available filter options from the backend.
      */
-    async loadFilterOptions() {
+    async fetchFilterOptions() {
         try {
             const options = await fetchFilterOptions();
             this.filterOptions.genres = options.genres || [];
