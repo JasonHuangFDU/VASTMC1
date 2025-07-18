@@ -246,7 +246,7 @@ function renderGraph(data) {
   const defs = svg.append('defs');
   Object.entries(ALL_EDGE_LEGEND_INFO).forEach(([cls, info]) => {
     // Increased refX to position the arrow tip before the node center, accommodating various node radii.
-    defs.append('marker').attr('id', `arrow-${cls}`).attr('viewBox', '0 -5 10 10').attr('refX', 25).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('path').attr('d', 'M0,-5L10,0L0,5').attr('class', `arrow-head ${cls}`);
+    defs.append('marker').attr('id', `arrow-${cls}`).attr('viewBox', '0 -5 10 10').attr('refX', 10).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('path').attr('d', 'M0,-5L10,0L0,5').attr('class', `arrow-head ${cls}`);
   });
 
   simulation = d3.forceSimulation(nodes)
@@ -343,21 +343,35 @@ function renderGraph(data) {
     linkElements.attr('d', d => {
       const dx = d.target.x - d.source.x;
       const dy = d.target.y - d.source.y;
-      
-      // This unified logic handles both single and multiple links.
-      // For a single link (linkcount=1, linknum=0), offset will be 0, resulting in a straight line curve.
       const angle = Math.atan2(dy, dx);
-      const spacing = 15; // Space between parallel links
+      const spacing = 15;
       const offset = (d.linknum - (d.linkcount - 1) / 2) * spacing;
-
-      // Calculate control point for the quadratic Bezier curve
+      
       const midX = (d.source.x + d.target.x) / 2;
       const midY = (d.source.y + d.target.y) / 2;
       const controlX = midX + offset * Math.sin(angle);
       const controlY = midY - offset * Math.cos(angle);
 
-      // All paths are drawn from center to center as quadratic Bezier curves.
-      return `M${d.source.x},${d.source.y} Q${controlX},${controlY} ${d.target.x},${d.target.y}`;
+      // --- Start of new logic for trimming the link path ---
+      const sourceRadius = getNodeRadius(d.source);
+      const targetRadius = getNodeRadius(d.target);
+
+      // Tangent at the source
+      const sourceTangentDx = controlX - d.source.x;
+      const sourceTangentDy = controlY - d.source.y;
+      const sourceTangentLength = Math.sqrt(sourceTangentDx * sourceTangentDx + sourceTangentDy * sourceTangentDy);
+      const sourceTrimmedX = d.source.x + (sourceTangentDx / sourceTangentLength) * sourceRadius;
+      const sourceTrimmedY = d.source.y + (sourceTangentDy / sourceTangentLength) * sourceRadius;
+
+      // Tangent at the target
+      const targetTangentDx = d.target.x - controlX;
+      const targetTangentDy = d.target.y - controlY;
+      const targetTangentLength = Math.sqrt(targetTangentDx * targetTangentDx + targetTangentDy * targetTangentDy);
+      const targetTrimmedX = d.target.x - (targetTangentDx / targetTangentLength) * targetRadius;
+      const targetTrimmedY = d.target.y - (targetTangentDy / targetTangentLength) * targetRadius;
+      // --- End of new logic ---
+
+      return `M${sourceTrimmedX},${sourceTrimmedY} Q${controlX},${controlY} ${targetTrimmedX},${targetTrimmedY}`;
     });
     nodeElements.attr('transform', d => `translate(${d.x},${d.y})`);
   });
