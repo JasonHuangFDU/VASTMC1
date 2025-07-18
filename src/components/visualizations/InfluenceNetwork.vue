@@ -126,6 +126,7 @@ const ALL_NODE_LEGEND_INFO = {
   'Album': { name: 'Album', symbol: d3.symbolSquare, color: '#999999', stroke: '#333', strokeWidth: 1.5 },
   'RecordLabel': { name: 'RecordLabel', symbol: d3.symbolWye, color: '#999999', stroke: '#333', strokeWidth: 1.5 },
   'Notable': { name: 'notable node', symbol: d3.symbolCircle, color: '#cccccc', stroke: 'gold', strokeWidth: 3 },
+  'SailorShift': { name: 'Sailor Shift', symbol: d3.symbolCircle, color: '#FF6F61', stroke: '#333', strokeWidth: 1.5 },
 };
 
 const getSymbolPath = (symbolType, size = 100) => {
@@ -182,6 +183,7 @@ function renderGraph(data) {
 
   const nodes = JSON.parse(JSON.stringify(data.nodes));
   const links = JSON.parse(JSON.stringify(data.links));
+  const nodeMap = new Map(nodes.map(node => [node.id, node]));
 
   // --- START: Link pre-processing for multi-edges ---
   const linkGroups = {};
@@ -204,13 +206,13 @@ function renderGraph(data) {
   // --- END: Link pre-processing ---
 
   // --- 动态更新图例 ---
-  const nodeTypesInGraph = new Set(nodes.map(n => n['Node Type']));
+  const nodeTypesInGraph = new Set(nodes.map(n => n.id === 17255 ? 'SailorShift' : n['Node Type']));
   const edgeClassesInGraph = new Set(links.map(l => getLinkClass(l['Edge Type'])));
   const genresInGraph = new Set(nodes.map(n => n.genre).filter(Boolean));
   const hasNotableNode = nodes.some(n => n.notable);
 
   displayedNodeTypes.value = Array.from(nodeTypesInGraph).map(type => ALL_NODE_LEGEND_INFO[type]).filter(Boolean);
-  if (hasNotableNode) {
+  if (hasNotableNode && !nodeTypesInGraph.has('Notable')) {
     displayedNodeTypes.value.push(ALL_NODE_LEGEND_INFO['Notable']);
   }
 
@@ -233,7 +235,7 @@ function renderGraph(data) {
   zoomGroup = svg.append('g');
 
   const maxInfluence = d3.max(nodes, d => d.influence_score);
-  // 根据跳数级别调整缩放范围，���保持根号等比关系
+  // 根据跳数级别调整缩放范围，保持根号等比关系
   if (store.hopLevel === 2) {
     // 二跳连接模式下，适当调整大小范围以适应更多节点
     sizeScale.domain([0, maxInfluence > 0 ? maxInfluence : 1]).range([6, 25]);
@@ -275,10 +277,7 @@ function renderGraph(data) {
       exit => exit.call(node => node.transition().duration(300).attr('opacity', 0).remove())
     )
     .attr('fill', d => {
-      // Diagnostic log to check the genre of specific nodes at render time.
-      //if (d.genre === 'Oceanus Folk' || d.genre === 'Desert rock') {
-      //  console.log(`Rendering node: ID=${d.id}, Name=${d.name}, Genre=${d.genre}`);
-      //}
+      if (d.id === 17255) return '#FF6F61'; // Sailor Shift 专属颜色
       return d.highlight ? '#ffc107' : (d.genre ? getGenreColor(d.genre) : '#cccccc');
     })
     .attr('stroke', d => d.highlight ? '#e85a19' : (d.notable ? 'gold' : '#fff'))
@@ -302,25 +301,71 @@ function renderGraph(data) {
     tooltip.style('opacity', 0);
   });
 
-  nodeElements.on('mouseover', function(event, d) { 
-    d3.select(this).attr('stroke', 'black').attr('stroke-width', 3); 
+  nodeElements.on('mouseover', function(event, d) {
+    const relatedIds = new Set([d.id]);
+    if (d['Node Type'] === 'MusicalGroup') {
+        links.forEach(link => {
+            if (link['Edge Type'] === 'MemberOf' && link.target.id === d.id) {
+                relatedIds.add(link.source.id);
+            }
+        });
+    }
+    nodeElements.filter(n => relatedIds.has(n.id))
+        .attr('stroke', 'black')
+        .attr('stroke-width', 3);
+
     let content = `<strong>${d.name}</strong><br/>Type: ${d['Node Type']}`;
     if (d['Node Type'] === 'Person' || d['Node Type'] === 'MusicalGroup') {
-      if (d.max_genre) content += `<br/>Main Genre: ${d.max_genre}`;
-      if (typeof d.influence_score === 'number') content += `<br/>Influence Score: ${d.influence_score.toFixed(2)}`;
-      if (d.notable !== undefined) content += `<br/>Notable: ${d.notable ? 'Yes' : 'No'}`;
+        if (d.max_genre) content += `<br/>Main Genre: ${d.max_genre}`;
+        if (typeof d.influence_score === 'number') content += `<br/>Influence Score: ${d.influence_score.toFixed(2)}`;
+        if (d.notable !== undefined) content += `<br/>Notable: ${d.notable ? 'Yes' : 'No'}`;
     } else if (d['Node Type'] === 'RecordLabel') {
-      if (typeof d.influence_score === 'number') content += `<br/>Influence Score: ${d.influence_score.toFixed(2)}`;
-    } else if (d.genre) {
-      content += `<br/>Genre: ${d.genre}`;
+        if (typeof d.influence_score === 'number') content += `<br/>Influence Score: ${d.influence_score.toFixed(2)}`;
+    } else if (d['Node Type'] === 'Song' || d['Node Type'] === 'Album') {
+        if (d.genre) content += `<br/>Genre: ${d.genre}`;
+        
+        const contributors = {
+            PerformerOf: [],
+            ComposerOf: [],
+            ProducerOf: [],
+            LyricistOf: [],
+        };
+
+        links.forEach(link => {
+            if (link.target.id === d.id && contributors.hasOwnProperty(link['Edge Type'])) {
+                const artist = nodeMap.get(link.source.id);
+                if (artist) {
+                    contributors[link['Edge Type']].push(`${artist.name} (${artist.id})`);
+                }
+            }
+        });
+
+        for (const [role, artists] of Object.entries(contributors)) {
+            if (artists.length > 0) {
+                const roleName = role.replace('Of', '');
+                content += `<br/>${roleName}: ${artists.join(', ')}`;
+            }
+        }
     }
+
     const containerRect = containerRef.value.getBoundingClientRect();
     const tooltipX = event.clientX - containerRect.left + 10;
     const tooltipY = event.clientY - containerRect.top - 28;
     tooltip.html(content).style('opacity', 1).style('left', `${tooltipX}px`).style('top', `${tooltipY}px`);
-  }).on('mouseout', function(event, d) { 
-    d3.select(this).attr('stroke', d.notable ? 'gold' : '#fff').attr('stroke-width', d.notable ? 3 : 1.5); 
-    tooltip.style('opacity', 0); 
+  }).on('mouseout', function(event, d) {
+    const relatedIds = new Set([d.id]);
+    if (d['Node Type'] === 'MusicalGroup') {
+        links.forEach(link => {
+            if (link['Edge Type'] === 'MemberOf' && link.target.id === d.id) {
+                relatedIds.add(link.source.id);
+            }
+        });
+    }
+    nodeElements.filter(n => relatedIds.has(n.id))
+        .attr('stroke', n => n.highlight ? '#e85a19' : (n.notable ? 'gold' : '#fff'))
+        .attr('stroke-width', n => n.highlight || n.notable ? 3 : 1.5);
+
+    tooltip.style('opacity', 0);
   }).on('click', (event, d) => {
     store.selectCenterNode(d.id); // Use ID for selection
   });
@@ -403,7 +448,7 @@ onMounted(() => {
 
 <style>
 /* 样式保持不变 */
-.influence-network-container { width: 100%; height: 100%; min-height: 600px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background-color: #f8f9fa; }
+.influence-network-container { width: 100%; height: 80vh; min-height: 480px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background-color: #f8f9fa; }
 .loading-indicator, .empty-state { font-size: 1.5em; color: #6c757d; }
 .tooltip { position: absolute; text-align: left; padding: 8px; font: 12px sans-serif; background: rgba(0, 0, 0, 0.8); color: white; border-radius: 8px; pointer-events: none; z-index: 10; }
 .link { fill: none; stroke-opacity: 0.6; stroke-width: 2px; /* 新增：设置默认边宽度 */ }

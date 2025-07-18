@@ -1280,29 +1280,64 @@ def filter_by_time_range(graph, time_range):
     return graph
 
 def filter_by_types(graph, node_types, edge_types):
-    """根据节点和边的类型筛选图。保留孤立节点。"""
+    """根据节点和边的类型筛选图，并验证连接的有效性。"""
     if not node_types and not edge_types:
         return graph
     
     app.logger.info(f"应用类型筛选: 节点={node_types}, 边={edge_types}")
-    
-    # 如果有节点类型筛选，先处理节点
+
+    # 定义边类型与其有效源/目标节点类型的映射关系
+    VALID_CONNECTIONS = {
+        'InStyleOf': (['Song', 'Album'], ['Song', 'Album']),
+        'InterpolatesFrom': (['Song', 'Album'], ['Song', 'Album']),
+        'CoverOf': (['Song', 'Album'], ['Song', 'Album']),
+        'LyricalReferenceTo': (['Song', 'Album'], ['Song', 'Album']),
+        'DirectlySamples': (['Song', 'Album'], ['Song', 'Album']),
+        'PerformerOf': (['Person', 'MusicalGroup'], ['Song', 'Album']),
+        'ComposerOf': (['Person', 'MusicalGroup'], ['Song', 'Album']),
+        'ProducerOf': (['Person', 'MusicalGroup'], ['Song', 'Album']),
+        'LyricistOf': (['Person', 'MusicalGroup'], ['Song', 'Album']),
+        'MemberOf': (['Person'], ['MusicalGroup']),
+        'RecordedBy': (['Song', 'Album'], ['RecordLabel']),
+        'DistributedBy': (['Song', 'Album'], ['RecordLabel']),
+    }
+
+    # 1. 如果有节点类型筛选，先处理节点
     if node_types:
         nodes_to_keep = {
             n for n, d in graph.nodes(data=True)
             if d.get('Node Type') in node_types
         }
-        # 创建一个只包含所需节点的子图。这会自动处理边的连接关系。
         graph = graph.subgraph(nodes_to_keep).copy()
 
-    # 在可能已经缩小的图上，再处理边类型
-    if edge_types:
-        edges_to_remove = [
-            (u, v, k) for u, v, k, d in graph.edges(data=True, keys=True)
-            if d.get('Edge Type') not in edge_types
-        ]
-        graph.remove_edges_from(edges_to_remove)
-        # 注意：这里我们不移除孤立节点，以满足需求3
+    # 2. 在可能已经缩小的图上，再处理边
+    edges_to_remove = []
+    for u, v, k, d in graph.edges(data=True, keys=True):
+        edge_type = d.get('Edge Type')
+        
+        # 2a. 基于边类型列表进行筛选
+        if edge_types and edge_type not in edge_types:
+            edges_to_remove.append((u, v, k))
+            continue # 如果类型不匹配，直接跳到下一条边
+
+        # 2b. 验证连接的合法性
+        if edge_type in VALID_CONNECTIONS:
+            # 确保节点存在于图中再获取属性
+            if u not in graph.nodes or v not in graph.nodes:
+                edges_to_remove.append((u,v,k))
+                continue
+
+            source_node_type = graph.nodes[u].get('Node Type')
+            target_node_type = graph.nodes[v].get('Node Type')
+            valid_sources, valid_targets = VALID_CONNECTIONS[edge_type]
+            
+            if source_node_type not in valid_sources or target_node_type not in valid_targets:
+                # 记录发现的无效连接，用于调试
+                app.logger.debug(f"移除无效连接: {source_node_type} ({u}) -> {target_node_type} ({v}) via '{edge_type}'")
+                edges_to_remove.append((u, v, k))
+
+    graph.remove_edges_from(edges_to_remove)
+    # 注意：这里我们不移除孤立节点，以满足需求
 
     return graph
 

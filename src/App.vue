@@ -13,7 +13,12 @@
       <div class="resizer" @mousedown="startResizeLeft"></div>
 
       <div class="center-column" :style="{ flex: 1 }">
-        <InfluenceNetwork />
+        <div class="top-view">
+          <InfluenceNetwork />
+        </div>
+        <div class="bottom-view">
+          <BottomView />
+        </div>
       </div>
 
       <div class="resizer" @mousedown="startResizeRight"></div>
@@ -34,6 +39,7 @@ import InfluenceNetwork from './components/visualizations/InfluenceNetwork.vue';
 import GenreLineGraph from './components/visualizations/GenreLineGraph.vue';
 import CareerTrajectory from './components/visualizations/CareerTrajectory.vue';
 import Q2SankeyView from './components/Q2SankeyView.vue';
+import BottomView from './components/visualizations/BottomView.vue';
 
 const store = useGraphStore();
 
@@ -217,6 +223,21 @@ main {
   padding: 5px;
   overflow: hidden;
   background-color: var(--color-background);
+}
+
+.top-view {
+  height: 75%;
+  min-height: 0; /* 允许flex item收缩 */
+}
+
+.bottom-view {
+  height: 25%;
+  min-height: 0; /* 允许flex item收缩 */
+  border-top: 2px solid var(--color-border);
+  padding: 10px;
+  background-color: var(--color-surface);
+  text-align: center;
+  color: var(--color-text-secondary);
 }
 
 /* 弹性布局设计 - 响应式高度分配 */
