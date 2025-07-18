@@ -19,17 +19,26 @@
         <div class="selectors">
           <div v-for="(artist, index) in selectedArtists" :key="index" class="selector">
             <label>Artist {{ index + 1 }}:</label>
-            <select v-model="selectedArtists[index]">
-              <option value="">SELECT</option>
-              <option
-                v-for="person in artistList"
+            <!-- 将select改为input，并添加搜索功能 -->
+            <input
+              type="text"
+              v-model="artistSearchInputs[index]"
+              @input="filterArtists(index)"
+              @focus="showSuggestions[index] = true"
+              @blur="handleBlur(index)"
+              placeholder="Search artist..."
+            />
+            <!-- 搜索结果建议框 -->
+            <div v-if="showSuggestions[index] && filteredArtistLists[index].length > 0" class="suggestions">
+              <div
+                v-for="person in filteredArtistLists[index]"
                 :key="person.id"
-                :value="person.id"
-                :disabled="selectedArtists.includes(person.id) && selectedArtists[index] !== person.id"
+                @mousedown="selectArtist(person, index)"
+                class="suggestion-item"
               >
                 {{ person.name }}
-              </option>
-            </select>
+              </div>
+            </div>
             <button
               v-if="selectedArtists[index]"
               class="clear-btn"
@@ -118,6 +127,9 @@ export default {
   setup() {
     const graphData = ref(null);
     const selectedArtists = ref([null, null, null]);
+    const artistSearchInputs = ref(['', '', '']); // 新增：存储每个输入框的搜索词
+    const filteredArtistLists = ref([[], [], []]); // 新增：存储每个输入框的过滤结果
+    const showSuggestions = ref([false, false, false]); // 新增：控制建议框显示
     const comparisonData = ref([]);
     const loading = ref(false);
     const mainChart = ref(null);
@@ -156,6 +168,35 @@ export default {
       comparisonData.value = [];
       destroyCharts();
       hideTooltip();
+    };
+
+    // 过滤艺术家列表（前缀匹配）
+    const filterArtists = (index) => {
+      const searchTerm = artistSearchInputs.value[index].toLowerCase();
+      if (!searchTerm) {
+        filteredArtistLists.value[index] = [];
+        return;
+      }
+
+      // 过滤以搜索词开头的艺术家（不区分大小写）
+      filteredArtistLists.value[index] = artistList.value.filter(person =>
+        person.name.toLowerCase().startsWith(searchTerm)
+      );
+    };
+
+    // 选择艺术家
+    const selectArtist = (person, index) => {
+      selectedArtists.value[index] = person.id;
+      artistSearchInputs.value[index] = person.name;
+      filteredArtistLists.value[index] = [];
+      showSuggestions.value[index] = false;
+    };
+
+    // 处理输入框失去焦点
+    const handleBlur = (index) => {
+      setTimeout(() => {
+        showSuggestions.value[index] = false;
+      }, 200);
     };
 
     // 加载图数据
@@ -667,12 +708,18 @@ export default {
 
     return {
       selectedArtists,
+      artistSearchInputs,
+      filteredArtistLists,
+      showSuggestions,
       comparisonData,
       loading,
       artistList,
       canCompare,
       mainChart,
       clearArtist,
+      filterArtists,
+      selectArtist,
+      handleBlur,
       loadComparisonData,
       showTooltip,
       tooltipStyle,
@@ -777,6 +824,32 @@ export default {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* 新增：搜索建议框样式 */
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 100;
+  margin-top: 2px;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.suggestion-item:hover {
+  background-color: #f0f8ff;
 }
 
 .clear-btn {

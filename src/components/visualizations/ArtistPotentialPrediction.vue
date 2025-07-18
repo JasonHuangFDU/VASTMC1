@@ -65,8 +65,8 @@
                 <ArtistRadarChart
                   v-if="report.radar_data && report.radar_data[index]"
                   :artistData="report.radar_data[index]"
-                  :width="120"
-                  :height="120"
+                  :width="130"
+                  :height="130"
                 />
               </div>
             </div>
@@ -98,12 +98,12 @@ export default {
       report: null,
       showWeightSelection: true,
       weightOrder: [
-        { id: 'influence_score', label: '影响力评分', description: '艺术家在行业中的影响力大小' },
-        { id: 'creative_depth', label: '创作深度', description: '艺术家的创作能力和深度' },
-        { id: 'label_weight', label: '唱片公司权重', description: '合作唱片公司的实力和资源' },
-        { id: 'producer_count', label: '制作经验', description: '作为制作人的经验和作品数量' },
-        { id: 'oceanus', label: 'Oceanus作品', description: '与Oceanus Folk相关的作品数量和质量' },
-        { id: 'collab', label: '合作能力', description: '与其他艺术家的合作广度和深度' }
+        { id: 'influence_score', label: 'Influence', description: '艺术家在行业中的影响力大小' },
+        { id: 'creative_depth', label: 'Creativity', description: '艺术家的创作能力和深度' },
+        { id: 'label_weight', label: 'Record Company', description: '合作唱片公司的实力和资源' },
+        { id: 'producer_count', label: 'Producer Experience', description: '作为制作人的经验和作品数量' },
+        { id: 'oceanus', label: 'Oceanus Work', description: '与Oceanus Folk相关的作品数量和质量' },
+        { id: 'collab', label: 'Collaboration', description: '与其他艺术家的合作广度和深度' }
       ],
       selectedWeights: []
     };
@@ -432,14 +432,14 @@ button:disabled {
   color: #047857;
   padding: 3px 6px;
   border-radius: 3px;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   word-break: break-word;
   max-width: 100%;
   line-height: 1.3;
 }
 
 .star-radar {
-  height: 100px;
+  height: 130px;
   flex-shrink: 0;
   display: flex;
   justify-content: center;

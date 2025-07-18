@@ -1038,15 +1038,15 @@ def predict():
             feat = artist.get('features', {})
             strengths = []
             if feat.get('composer_count', 0) > 0:
-                strengths.append(f"作曲作品: {feat['composer_count']}")
+                strengths.append(f"Composer Count: {feat['composer_count']}")
             if feat.get('lyricist_count', 0) > 0:
-                strengths.append(f"作词作品: {feat['lyricist_count']}")
+                strengths.append(f"Lyricist Count: {feat['lyricist_count']}")
             if feat.get('producer_count', 0) > 0:
-                strengths.append(f"制作经验: {feat['producer_count']}")
+                strengths.append(f"Producer Count: {feat['producer_count']}")
             if feat.get('recent_activity', 0) < 3:
-                strengths.append(f"最近活动: {feat['recent_activity']}年前")
+                strengths.append(f"Recent Activity: {feat['recent_activity']} years ago")
             if feat.get('recent_activity', 0) > 3:
-                strengths.append(f"合作多样性: {feat['collab_diversity']}")
+                strengths.append(f"Collaboration: {feat['collab_diversity']}")
             risk_factors = []
             
             
@@ -1061,12 +1061,12 @@ def predict():
 
         # 准备雷达图数据
         radar_dimensions = {
-            'influence_score': '影响力',
-            'creative_depth': '创作深度',
-            'collab_diversity': '合作多样性',
-            'oceanus_works': 'Oceanus作品',
-            'total_notable': '知名作品',
-            'collaboration_score': '协作强度'
+            'influence_score': 'Influence',
+            'creative_depth': 'Creativity',
+            'collab_diversity': 'Collab-Diversity',
+            'oceanus_works': 'Oceanus',
+            'total_notable': 'Notablility',
+            'collaboration_score': 'Collab-Frequency'
         }
         
         radar_data = []
