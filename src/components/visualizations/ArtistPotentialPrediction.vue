@@ -3,38 +3,34 @@
     <div class="header">
       <h4>Oceanus Folk Stars Prediction</h4>
       <button v-if="report" @click="resetPrediction" class="re-predict-btn">
-        重新预测
+        Re-predict
       </button>
     </div>
 
-    <!-- 权重排序区域 - 只在预测前显示 -->
+    <!-- 权重评分区域 - 只在预测前显示 -->
     <div v-if="showWeightSelection" class="weight-selection-section">
       <div class="selection-header">
-        <h4>Please rank the following weight factors.</h4>
-        <p class="selection-subtitle">(Click to select in order of importance from highest to lowest.)</p>
+        <h4>Rate the importance of each factor (1-10)</h4>
+        <p class="selection-subtitle">(Higher score means greater importance)</p>
       </div>
 
-      <div class="selected-weights">
-        <div v-for="(weight, index) in selectedWeights" :key="weight.id"
-             class="weight-item selected" @click="removeWeight(weight.id)">
-          <span class="order">{{ index + 1 }}</span>
-          <span class="weight-label">{{ weight.label }}</span>
-          <span class="remove-btn">×</span>
-        </div>
-      </div>
-
-      <div class="unselected-weights">
-        <div v-for="weight in unselectedWeights" :key="weight.id"
-             class="weight-item" @click="addWeight(weight.id)">
-          <span class="weight-label">{{ weight.label }}</span>
+      <div class="weight-items">
+        <div v-for="weight in weightOrder" :key="weight.id" class="weight-item">
+          <div class="weight-info">
+            <span class="weight-label">{{ weight.label }}</span>
+          </div>
+          <div class="score-selector">
+            <select v-model="weightScores[weight.id]" class="score-select">
+              <option v-for="n in 10" :key="n" :value="n">{{ n }}</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <div class="selection-buttons">
-        <button @click="resetWeights">重置排序</button>
-        <button @click="runPrediction" :disabled="selectedWeights.length !== weightOrder.length"
-                class="primary">
-          {{ loading ? '分析中...' : '开始分析' }}
+        <button @click="resetScores">Reset</button>
+        <button @click="runPrediction" :disabled="!allScoresSelected" class="primary">
+          {{ loading ? 'Analyzing...' : 'Start Analysis' }}
         </button>
       </div>
     </div>
@@ -98,60 +94,70 @@ export default {
       report: null,
       showWeightSelection: true,
       weightOrder: [
-        { id: 'influence_score', label: 'Influence', description: '艺术家在行业中的影响力大小' },
-        { id: 'creative_depth', label: 'Creativity', description: '艺术家的创作能力和深度' },
-        { id: 'label_weight', label: 'Record Company', description: '合作唱片公司的实力和资源' },
-        { id: 'producer_count', label: 'Producer Experience', description: '作为制作人的经验和作品数量' },
-        { id: 'oceanus', label: 'Oceanus Work', description: '与Oceanus Folk相关的作品数量和质量' },
-        { id: 'collab', label: 'Collaboration', description: '与其他艺术家的合作广度和深度' }
+        { id: 'influence_score', label: 'Influence' },
+        { id: 'creative_depth', label: 'Creativity' },
+        { id: 'label_weight', label: 'Record Company' },
+        { id: 'producer_count', label: 'Producer Experience' },
+        { id: 'oceanus', label: 'Oceanus Work' },
+        { id: 'collab', label: 'Collaboration' }
       ],
-      selectedWeights: []
+      weightScores: {}
     };
   },
+  created() {
+    this.resetScores();
+  },
   computed: {
-    unselectedWeights() {
-      return this.weightOrder.filter(weight =>
-        !this.selectedWeights.some(selected => selected.id === weight.id)
-      );
+    allScoresSelected() {
+      return this.weightOrder.every(weight => {
+        return this.weightScores[weight.id] > 0;
+      });
     }
   },
   methods: {
-    addWeight(weightId) {
-      const weight = this.weightOrder.find(w => w.id === weightId);
-      if (weight) {
-        this.selectedWeights.push(weight);
-      }
+    resetScores() {
+      const defaultScores = {};
+      this.weightOrder.forEach(weight => {
+        defaultScores[weight.id] = 5;
+      });
+      this.weightScores = { ...defaultScores };
     },
-    removeWeight(weightId) {
-      this.selectedWeights = this.selectedWeights.filter(w => w.id !== weightId);
-    },
-    resetWeights() {
-      this.selectedWeights = [];
-    },
+
     async runPrediction() {
       this.loading = true;
       this.error = null;
       this.report = null;
 
       try {
-        const weightPreferences = this.selectedWeights.map(item => item.id);
-        const result = await loadOceanusDataAndPredict(weightPreferences);
+        const totalScore = this.weightOrder.reduce((sum, weight) => {
+          return sum + this.weightScores[weight.id];
+        }, 0);
+
+        const normalizedWeights = this.weightOrder.map(weight => {
+          return this.weightScores[weight.id] / totalScore;
+        });
+
+        const weightIds = this.weightOrder.map(weight => weight.id);
+
+        const result = await loadOceanusDataAndPredict(weightIds, normalizedWeights);
+
         this.report = result;
         this.showWeightSelection = false;
         const predictedIds = result.predicted_stars.map(star => star.id);
         this.$emit('prediction-complete', predictedIds);
       } catch (error) {
-        this.error = `预测失败: ${error.message}`;
-        console.error('预测错误详情:', error);
+        this.error = `Prediction failed: ${error.message}`;
+        console.error('Prediction error:', error);
       } finally {
         this.loading = false;
       }
     },
+
     resetPrediction() {
       this.showWeightSelection = true;
       this.report = null;
       this.error = null;
-      this.selectedWeights = [];
+      this.resetScores();
     }
   }
 };
@@ -159,10 +165,10 @@ export default {
 
 <style scoped>
 .artist-prediction {
-  padding: 20px;
+  padding: 15px;
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   margin-top: 0px;
   overflow: hidden;
 }
@@ -171,7 +177,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
   gap: 0px;
 }
@@ -179,12 +185,12 @@ export default {
 .re-predict-btn {
   background-color: #6c757d;
   color: white;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
-  white-space: nowrap;
+  font-size: 0.85rem;
 }
 
 .re-predict-btn:hover {
@@ -194,108 +200,98 @@ export default {
 .weight-selection-section {
   background-color: #f8f9fa;
   border-radius: 8px;
-  padding: 20px;
+  padding: 15px;
   margin-bottom: 0px;
   border: 1px solid #e9ecef;
-  transition: all 0.3s ease;
 }
 
 .selection-header {
   text-align: center;
-  margin-bottom: 0px;
+  margin-bottom: 15px;
 }
 
 .selection-header h4 {
-  margin: 0;
+  margin: 0 0 5px 0;
   color: #2c3e50;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .selection-subtitle {
   color: #6c757d;
-  margin-top: 0px;
-  font-size: 0.8rem;
+  margin-top: 0;
+  font-size: 0.75rem;
 }
 
-.selected-weights, .unselected-weights {
+.weight-items {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 5px;
+  margin-bottom: 15px;
 }
 
 .weight-item {
-  flex: 0 0 calc(50% - 8px);
-  min-width: 0;
+  flex: 0 0 calc(50% - 4px);
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: 8px 10px;
   background-color: white;
   border: 1px solid #dee2e6;
   border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-  height: 36px;
+  min-height: 40px;
   box-sizing: border-box;
 }
 
 .weight-item:hover {
   border-color: #4a6cf7;
-  box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.2);
 }
 
-.weight-item.selected {
-  border-color: #4a6cf7;
-  background-color: #e0e7ff;
-  padding-left: 30px;
-}
-
-.order {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  background-color: #4a6cf7;
-  color: white;
-  border-radius: 50%;
+.weight-info {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 0.7rem;
+  flex-direction: column;
+  flex: 1;
 }
 
 .weight-label {
-  font-weight: bold;
+  font-weight: 600;
   color: #4a6cf7;
   font-size: 0.85rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-right: 5px;
 }
 
-.remove-btn {
-  margin-left: auto;
-  color: #dc3545;
-  font-size: 1rem;
-  font-weight: bold;
-  width: 16px;
+.score-selector {
+  min-width: 60px;
+  text-align: right;
+}
+
+.score-select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 0.85rem;
+  color: #495057;
+  cursor: pointer;
   text-align: center;
+}
+
+.score-select:focus {
+  border-color: #4a6cf7;
+  outline: none;
 }
 
 .selection-buttons {
   display: flex;
   justify-content: center;
-  gap: 50px;
-  margin-top: 0px;
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .selection-buttons button {
-  padding: 8px 16px;
+  padding: 6px 14px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -308,30 +304,23 @@ export default {
   color: #495057;
 }
 
+.selection-buttons button:first-child:hover {
+  background-color: #dde0e3;
+}
+
 .selection-buttons button.primary {
   background-color: #4a6cf7;
   color: white;
 }
 
+.selection-buttons button.primary:hover {
+  background-color: #3a5ce5;
+}
+
 .selection-buttons button:disabled {
   background-color: #a0a0a0;
   cursor: not-allowed;
-}
-
-button {
-  padding: 8px 16px;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-button:disabled {
-  background-color: #a0a0a0;
-  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .error-message {
@@ -340,8 +329,7 @@ button:disabled {
   color: #b71c1c;
   border-radius: 4px;
   margin-bottom: 10px;
-  word-break: break-word;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .predicted-stars {
@@ -451,7 +439,7 @@ button:disabled {
   .header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 15px;
+    gap: 10px;
   }
 
   .stars-container {
@@ -460,13 +448,9 @@ button:disabled {
     max-width: 100%;
   }
 
-  .weight-item {
-    flex: 0 0 calc(50% - 8px);
-  }
-
   .selection-buttons {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
   .selection-buttons button {
@@ -481,18 +465,9 @@ button:disabled {
     gap: 5px;
   }
 
-  .star-header .rank,
-  .star-header .probability {
-    margin-right: 0;
-  }
-
-  .probability {
-    align-self: flex-start;
-  }
-
   .header button.re-predict-btn {
     width: 100%;
-    margin-top: 10px;
+    margin-top: 8px;
   }
 
   .weight-item {
