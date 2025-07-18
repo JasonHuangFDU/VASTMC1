@@ -78,13 +78,19 @@ export const useGraphStore = defineStore('graph', {
 
       // Set initial state for the first graph request.
       this.searchQuery = 17255; // ID for "Sailor Shift"
-      this.selectedGenres = []; // <--- MODIFIED: Was selectedGenre: null
+      this.selectedGenres = [];
       this.selectedNodeTypes = [];
       this.selectedEdgeTypes = [];
       this.selectedTimeRange = { start: 1981, end: 2040 };
 
       // Fetch the initial graph view.
       await this.updateGraphLayout();
+
+      // After loading, set the initial center node object.
+      const initialCenterNode = this.graphData.nodes.find(node => node.id === this.searchQuery);
+      if (initialCenterNode) {
+        this.centerNode = initialCenterNode;
+      }
 
       // 在所有操作成功完成后，将状态标记为已初始化
       this.isInitialized = true;
@@ -206,8 +212,12 @@ export const useGraphStore = defineStore('graph', {
     },
 
     selectCenterNode(nodeId) {
-        this.searchQuery = nodeId;
-        this.updateGraphLayout(); // Immediate update, no debounce
+      this.searchQuery = nodeId;
+      const node = this.graphData.nodes.find(n => n.id === nodeId);
+      if (node) {
+        this.centerNode = node;
+      }
+      this.updateGraphLayout();
     },
 
     setGenres(genres) { // <--- MODIFIED: Renamed from setGenre

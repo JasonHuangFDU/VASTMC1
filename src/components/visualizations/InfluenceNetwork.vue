@@ -178,6 +178,26 @@ function renderGraph(data) {
   const nodes = JSON.parse(JSON.stringify(data.nodes));
   const links = JSON.parse(JSON.stringify(data.links));
 
+  // --- START: Link pre-processing for multi-edges ---
+  const linkGroups = {};
+  links.forEach(link => {
+    // Create a canonical key to group forward and backward links together for layout.
+    const key = link.source < link.target ? `${link.source}-${link.target}` : `${link.target}-${link.source}`;
+    if (!linkGroups[key]) {
+      linkGroups[key] = [];
+    }
+    linkGroups[key].push(link);
+  });
+
+  // Assign index and count to each link within its group.
+  Object.values(linkGroups).forEach(group => {
+    group.forEach((link, i) => {
+      link.linknum = i;
+      link.linkcount = group.length;
+    });
+  });
+  // --- END: Link pre-processing ---
+
   // --- 动态更新图例 ---
   const nodeTypesInGraph = new Set(nodes.map(n => n['Node Type']));
   const edgeClassesInGraph = new Set(links.map(l => getLinkClass(l['Edge Type'])));
@@ -208,7 +228,7 @@ function renderGraph(data) {
   zoomGroup = svg.append('g');
 
   const maxInfluence = d3.max(nodes, d => d.influence_score);
-  // 根据跳数级别调整缩放范围，但保持根号等比关系
+  // 根据跳数级别调整缩放范围，���保持根号等比关系
   if (store.hopLevel === 2) {
     // 二跳连接模式下，适当调整大小范围以适应更多节点
     sizeScale.domain([0, maxInfluence > 0 ? maxInfluence : 1]).range([6, 25]);
@@ -220,7 +240,8 @@ function renderGraph(data) {
   
   const defs = svg.append('defs');
   Object.entries(ALL_EDGE_LEGEND_INFO).forEach(([cls, info]) => {
-    defs.append('marker').attr('id', `arrow-${cls}`).attr('viewBox', '0 -5 10 10').attr('refX', 10).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('path').attr('d', 'M0,-5L10,0L0,5').attr('class', `arrow-head ${cls}`);
+    // Increased refX to position the arrow tip before the node center, accommodating various node radii.
+    defs.append('marker').attr('id', `arrow-${cls}`).attr('viewBox', '0 -5 10 10').attr('refX', 25).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('path').attr('d', 'M0,-5L10,0L0,5').attr('class', `arrow-head ${cls}`);
   });
 
   simulation = d3.forceSimulation(nodes)
@@ -299,16 +320,27 @@ function renderGraph(data) {
     if (zoomGroup) zoomGroup.attr('transform', e.transform);
   }));
 
-  simulation.on('tick', () => { 
+  simulation.on('tick', () => {
     linkElements.attr('d', d => {
-      const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y, distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance === 0) return `M ${d.source.x} ${d.source.y}`;
-      const sourceRadius = getNodeRadius(d.source), targetRadius = getNodeRadius(d.target);
-      const newSourceX = d.source.x + (dx / distance) * sourceRadius, newSourceY = d.source.y + (dy / distance) * sourceRadius;
-      const newTargetX = d.target.x - (dx / distance) * targetRadius, newTargetY = d.target.y - (dy / distance) * targetRadius;
-      return `M${newSourceX},${newSourceY} L${newTargetX},${newTargetY}`;
-    }); 
-    nodeElements.attr('transform', d => `translate(${d.x},${d.y})`); 
+      const dx = d.target.x - d.source.x;
+      const dy = d.target.y - d.source.y;
+      
+      // This unified logic handles both single and multiple links.
+      // For a single link (linkcount=1, linknum=0), offset will be 0, resulting in a straight line curve.
+      const angle = Math.atan2(dy, dx);
+      const spacing = 15; // Space between parallel links
+      const offset = (d.linknum - (d.linkcount - 1) / 2) * spacing;
+
+      // Calculate control point for the quadratic Bezier curve
+      const midX = (d.source.x + d.target.x) / 2;
+      const midY = (d.source.y + d.target.y) / 2;
+      const controlX = midX + offset * Math.sin(angle);
+      const controlY = midY - offset * Math.cos(angle);
+
+      // All paths are drawn from center to center as quadratic Bezier curves.
+      return `M${d.source.x},${d.source.y} Q${controlX},${controlY} ${d.target.x},${d.target.y}`;
+    });
+    nodeElements.attr('transform', d => `translate(${d.x},${d.y})`);
   });
 }
 

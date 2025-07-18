@@ -157,24 +157,17 @@ const suggestions = ref([]);
 const showSuggestions = ref(false);
 
 // --- Watchers ---
-// This watcher synchronizes the local input field with the store's state,
-// ensuring the user-friendly "Name (id: XXX)" format is displayed.
-watch([searchQuery, filterOptions], ([newQueryId, newOptions]) => {
-  if (newQueryId && newOptions.person_nodes && newOptions.person_nodes.length > 0) {
-    const selectedNode = newOptions.person_nodes.find(p => p.id === newQueryId);
-    if (selectedNode) {
-      // Found the corresponding person, so format the input text
-      localSearchQuery.value = `${selectedNode.name} (id: ${selectedNode.id})`;
-    } else {
-      // If the ID is not in the person list (e.g., another node type), display the ID itself
-      localSearchQuery.value = newQueryId.toString();
-    }
-  } else if (!newQueryId) {
-    // If the search query is cleared, clear the input field
+// This watcher synchronizes the local input field with the store's centerNode.
+watch(() => store.centerNode, (newNode) => {
+  if (newNode) {
+    // If there is a center node, display its name and id.
+    localSearchQuery.value = `${newNode.name} (${newNode.id})`;
+  } else {
+    // If the center node is cleared, clear the input field.
     localSearchQuery.value = '';
   }
 }, {
-  deep: true // Use a deep watch to detect changes within the filterOptions object
+  deep: true
 });
 
 // --- Computed Properties ---
