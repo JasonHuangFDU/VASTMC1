@@ -10,12 +10,8 @@
     <!-- 权重排序区域 - 只在预测前显示 -->
     <div v-if="showWeightSelection" class="weight-selection-section">
       <div class="selection-header">
-        <h3>请对以下权重因素进行排序</h3>
-        <p class="selection-subtitle">(按重要性从高到低点击选择)</p>
-      </div>
-
-      <div class="selection-instruction" v-if="selectedWeights.length === 0">
-        请点击下方因素开始排序（第一个点击的为最高权重）
+        <h4>Please rank the following weight factors.</h4>
+        <p class="selection-subtitle">(Click to select in order of importance from highest to lowest.)</p>
       </div>
 
       <div class="selected-weights">
@@ -54,7 +50,6 @@
             <div class="star-header">
               <span class="rank">{{ index + 1 }}</span>
               <span class="name">{{ star.name }}</span>
-              <span class="probability">{{ star.probability }}</span>
             </div>
 
             <div class="star-content">
@@ -70,8 +65,8 @@
                 <ArtistRadarChart
                   v-if="report.radar_data && report.radar_data[index]"
                   :artistData="report.radar_data[index]"
-                  :width="100"
-                  :height="100"
+                  :width="120"
+                  :height="120"
                 />
               </div>
             </div>
@@ -176,7 +171,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 0px;
   flex-wrap: wrap;
   gap: 0px;
 }
@@ -200,43 +195,33 @@ export default {
   background-color: #f8f9fa;
   border-radius: 8px;
   padding: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 0px;
   border: 1px solid #e9ecef;
   transition: all 0.3s ease;
 }
 
 .selection-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 0px;
 }
 
-.selection-header h3 {
+.selection-header h4 {
   margin: 0;
   color: #2c3e50;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .selection-subtitle {
   color: #6c757d;
-  margin-top: 5px;
+  margin-top: 0px;
   font-size: 0.8rem;
-}
-
-.selection-instruction {
-  background-color: #e9ecef;
-  padding: 8px 12px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-  color: #495057;
-  font-size: 0.85rem;
-  text-align: center;
 }
 
 .selected-weights, .unselected-weights {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 15px;
+  margin-bottom: 5px;
 }
 
 .weight-item {
@@ -373,7 +358,7 @@ button:disabled {
 
 .star-card {
   width: 160px;
-  height: 200px;
+  height: 250px;
   padding: 10px;
   border-radius: 8px;
   background-color: #fff;
@@ -415,17 +400,6 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.star-header .probability {
-  background-color: #e0e7ff;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: bold;
-  color: #4a6cf7;
-  font-size: 0.7rem;
-  flex-shrink: 0;
-  margin-left: 4px;
 }
 
 .star-content {
