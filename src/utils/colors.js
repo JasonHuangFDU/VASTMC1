@@ -17,16 +17,33 @@ export const appColors = {
   // --- 桑基图和折线图的通用颜色系列 ---
   // 用于流派、艺术家等分类数据，确保在不同图中保持一致
   categoryPalette: [
-    '#E6A7A6', // 柔和橘粉
-    '#B7D962', // 清新绿
-    '#FDD787', // 柔和橙
-    '#9FC1E8', // 柔和蓝
-    '#CCB8D2', // 柔和紫罗兰
-    '#8DE3C7', // 柔和薄荷绿
-    '#FFC599', // 柔和蜜桃色
-    '#A0A0A0', // 中性灰
-    '#6A9B9B', // 柔和青
-    '#D3A9C8', // 柔和玫粉紫
+    // --- 原始调色板 ---
+    '#E6A7A6', // 0: 柔和橘粉
+    '#B7D962', // 1: 清新绿
+    '#FDD787', // 2: 柔和橙
+    '#9FC1E8', // 3: 柔和蓝
+    '#CCB8D2', // 4: 柔和紫罗兰
+    '#8DE3C7', // 5: 柔和薄荷绿
+    '#FFC599', // 6: 柔和蜜桃色
+    '#A0A0A0', // 7: 中性灰
+    '#6A9B9B', // 8: 柔和青
+    '#D3A9C8', // 9: 柔和玫粉紫
+    // --- 新增调色板 ---
+    '#BDB76B', // 10: 柔和土黄
+    '#AEC6CF', // 11: 柔和灰蓝
+    '#AB8476', // 12: 柔和棕
+    '#87CEEB', // 13: 柔和天蓝
+    '#77DD77', // 14: 粉彩绿
+    '#5A5A8C', // 15: 柔和暗紫
+    '#FFB3DE', // 16: 柔和粉
+    '#FDB9C8', // 17: 粉红丁香
+    '#B19CD9', // 18: 浅薰衣草
+    '#FF9999', // 19: 柔和珊瑚红
+    '#5F9EA0', // 20: 岛屿蓝绿
+    '#A0522D', // 21: 柔和赭色
+    '#B2BEB5', // 22: 灰锡色
+    '#E6E6FA', // 23: 淡紫色
+    '#C19A6B'  // 24: 柔和驼色
   ],
 
   // --- 特定实体颜色 ---
@@ -56,6 +73,7 @@ export const appColors = {
  */
 export const getGenreColor = (genreName) => {
   const paletteMap = {
+    // --- 已有映射 ---
     'Dream Pop': appColors.categoryPalette[0],
     'Indie Folk': appColors.categoryPalette[1],
     'Desert Rock': appColors.categoryPalette[2],
@@ -66,9 +84,26 @@ export const getGenreColor = (genreName) => {
     'Jazz Surf Rock': appColors.categoryPalette[7],
     'Synthpop': appColors.categoryPalette[8],
     'Post-Apocalyptic Folk': appColors.categoryPalette[9],
-    // 添加更多流派到调色板的映射
-    'Oceanus Folk': appColors.oceanusFolk, // 确保 Oceanus Folk 有固定颜色
-    // 如果有其他重要的流派，可以在这里显式映射
+    
+    // --- 新增映射 ---
+    'Acoustic Folk': appColors.categoryPalette[10],
+    'Alternative Rock': appColors.categoryPalette[11],
+    'Southern Gothic Rock': appColors.categoryPalette[21],
+    'Blues Rock': appColors.categoryPalette[13],
+    'Celtic Folk': appColors.categoryPalette[14],
+    'Darkwave': appColors.categoryPalette[15],
+    'Emo/Pop Punk': appColors.categoryPalette[16],
+    'Indie Pop': appColors.categoryPalette[17],
+    'Lo-Fi Electronica': appColors.categoryPalette[18],
+    'Psychedelic Rock': appColors.categoryPalette[19],
+    'Sea Shanties': appColors.categoryPalette[20],
+    'Avant-Garde Folk': appColors.categoryPalette[12],
+    'Speed Metal': appColors.categoryPalette[22],
+    'Symphonic Metal': appColors.categoryPalette[23],
+    'Indie Rock': appColors.categoryPalette[24],
+    
+    // --- 特殊颜色映射 ---
+    'Oceanus Folk': appColors.oceanusFolk,
   };
   return paletteMap[genreName] || '#D9D9D9'; // 默认颜色为浅灰
 };
