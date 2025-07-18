@@ -1,95 +1,79 @@
-<template>
-  <div class="career-trajectory">
-    <!-- 生涯轨迹视图 -->
-    <div class="career-view">
-      <!-- 艺术家选择面板 -->
-      <div class="artist-selection">
-        <!-- 将标题和按钮放在同一行 -->
-        <div class="selection-header">
-          <h3>Select Three Artists to Compare Their Career Trajectories</h3>
-          <button
-            class="compare-btn"
-            :disabled="!canCompare"
-            @click="loadComparisonData"
-          >
-            COMPARE
-          </button>
-        </div>
+/* 其他样式保持不变 */
+.selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
 
-        <div class="selectors">
-          <div v-for="(artist, index) in selectedArtists" :key="index" class="selector">
-            <label>Artist {{ index + 1 }}:</label>
-            <!-- 将select改为input，并添加搜索功能 -->
-            <input
-              type="text"
-              v-model="artistSearchInputs[index]"
-              @input="filterArtists(index)"
-              @focus="showSuggestions[index] = true"
-              @blur="handleBlur(index)"
-              placeholder="Search artist..."
-            />
-            <!-- 搜索结果建议框 -->
-            <div v-if="showSuggestions[index] && filteredArtistLists[index].length > 0" class="suggestions">
-              <div
-                v-for="person in filteredArtistLists[index]"
-                :key="person.id"
-                @mousedown="selectArtist(person, index)"
-                class="suggestion-item"
-              >
-                {{ person.name }}
-              </div>
-            </div>
-            <button
-              v-if="selectedArtists[index]"
-              class="clear-btn"
-              @click="clearArtist(index)"
-            >
-              ×
-            </button>
-          </div>
-        </div>
+.selection-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #2c3e50;
+}
+
+.artist-selection h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 0px;
+}<template>
+  <div class="career-trajectory">
+    <!-- 艺术家选择面板（占比 1） -->
+    <div class="artist-selection">
+      <!-- 将标题和按钮放在同一行 -->
+      <div class="selection-header">
+        <h3>Select Three Artists to Compare Their Career Trajectories</h3>
+        <button
+          class="compare-btn"
+          :disabled="!canCompare"
+          @click="loadComparisonData"
+        >
+          COMPARE
+        </button>
       </div>
 
+      <div class="selectors">
+        <div v-for="(artist, index) in selectedArtists" :key="index" class="selector">
+          <label>Artist {{ index + 1 }}:</label>
+          <!-- 将select改为input，并添加搜索功能 -->
+          <input
+            type="text"
+            v-model="artistSearchInputs[index]"
+            @input="filterArtists(index)"
+            @focus="showSuggestions[index] = true"
+            @blur="handleBlur(index)"
+            placeholder="Search artist..."
+          />
+          <!-- 搜索结果建议框 -->
+          <div v-if="showSuggestions[index] && filteredArtistLists[index].length > 0" class="suggestions">
+            <div
+              v-for="person in filteredArtistLists[index]"
+              :key="person.id"
+              @mousedown="selectArtist(person, index)"
+              class="suggestion-item"
+            >
+              {{ person.name }}
+            </div>
+          </div>
+          <button
+            v-if="selectedArtists[index]"
+            class="clear-btn"
+            @click="clearArtist(index)"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 生涯轨迹视图（图表部分 - 占比 3） -->
+    <div class="career-view">
       <!-- 主图表容器 -->
       <div v-if="comparisonData.length" class="chart-container">
         <div class="chart-wrapper" ref="chartWrapper">
           <canvas ref="mainChart" @mousemove="handleChartHover" @mouseleave="hideTooltip"></canvas>
         </div>
-      </div>
-
-      <!-- 自定义工具提示 -->
-      <div v-if="showTooltip" class="custom-tooltip" :style="tooltipStyle">
-        <div class="tooltip-header">
-          Year <span class="year">{{ hoverYear }}</span>
-        </div>
-        <div class="tooltip-content">
-          <div v-for="(artist, index) in hoverData" :key="index" class="artist-info">
-            <div class="artist-color" :style="{ backgroundColor: getArtistColor(index) }"></div>
-            <div class="artist-details">
-              <div class="artist-name">{{ artist.name }}</div>
-              <div class="artist-stats">
-                <div class="stat-item">
-                  <span class="stat-label">Influence:</span>
-                  <span class="stat-value">{{ artist.cumulativeInfluence.toFixed(1) }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">New Work:</span>
-                  <span class="stat-value">{{ artist.workCount }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Collaboration:</span>
-                  <span class="stat-value">{{ artist.collabCount }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 数据加载状态 -->
-      <div v-if="loading" class="loading">
-        <div class="spinner"></div>
-        <p>LOADING...</p>
       </div>
 
       <!-- 空状态提示 -->
@@ -102,9 +86,44 @@
       </div>
     </div>
 
-    <!-- 艺术家潜力预测视图（显示在生涯轨迹图下方） -->
+    <!-- 艺术家潜力预测视图（下半部分 - 占比 2） -->
     <div class="prediction-view">
       <ArtistPotentialPrediction @prediction-complete="handlePredictionComplete" />
+    </div>
+
+    <!-- 自定义工具提示 -->
+    <div v-if="showTooltip" class="custom-tooltip" :style="tooltipStyle">
+      <div class="tooltip-header">
+        Year <span class="year">{{ hoverYear }}</span>
+      </div>
+      <div class="tooltip-content">
+        <div v-for="(artist, index) in hoverData" :key="index" class="artist-info">
+          <div class="artist-color" :style="{ backgroundColor: getArtistColor(index) }"></div>
+          <div class="artist-details">
+            <div class="artist-name">{{ artist.name }}</div>
+            <div class="artist-stats">
+              <div class="stat-item">
+                <span class="stat-label">Influence:</span>
+                <span class="stat-value">{{ artist.cumulativeInfluence.toFixed(1) }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">New Work:</span>
+                <span class="stat-value">{{ artist.workCount }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Collaboration:</span>
+                <span class="stat-value">{{ artist.collabCount }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 数据加载状态 -->
+    <div v-if="loading" class="loading">
+      <div class="spinner"></div>
+      <p>LOADING...</p>
     </div>
   </div>
 </template>
@@ -133,6 +152,7 @@ export default {
     const comparisonData = ref([]);
     const loading = ref(false);
     const mainChart = ref(null);
+    const chartWrapper = ref(null);
     let mainChartInstance = null;
     let sortedYears = [];
 
@@ -299,9 +319,9 @@ export default {
       }
     };
 
-    // 渲染所有图表
+    // 渲染所有图表 - 修改为弹性布局
     const renderCharts = () => {
-      if (!mainChart.value || !comparisonData.value.length) return;
+      if (!mainChart.value || !comparisonData.value.length || !chartWrapper.value) return;
 
       // 销毁旧图表实例
       destroyCharts();
@@ -316,20 +336,12 @@ export default {
 
       sortedYears = Array.from(allYears).sort((a, b) => a - b);
 
-      // 计算图表宽度 - 最大宽度限制
-      const minWidth = 300;
-      const maxWidth = 800;
-      const width = Math.min(maxWidth, Math.max(minWidth, sortedYears.length * 30));
+      // 使用容器的实际尺寸
+      const containerWidth = chartWrapper.value.clientWidth;
+      const containerHeight = chartWrapper.value.clientHeight;
 
-      // 设置图表容器宽度
-      const chartWrapper = document.querySelector('.chart-wrapper');
-      if (chartWrapper) {
-        chartWrapper.style.width = `${width}px`;
-      }
-
-      // 设置主图表尺寸（使用容器高度）
-      const containerHeight = chartWrapper.clientHeight;
-      mainChart.value.width = width;
+      // 设置canvas尺寸
+      mainChart.value.width = containerWidth;
       mainChart.value.height = containerHeight;
 
       // 渲染主图表
@@ -459,7 +471,7 @@ export default {
         options: {
           responsive: false,
           maintainAspectRatio: false,
-          indexAxis: 'x', // 关键修改：设置为横向图表
+          indexAxis: 'x',
           interaction: {
             mode: 'index',
             intersect: false
@@ -475,10 +487,12 @@ export default {
                   return item.text.includes('Influence') || item.text.includes('New Work');
                 },
                 font: {
-                  size: 11
+                  size: 10  // 缩小图例字体
                 },
                 usePointStyle: true,
-                padding: 15
+                padding: 8,  // 减小图例间距
+                boxWidth: 15,  // 缩小图例标记
+                boxHeight: 10
               }
             },
             tooltip: {
@@ -488,12 +502,7 @@ export default {
           scales: {
             x: {
               title: {
-                display: true,
-                text: 'YEAR',
-                font: {
-                  size: 11,
-                  weight: 'bold'
-                }
+                display: false  // 移除YEAR标签
               },
               ticks: {
                 font: {
@@ -510,13 +519,13 @@ export default {
                 display: true,
                 text: 'Influence Score',
                 font: {
-                  size: 11,
-                  weight: 'bold'
+                  size: 10,
+                  weight: 'normal'
                 }
               },
               ticks: {
                 font: {
-                  size: 10
+                  size: 9
                 }
               },
               beginAtZero: true
@@ -527,13 +536,13 @@ export default {
                 display: true,
                 text: 'Collaboration Frequency',
                 font: {
-                  size: 11,
-                  weight: 'bold'
+                  size: 10,
+                  weight: 'normal'
                 }
               },
               ticks: {
                 font: {
-                  size: 10
+                  size: 9
                 }
               },
               beginAtZero: true,
@@ -543,7 +552,7 @@ export default {
             }
           }
         },
-        // 添加插件绘制垂直参考线（改为水平参考线）
+        // 添加插件绘制垂直参考线
         plugins: [{
           id: 'hoverLinePlugin',
           afterDraw: (chart) => {
@@ -572,7 +581,7 @@ export default {
       return colors[index % colors.length];
     };
 
-    // 处理图表悬停事件 - 修改后版本（适配横向图表）
+    // 处理图表悬停事件
     const handleChartHover = (event) => {
       if (!mainChartInstance || !comparisonData.value.length) return;
 
@@ -716,6 +725,7 @@ export default {
       artistList,
       canCompare,
       mainChart,
+      chartWrapper,
       clearArtist,
       filterArtists,
       selectArtist,
@@ -735,64 +745,100 @@ export default {
 </script>
 
 <style scoped>
-/* 新增选择器头部样式 */
-.selection-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0px;
-}
-
-.selection-header h3 {
-  margin: 0;
-  font-size: 12px;
-  color: #2c3e50;
-}
-
+/* 主容器 - 弹性布局设置 */
 .career-trajectory {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 5px;
+  height: 100vh; /* 占满视口高度 */
+  max-height: 100vh; /* 限制最大高度 */
+  gap: 4px; /* 进一步减小间距 */
+  padding: 2px; /* 进一步减小内边距 */
   background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  min-height: 600px;
   position: relative;
+  overflow: hidden; /* 防止内容溢出 */
+  box-sizing: border-box; /* 包含内边距和边框在内 */
 }
 
-.career-view {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.prediction-view {
+/* 艺术家选择面板 - 进一步减小高度 */
+.artist-selection {
+  flex: 0 0 auto; /* 改为固定高度，不占用flex比例 */
+  height: 120px; /* 从140px减到120px */
   background-color: white;
   border-radius: 8px;
-  padding: 0px;
+  padding: 8px; /* 从10px减到8px */
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  margin-top: 0px; /* 添加上边距以分隔两个部分 */
 }
 
+/* 生涯轨迹视图 - 占比 3 */
+.career-view {
+  flex: 3; /* 占 3 份 */
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-radius: 8px;
+  padding: 8px; /* 从10px减到8px */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  min-height: 0; /* 允许收缩 */
+  overflow: hidden;
+}
+
+/* 艺术家潜力预测视图 - 保持占比 */
+.prediction-view {
+  flex: 2.5; /* 保持2.5的占比 */
+  background-color: white;
+  border-radius: 8px;
+  padding: 8px; /* 从10px减到8px */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  min-height: 0; /* 允许收缩 */
+  overflow: hidden;
+}
+
+/* 艺术家选择面板 */
 .artist-selection {
   background-color: white;
   border-radius: 8px;
-  padding: 15px;
+  padding: 12px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  flex-shrink: 0; /* 保持固定高度 */
 }
 
-.artist-selection h3 {
-  margin-top: 0;
-  color: #2c3e50;
-  font-size: 16px;
-  margin-bottom: 0px;
+/* 图表容器 - 占据剩余空间 */
+.chart-container {
+  flex: 1; /* 占据剩余空间 */
+  position: relative;
+  overflow: hidden; /* 去掉滚动条 */
+  min-height: 0; /* 允许收缩 */
+}
+
+/* 图表包装器 - 填充父容器 */
+.chart-wrapper {
+  position: relative;
+  width: 100%; /* 占满宽度 */
+  height: 100%; /* 占满高度 */
+}
+
+/* Canvas 元素样式 */
+.chart-wrapper canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* 空状态提示 - 填充剩余空间 */
+.empty-state {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
 }
 
 .selectors {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  gap: 8px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -804,37 +850,34 @@ export default {
 }
 
 .selector label {
-  margin-bottom: 6px;
-  font-size: 13px;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
   color: #555;
-  font-weight: bold;
+  font-weight: 500;
 }
 
-.selector select {
-  padding: 1px;
+.selector input {
+  padding: 6px;
   border: 1px solid #ddd;
   border-radius: 4px;
   background-color: white;
-  font-size: 13px;
-  appearance: none;
-  cursor: pointer;
-  width: 80%;
+  font-size: 0.8rem;
+  width: 100%;
   box-sizing: border-box;
 }
 
-.selector select:focus {
+.selector input:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
-/* 新增：搜索建议框样式 */
 .suggestions {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
-  max-height: 200px;
+  max-height: 150px;
   overflow-y: auto;
   background-color: white;
   border: 1px solid #ddd;
@@ -845,9 +888,9 @@ export default {
 }
 
 .suggestion-item {
-  padding: 8px 12px;
+  padding: 6px 10px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.8rem;
 }
 
 .suggestion-item:hover {
@@ -856,15 +899,15 @@ export default {
 
 .clear-btn {
   position: absolute;
-  top: 26px;
-  right: 8px;
+  top: 20px; /* 从22px减到20px */
+  right: 6px;
   background: none;
   border: none;
-  font-size: 16px;
+  font-size: 12px; /* 从14px减到12px */
   cursor: pointer;
   color: #aaa;
-  width: 20px;
-  height: 20px;
+  width: 16px; /* 从18px减到16px */
+  height: 16px; /* 从18px减到16px */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -875,15 +918,15 @@ export default {
 }
 
 .compare-btn {
-  padding: 7px 20px;
+  padding: 4px 12px; /* 从6px 16px减到4px 12px */
   background-color: #3498db;
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 0.75rem; /* 从0.8rem减到0.75rem */
   cursor: pointer;
   transition: background-color 0.2s;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .compare-btn:disabled {
@@ -895,22 +938,6 @@ export default {
   background-color: #2980b9;
   transform: translateY(-1px);
   box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-}
-
-.chart-container {
-  position: relative;
-  background-color: white;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  overflow: auto; /* 添加滚动条以防图表过宽 */
-}
-
-.chart-wrapper {
-  position: relative;
-  height: 300px; /* 固定高度 */
-  width: 100%;
-  min-width: 450px; /* 最小宽度 */
 }
 
 /* 自定义工具提示样式 */
@@ -941,7 +968,6 @@ export default {
   border-color: transparent white transparent transparent;
 }
 
-/* 右侧工具提示箭头 */
 .custom-tooltip[style*="left: calc(100%"]::before {
   left: auto;
   right: -10px;
@@ -1026,12 +1052,17 @@ export default {
 }
 
 .loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 30px;
-  min-height: 260px;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 10;
 }
 
 .spinner {
@@ -1046,17 +1077,6 @@ export default {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-.empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 340px;
-  background-color: white;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .placeholder {
@@ -1080,15 +1100,15 @@ export default {
 @media (max-width: 1200px) {
   .selectors {
     grid-template-columns: 1fr;
-    gap: 15px;
+    gap: 10px;
   }
 
-  .selector select {
-    padding: 10px;
+  .selector input {
+    padding: 8px;
   }
 
   .clear-btn {
-    top: 32px;
+    top: 26px;
   }
 
   .custom-tooltip {
@@ -1097,12 +1117,6 @@ export default {
 
   .artist-stats {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  .chart-wrapper {
-    min-width: 600px;
   }
 }
 

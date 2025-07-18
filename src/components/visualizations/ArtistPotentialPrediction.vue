@@ -14,22 +14,19 @@
         <p class="selection-subtitle">(Higher score means greater importance)</p>
       </div>
 
+      <!-- 权重项目 - 改为3列2行网格布局 -->
       <div class="weight-items">
         <div v-for="weight in weightOrder" :key="weight.id" class="weight-item">
-          <div class="weight-info">
-            <span class="weight-label">{{ weight.label }}</span>
-          </div>
-          <div class="score-selector">
-            <select v-model="weightScores[weight.id]" class="score-select">
-              <option v-for="n in 10" :key="n" :value="n">{{ n }}</option>
-            </select>
-          </div>
+          <label class="weight-label">{{ weight.label }}:</label>
+          <select v-model="weightScores[weight.id]" class="score-select">
+            <option v-for="n in 10" :key="n" :value="n">{{ n }}</option>
+          </select>
         </div>
       </div>
 
       <div class="selection-buttons">
-        <button @click="resetScores">Reset</button>
-        <button @click="runPrediction" :disabled="!allScoresSelected" class="primary">
+        <button @click="resetScores" class="reset-btn">Reset</button>
+        <button @click="runPrediction" :disabled="!allScoresSelected" class="primary-btn">
           {{ loading ? 'Analyzing...' : 'Start Analysis' }}
         </button>
       </div>
@@ -43,28 +40,22 @@
       <div class="predicted-stars">
         <div class="stars-container">
           <div v-for="(star, index) in report.predicted_stars" :key="index" class="star-card">
-            <div class="star-header">
-              <span class="rank">{{ index + 1 }}</span>
-              <span class="name">{{ star.name }}</span>
+            <div class="star-rank">{{ index + 1 }}</div>
+            <div class="star-info">
+              <div class="star-name">{{ star.name }}</div>
+              <div class="star-strengths">
+                <span v-for="(strength, sIndex) in star.strengths.slice(0, 2)" :key="sIndex" class="strength-tag">
+                  {{ strength }}
+                </span>
+              </div>
             </div>
-
-            <div class="star-content">
-              <div class="star-details">
-                <div class="strengths">
-                  <span v-for="(strength, sIndex) in star.strengths" :key="sIndex" class="strength-tag">
-                    {{ strength }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="star-radar">
-                <ArtistRadarChart
-                  v-if="report.radar_data && report.radar_data[index]"
-                  :artistData="report.radar_data[index]"
-                  :width="130"
-                  :height="130"
-                />
-              </div>
+            <div class="star-radar">
+              <ArtistRadarChart
+                v-if="report.radar_data && report.radar_data[index]"
+                :artistData="report.radar_data[index]"
+                :width="80"
+                :height="80"
+              />
             </div>
           </div>
         </div>
@@ -164,314 +155,345 @@ export default {
 </script>
 
 <style scoped>
+/* 主容器 - 完全移除滚动 */
 .artist-prediction {
-  padding: 15px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  margin-top: 0px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
+/* 头部样式 */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-  gap: 0px;
+  margin-bottom: 8px; /* 减小底部间距 */
+  flex-shrink: 0;
 }
 
+.header h4 {
+  margin: 0;
+  color: #333333;
+  font-size: 0.9rem; /* 稍微减小字体 */
+  font-weight: 600;
+}
+
+/* Re-predict按钮 */
 .re-predict-btn {
-  background-color: #6c757d;
+  background-color: #5D9CEC;
   color: white;
-  padding: 6px 12px;
+  padding: 3px 8px; /* 减小按钮大小 */
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-weight: 500;
-  font-size: 0.85rem;
+  font-size: 0.7rem; /* 减小字体 */
+  transition: background-color 0.2s;
 }
 
 .re-predict-btn:hover {
-  background-color: #5a6268;
+  background-color: #4A89DA;
 }
 
+/* 权重选择区域 */
 .weight-selection-section {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 0px;
-  border: 1px solid #e9ecef;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .selection-header {
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 8px; /* 减小间距 */
+  flex-shrink: 0;
 }
 
 .selection-header h4 {
-  margin: 0 0 5px 0;
-  color: #2c3e50;
-  font-size: 0.95rem;
+  margin: 0 0 2px 0; /* 减小间距 */
+  color: #333333;
+  font-size: 0.8rem; /* 减小字体 */
 }
 
 .selection-subtitle {
-  color: #6c757d;
-  margin-top: 0;
-  font-size: 0.75rem;
+  color: #666666;
+  margin: 0;
+  font-size: 0.65rem; /* 减小字体 */
 }
 
+/* 权重项目 - 改为3列2行网格布局，类似上方的艺术家选择框 */
 .weight-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 15px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px; /* 减小间距 */
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  margin-bottom: 8px; /* 减小间距 */
 }
 
 .weight-item {
-  flex: 0 0 calc(50% - 4px);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  background-color: white;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  min-height: 40px;
-  box-sizing: border-box;
-}
-
-.weight-item:hover {
-  border-color: #4a6cf7;
-}
-
-.weight-info {
+  position: relative;
   display: flex;
   flex-direction: column;
-  flex: 1;
 }
 
+/* 权重标签 - 类似艺术家选择框的label样式 */
 .weight-label {
-  font-weight: 600;
-  color: #4a6cf7;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-bottom: 3px; /* 减小间距 */
+  font-size: 0.75rem; /* 减小字体 */
+  color: #555;
+  font-weight: 500;
 }
 
-.score-selector {
-  min-width: 60px;
-  text-align: right;
-}
-
+/* 分数选择器 - 类似艺术家选择框的input样式 */
 .score-select {
-  width: 100%;
-  padding: 5px 8px;
-  border: 1px solid #ced4da;
+  padding: 4px; /* 减小内边距 */
+  border: 1px solid #ddd;
   border-radius: 4px;
   background-color: white;
-  font-size: 0.85rem;
-  color: #495057;
+  font-size: 0.75rem; /* 减小字体 */
+  width: 100%;
+  box-sizing: border-box;
+  color: #333333;
   cursor: pointer;
-  text-align: center;
 }
 
 .score-select:focus {
-  border-color: #4a6cf7;
   outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
+/* 按钮区域 */
 .selection-buttons {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  margin-top: 10px;
+  gap: 8px; /* 减小间距 */
+  flex-shrink: 0;
 }
 
-.selection-buttons button {
-  padding: 6px 14px;
+/* Reset按钮 */
+.reset-btn {
+  padding: 4px 12px; /* 减小按钮大小 */
+  background-color: #F0F0F0;
+  color: #666666;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-weight: 500;
-  font-size: 0.85rem;
+  font-size: 0.75rem; /* 减小字体 */
+  transition: background-color 0.2s;
 }
 
-.selection-buttons button:first-child {
-  background-color: #e9ecef;
-  color: #495057;
+.reset-btn:hover {
+  background-color: #E0E0E0;
 }
 
-.selection-buttons button:first-child:hover {
-  background-color: #dde0e3;
-}
-
-.selection-buttons button.primary {
-  background-color: #4a6cf7;
+/* 主按钮 */
+.primary-btn {
+  padding: 4px 12px; /* 减小按钮大小 */
+  background-color: #3498db;
   color: white;
-}
-
-.selection-buttons button.primary:hover {
-  background-color: #3a5ce5;
-}
-
-.selection-buttons button:disabled {
-  background-color: #a0a0a0;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.error-message {
-  padding: 10px;
-  background-color: #ffebee;
-  color: #b71c1c;
+  border: none;
   border-radius: 4px;
-  margin-bottom: 10px;
-  font-size: 0.85rem;
+  cursor: pointer;
+  font-size: 0.75rem; /* 减小字体 */
+  transition: background-color 0.2s;
+  font-weight: 500;
+}
+
+.primary-btn:hover {
+  background-color: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+
+.primary-btn:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+/* 错误消息 */
+.error-message {
+  padding: 4px 8px; /* 减小内边距 */
+  background-color: #FFF3CD;
+  color: #856404;
+  border-radius: 4px;
+  margin-bottom: 6px; /* 减小间距 */
+  font-size: 0.7rem; /* 减小字体 */
+  border: 1px solid #FFEAA7;
+  flex-shrink: 0;
+}
+
+/* 结果展示区域 */
+.results-section {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
 .predicted-stars {
-  margin-top: 0px;
-}
-
-.stars-container {
-  display: flex;
-  gap: 15px;
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-}
-
-.star-card {
-  width: 160px;
-  height: 250px;
-  padding: 10px;
-  border-radius: 8px;
-  background-color: #fff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
-
-.star-header {
+  flex: 1;
   display: flex;
   align-items: center;
-  margin-bottom: 5px;
-  flex-wrap: wrap;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #f0f0f0;
 }
 
-.star-header .rank {
-  width: 20px;
-  height: 20px;
-  background-color: #4a6cf7;
+/* 星级容器 - 横向布局 */
+.stars-container {
+  width: 100%;
+  display: flex;
+  gap: 6px; /* 减小间距 */
+  padding: 0 2px; /* 减小内边距 */
+  justify-content: space-between;
+}
+
+/* 星级卡片 - 垂直紧凑布局 */
+.star-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px; /* 减小间距 */
+  padding: 6px; /* 减小内边距 */
+  background-color: #F8F9FA;
+  border-radius: 6px;
+  border: 1px solid #E0E0E0;
+  transition: all 0.2s;
+}
+
+.star-card:hover {
+  background-color: #F0F4F8;
+  border-color: #A7C5EB;
+}
+
+/* 排名圆圈 */
+.star-rank {
+  width: 20px; /* 减小尺寸 */
+  height: 20px; /* 减小尺寸 */
+  background-color: #5D9CEC;
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  margin-right: 5px;
+  font-size: 0.7rem; /* 减小字体 */
   flex-shrink: 0;
-  font-size: 0.75rem;
 }
 
-.star-header .name {
-  font-weight: bold;
-  font-size: 0.8rem;
-  flex-grow: 1;
+/* 星级信息 */
+.star-info {
+  text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px; /* 减小间距 */
+  min-width: 0;
+}
+
+.star-name {
+  font-weight: 600;
+  font-size: 0.75rem; /* 减小字体 */
+  color: #333333;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 
-.star-content {
+/* 优势标签 */
+.star-strengths {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  gap: 8px;
-  padding-top: 5px;
-}
-
-.star-details {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.strengths {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 4px;
-  max-height: 60px;
-  overflow-y: auto;
+  gap: 1px; /* 减小间距 */
+  align-items: center;
 }
 
 .strength-tag {
   display: inline-block;
-  background-color: #d1fae5;
-  color: #047857;
-  padding: 3px 6px;
+  background-color: #E3F2FD;
+  color: #1976D2;
+  padding: 1px 4px; /* 减小内边距 */
   border-radius: 3px;
-  font-size: 0.7rem;
-  word-break: break-word;
+  font-size: 0.6rem; /* 减小字体 */
+  line-height: 1.2;
+  white-space: nowrap;
   max-width: 100%;
-  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* 雷达图 */
 .star-radar {
-  height: 130px;
+  width: 70px; /* 减小尺寸 */
+  height: 70px; /* 减小尺寸 */
   flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto;
 }
 
-@media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .stars-container {
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 100%;
-  }
-
-  .selection-buttons {
-    flex-direction: column;
+/* 响应式设计 - 权重选择框在小屏幕上变为单列 */
+@media (max-width: 1200px) {
+  .weight-items {
+    grid-template-columns: repeat(2, 1fr); /* 中等屏幕显示2列 */
     gap: 8px;
   }
 
-  .selection-buttons button {
-    width: 100%;
+  .stars-container {
+    flex-direction: column;
+    gap: 4px; /* 减小间距 */
+  }
+  
+  .star-card {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 4px; /* 减小内边距 */
+  }
+  
+  .star-info {
+    text-align: left;
+    flex: 1;
+  }
+  
+  .star-strengths {
+    flex-direction: row;
+    gap: 3px; /* 减小间距 */
   }
 }
 
-@media (max-width: 480px) {
-  .star-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
+@media (max-width: 800px) {
+  .weight-items {
+    grid-template-columns: 1fr; /* 小屏幕显示1列 */
   }
-
-  .header button.re-predict-btn {
-    width: 100%;
-    margin-top: 8px;
+  
+  /* 进一步压缩星级卡片 */
+  .star-rank {
+    width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
   }
+  
+  .star-radar {
+    width: 60px;
+    height: 60px;
+  }
+}
 
-  .weight-item {
-    flex: 0 0 100%;
+@media (max-height: 700px) {
+  /* 在屏幕高度较小时进一步压缩 */
+  .header h4 {
+    font-size: 0.85rem;
+  }
+  
+  .selection-header h4 {
+    font-size: 0.75rem;
+  }
+  
+  .weight-label {
+    font-size: 0.7rem;
+  }
+  
+  .score-select {
+    padding: 3px;
+    font-size: 0.7rem;
   }
 }
 </style>
