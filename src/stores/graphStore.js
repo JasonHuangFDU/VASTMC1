@@ -202,6 +202,12 @@ export const useGraphStore = defineStore('graph', {
 
       // Fetch the initial graph view
       await this.updateGraphLayout();
+
+      // After loading, set the center node object to trigger UI updates.
+      const newCenterNode = this.graphData.nodes.find(node => node.id === this.searchQuery);
+      if (newCenterNode) {
+        this.centerNode = newCenterNode;
+      }
     },
 
     // --- Actions for setting individual filters ---

@@ -187,8 +187,8 @@ function renderGraph(data) {
       .attr('viewBox', '0 -5 10 10')
       .attr('refX', 10)
       .attr('refY', 0)
-      .attr('markerWidth', 4) // 2. 箭头尺寸
-      .attr('markerHeight', 4) // 2. 箭头尺寸
+      .attr('markerWidth', 4)
+      .attr('markerHeight', 4)
       .attr('orient', 'auto')
       .append('path').attr('d', 'M0,-5L10,0L0,5').attr('class', `arrow-head ${cls}`);
   });
@@ -202,7 +202,7 @@ function renderGraph(data) {
   const linkElements = zoomGroup.append('g').selectAll('path').data(links).join('path')
     .attr('class', d => `link link-${getPrimaryLinkClass(d.relations)}`)
     .style('stroke-width', d => linkWidthScale(d.count))
-    .style('stroke-dasharray', d => { // 4. 虚线样式
+    .style('stroke-dasharray', d => {
         const primaryClass = getPrimaryLinkClass(d.relations);
         return ALL_EDGE_LEGEND_INFO[primaryClass]?.dasharray || '0';
     });
@@ -221,7 +221,9 @@ function renderGraph(data) {
 
   linkElements.on('mouseover', function(event, d) {
     d3.select(this).classed('hovered', true);
-    // 1. 边悬浮框内容
+    nodeElements.classed('dimmed', n => n.id !== d.source.id && n.id !== d.target.id);
+    linkElements.classed('dimmed', l => l !== d);
+
     let content = `<strong>${d.source.name} -> ${d.target.name}</strong><br/>Relations (${d.count}):<br/>` + d.relations.join('<br/>');
     const containerRect = containerRef.value.getBoundingClientRect();
     const tooltipX = event.clientX - containerRect.left + 10;
@@ -229,11 +231,12 @@ function renderGraph(data) {
     tooltip.html(content).style('opacity', 1).style('left', `${tooltipX}px`).style('top', `${tooltipY}px`);
   }).on('mouseout', function() {
     d3.select(this).classed('hovered', false);
+    nodeElements.classed('dimmed', false);
+    linkElements.classed('dimmed', false);
     tooltip.style('opacity', 0);
   });
 
   nodeElements.on('mouseover', function(event, d) {
-    // 3. 聚焦效果
     const connectedIds = new Set([d.id]);
     links.forEach(link => {
       if (link.source.id === d.id) connectedIds.add(link.target.id);
@@ -284,7 +287,6 @@ function renderGraph(data) {
   }));
 
   simulation.on('tick', () => {
-    // 2. 箭头位置
     linkElements.attr('d', d => {
         const dx = d.target.x - d.source.x;
         const dy = d.target.y - d.source.y;
@@ -300,7 +302,6 @@ function renderGraph(data) {
         const targetTrimmedX = d.target.x - (dx / dist) * targetRadius;
         const targetTrimmedY = d.target.y - (dy / dist) * targetRadius;
         
-        // 如果聚合边数大于1，使用曲线路径
         if (d.count > 1) {
             const dr = dist * 1.5;
             return `M${sourceTrimmedX},${sourceTrimmedY}A${dr},${dr} 0 0,1 ${targetTrimmedX},${targetTrimmedY}`;
@@ -341,18 +342,18 @@ onMounted(() => {
 <style>
 .influence-network-container { width: 100%; height: 80vh; min-height: 480px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background-color: #f8f9fa; }
 .loading-indicator, .empty-state { font-size: 1.5em; color: #6c757d; }
-.tooltip { position: absolute; text-align: left; padding: 8px; font: 12px sans-serif; background: rgba(0, 0, 0, 0.85); color: white; border-radius: 8px; pointer-events: none; z-index: 10; max-width: 300px; }
+.tooltip { position: absolute; text-align: left; padding: 8px; font: 12px sans-serif; background: rgba(0, 0, 0, 0.7); color: white; border-radius: 8px; pointer-events: none; z-index: 10; max-width: 300px; }
 
 .link {
   fill: none;
-  stroke-opacity: 0.4;
+  stroke-opacity: 0.6;
   transition: stroke-opacity 0.3s ease, opacity 0.3s ease;
 }
 .link.hovered {
   stroke-opacity: 1;
 }
 .link.dimmed {
-  opacity: 0.1 !important; /* 3. 聚焦时箭头和线一起变暗 */
+  opacity: 0.1 !important;
 }
 .link.link-influence { stroke: #9FC1E8; }
 .link.link-collaboration { stroke: #B7D962; }
