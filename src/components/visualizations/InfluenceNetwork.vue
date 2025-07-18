@@ -305,8 +305,13 @@ function renderGraph(data) {
     const relatedIds = new Set([d.id]);
     if (d['Node Type'] === 'MusicalGroup') {
         links.forEach(link => {
+            // 检查从成员到乐队的连接
             if (link['Edge Type'] === 'MemberOf' && link.target.id === d.id) {
                 relatedIds.add(link.source.id);
+            }
+            // 检查从乐队到成员的连接（以防数据方向不一致）
+            if (link['Edge Type'] === 'MemberOf' && link.source.id === d.id) {
+                relatedIds.add(link.target.id);
             }
         });
     }
@@ -324,26 +329,14 @@ function renderGraph(data) {
     } else if (d['Node Type'] === 'Song' || d['Node Type'] === 'Album') {
         if (d.genre) content += `<br/>Genre: ${d.genre}`;
         
-        const contributors = {
-            PerformerOf: [],
-            ComposerOf: [],
-            ProducerOf: [],
-            LyricistOf: [],
-        };
-
-        links.forEach(link => {
-            if (link.target.id === d.id && contributors.hasOwnProperty(link['Edge Type'])) {
-                const artist = nodeMap.get(link.source.id);
-                if (artist) {
-                    contributors[link['Edge Type']].push(`${artist.name} (${artist.id})`);
+        // 使用从后端预计算的贡献者信息
+        if (d.contributors) {
+            for (const [role, artists] of Object.entries(d.contributors)) {
+                if (artists.length > 0) {
+                    const roleName = role.charAt(0).toUpperCase() + role.slice(1, -1); // "Performers" -> "Performer"
+                    const artistLinks = artists.map(a => `${a.name} (${a.id})`).join(', ');
+                    content += `<br/>${roleName}: ${artistLinks}`;
                 }
-            }
-        });
-
-        for (const [role, artists] of Object.entries(contributors)) {
-            if (artists.length > 0) {
-                const roleName = role.replace('Of', '');
-                content += `<br/>${roleName}: ${artists.join(', ')}`;
             }
         }
     }
@@ -356,8 +349,13 @@ function renderGraph(data) {
     const relatedIds = new Set([d.id]);
     if (d['Node Type'] === 'MusicalGroup') {
         links.forEach(link => {
+            // 检查从成员到乐队的连接
             if (link['Edge Type'] === 'MemberOf' && link.target.id === d.id) {
                 relatedIds.add(link.source.id);
+            }
+            // 检查从乐队到成员的连接
+            if (link['Edge Type'] === 'MemberOf' && link.source.id === d.id) {
+                relatedIds.add(link.target.id);
             }
         });
     }

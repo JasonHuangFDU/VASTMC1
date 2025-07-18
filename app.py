@@ -1380,6 +1380,7 @@ def format_graph_for_d3(graph, highlighted_nodes=None):
     """
     将NetworkX图对象转换为D3.js兼容的JSON格式。
     新增功能：为指定的节点添加 'highlight' 属性。
+    新增功能：为Song/Album节点预计算并嵌入贡献者信息。
     """
     if highlighted_nodes is None:
         highlighted_nodes = set()
@@ -1389,10 +1390,41 @@ def format_graph_for_d3(graph, highlighted_nodes=None):
     
     graph_data = nx.node_link_data(graph)
     
-    # 为需要高亮的节点添加属性
+    # 定义贡献者角色
+    CONTRIBUTOR_ROLES = {
+        'PerformerOf': 'Performers',
+        'ComposerOf': 'Composers',
+        'ProducerOf': 'Producers',
+        'LyricistOf': 'Lyricists',
+    }
+
+    # 为需要高亮的节点添加属性，并为作品节点添加贡献者信息
     for node in graph_data.get('nodes', []):
+        # 添加高亮属性
         if node['id'] in highlighted_nodes:
             node['highlight'] = True
+        
+        # 如果是Song或Album，从完整图中查找贡献者
+        if node.get('Node Type') in ['Song', 'Album']:
+            node_id = node['id']
+            contributors = {
+                'Performers': [],
+                'Composers': [],
+                'Producers': [],
+                'Lyricists': [],
+            }
+            # 在完整图上查找所有指向该作品的入边
+            if FULL_NETWORKX_GRAPH.has_node(node_id):
+                for u, _, data in FULL_NETWORKX_GRAPH.in_edges(node_id, data=True):
+                    edge_type = data.get('Edge Type')
+                    if edge_type in CONTRIBUTOR_ROLES:
+                        role = CONTRIBUTOR_ROLES[edge_type]
+                        artist_node = FULL_NETWORKX_GRAPH.nodes[u]
+                        contributors[role].append({
+                            'id': artist_node['id'],
+                            'name': artist_node.get('name', 'Unknown')
+                        })
+            node['contributors'] = contributors
             
     return graph_data
 
