@@ -10,13 +10,15 @@
         <Q2SankeyView class="q2-sankey-view" />
       </aside>
 
-      <div class="resizer" @mousedown="startResize"></div>
+      <div class="resizer" @mousedown="startResizeLeft"></div>
 
       <div class="center-column" :style="{ flex: 1 }">
         <InfluenceNetwork />
       </div>
 
-      <aside class="right-column">
+      <div class="resizer" @mousedown="startResizeRight"></div>
+
+      <aside class="right-column" :style="{ flex: `0 0 ${rightColumnWidth}px` }">
         <CareerTrajectory />
       </aside>
     </main>
@@ -33,62 +35,77 @@ import GenreLineGraph from './components/visualizations/GenreLineGraph.vue';
 import CareerTrajectory from './components/visualizations/CareerTrajectory.vue';
 import Q2SankeyView from './components/Q2SankeyView.vue';
 
-const q2_1_data = ref(null);
 const store = useGraphStore();
 
-// 可调整大小的左侧面板
-const leftColumnWidth = ref(480); // 默认宽度
-const isResizing = ref(false);
-const minLeftWidth = 300;
-const maxLeftWidth = 800;
+// 可调整大小的面板
+const leftColumnWidth = ref(480);
+const rightColumnWidth = ref(480);
+const isResizingLeft = ref(false);
+const isResizingRight = ref(false);
 
-const startResize = (e) => {
-  isResizing.value = true;
-  document.addEventListener('mousemove', handleResize);
-  document.addEventListener('mouseup', stopResize);
+const minWidth = 300;
+const maxWidth = 800;
+
+// 左侧面板拖拽逻辑
+const startResizeLeft = (e) => {
+  isResizingLeft.value = true;
+  document.addEventListener('mousemove', handleResizeLeft);
+  document.addEventListener('mouseup', stopResizeLeft);
   document.body.style.cursor = 'col-resize';
   document.body.style.userSelect = 'none';
 };
 
-const handleResize = (e) => {
-  if (!isResizing.value) return;
-  
+const handleResizeLeft = (e) => {
+  if (!isResizingLeft.value) return;
   const newWidth = e.clientX;
-  
-  if (newWidth >= minLeftWidth && newWidth <= maxLeftWidth) {
+  if (newWidth >= minWidth && newWidth <= maxWidth) {
     leftColumnWidth.value = newWidth;
   }
 };
 
-const stopResize = () => {
-  isResizing.value = false;
-  document.removeEventListener('mousemove', handleResize);
-  document.removeEventListener('mouseup', stopResize);
+const stopResizeLeft = () => {
+  isResizingLeft.value = false;
+  document.removeEventListener('mousemove', handleResizeLeft);
+  document.removeEventListener('mouseup', stopResizeLeft);
   document.body.style.cursor = '';
   document.body.style.userSelect = '';
 };
 
-async function loadVisualizationsData() {
-  try {
-    const response = await fetch('/mc1_q2_1_data_new.json');
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    q2_1_data.value = await response.json();
-    console.log("q2_1_data loaded successfully.");
-  } catch (error) {
-    console.error("Failed to load q2.1 data:", error);
+// 右侧面板拖拽逻辑
+const startResizeRight = (e) => {
+  isResizingRight.value = true;
+  document.addEventListener('mousemove', handleResizeRight);
+  document.addEventListener('mouseup', stopResizeRight);
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+};
+
+const handleResizeRight = (e) => {
+  if (!isResizingRight.value) return;
+  const newWidth = window.innerWidth - e.clientX;
+  if (newWidth >= minWidth && newWidth <= maxWidth) {
+    rightColumnWidth.value = newWidth;
   }
-}
+};
+
+const stopResizeRight = () => {
+  isResizingRight.value = false;
+  document.removeEventListener('mousemove', handleResizeRight);
+  document.removeEventListener('mouseup', stopResizeRight);
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+};
 
 onMounted(() => {
   store.initializeStore();
-  loadVisualizationsData();
 });
 
 onUnmounted(() => {
-  document.removeEventListener('mousemove', handleResize);
-  document.removeEventListener('mouseup', stopResize);
+  // 确保所有事件监听器都被清理
+  document.removeEventListener('mousemove', handleResizeLeft);
+  document.removeEventListener('mouseup', stopResizeLeft);
+  document.removeEventListener('mousemove', handleResizeRight);
+  document.removeEventListener('mouseup', stopResizeRight);
 });
 </script>
 
@@ -145,14 +162,22 @@ main {
   overflow: hidden;
 }
 
-.left-column {
+.left-column, .right-column {
   display: flex;
   flex-direction: column;
   padding: 8px;
   background-color: var(--color-surface);
-  border-right: 1px solid var(--color-border);
   min-width: 300px;
   max-width: 800px;
+  overflow: hidden;
+}
+
+.left-column {
+  border-right: 1px solid var(--color-border);
+}
+
+.right-column {
+  border-left: 1px solid var(--color-border);
 }
 
 .resizer {
@@ -162,6 +187,7 @@ main {
   position: relative;
   transition: background-color 0.2s ease;
   flex-shrink: 0;
+  z-index: 1;
 }
 
 .resizer:hover {
@@ -191,16 +217,6 @@ main {
   padding: 5px;
   overflow: hidden;
   background-color: var(--color-background);
-}
-
-.right-column {
-  flex: 0 0 auto;
-  width: 300px;
-  display: flex;
-  flex-direction: column;
-  padding: 8px;
-  background-color: var(--color-surface);
-  border-left: 1px solid var(--color-border);
 }
 
 /* 弹性布局设计 - 响应式高度分配 */
