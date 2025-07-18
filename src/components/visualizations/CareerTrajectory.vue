@@ -7,7 +7,7 @@
         class="toggle-btn"
         @click="toggleView"
       >
-        {{ showPrediction ? '查看生涯轨迹' : '查看潜力预测' }}
+        {{ showPrediction ? 'Career Trajectory' : 'Artist Prediction' }}
       </button>
     </div>
 
@@ -322,7 +322,7 @@ export default {
       const datasets = [];
 
       // 定义水平偏移量（防止点重合）
-      const horizontalOffsets = [-1, 0, 1]; // 三位艺术家的水平偏移量
+      const horizontalOffsets = [0, 0.2, 0.4]; // 三位艺术家的水平偏移量
 
       // 1. 影响力折线图（累计影响力）
       comparisonData.value.forEach((artist, index) => {
@@ -341,11 +341,11 @@ export default {
         // 添加折线数据集
         datasets.push({
           type: 'line',
-          label: `${artist.name} - 累计影响力`,
+          label: `${artist.name} - Influence`,
           data: cumulativeInfluenceData,
           borderColor: color,
           backgroundColor: 'transparent',
-          tension: 0.3,
+          tension: 0.1,
           xAxisID: 'x',
           yAxisID: 'y',
           pointRadius: 0,
@@ -382,7 +382,7 @@ export default {
 
         datasets.push({
           type: 'scatter',
-          label: `${artist.name} - 作品发布`,
+          label: `${artist.name} - New Work`,
           data: eventPoints,
           pointStyle: 'rectRot',
           pointRadius: eventPoints.map(p => minRadius + (p.count / maxCount) * (maxRadius - minRadius)),
@@ -452,7 +452,7 @@ export default {
               position: 'top',
               labels: {
                 filter: item => {
-                  return item.text.includes('影响力') || item.text.includes('作品发布');
+                  return item.text.includes('Influence') || item.text.includes('New Work');
                 },
                 font: {
                   size: 11 // 减小图例字体
@@ -469,7 +469,7 @@ export default {
             y: {
               title: {
                 display: true,
-                text: '年份',
+                text: 'YEAR',
                 font: {
                   size: 11, // 减小坐标轴标题字体
                   weight: 'bold'
@@ -488,7 +488,7 @@ export default {
               position: 'top',
               title: {
                 display: true,
-                text: '累计影响力分数',
+                text: 'Influence Score',
                 font: {
                   size: 11, // 减小坐标轴标题字体
                   weight: 'bold'
@@ -505,7 +505,7 @@ export default {
               position: 'bottom',
               title: {
                 display: true,
-                text: '合作次数',
+                text: 'Collaboration Frequency',
                 font: {
                   size: 11, // 减小坐标轴标题字体
                   weight: 'bold'
@@ -749,7 +749,7 @@ export default {
   border: none;
   border-radius: 20px;
   padding: 8px 16px;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   transition: all 0.3s ease;
@@ -771,7 +771,7 @@ export default {
   height: 100%;
   background-color: white;
   border-radius: 8px;
-  padding: 20px;
+  padding: 0px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
