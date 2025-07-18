@@ -1288,15 +1288,15 @@ def filter_by_types(graph, node_types, edge_types):
 
     # 定义边类型与其有效源/目标节点类型的映射关系
     VALID_CONNECTIONS = {
-        'InStyleOf': (['Song', 'Album'], ['Song', 'Album']),
+        'InStyleOf': (['Song', 'Album'], ['Song', 'Album', 'Person', 'MusicalGroup']),
         'InterpolatesFrom': (['Song', 'Album'], ['Song', 'Album']),
         'CoverOf': (['Song', 'Album'], ['Song', 'Album']),
         'LyricalReferenceTo': (['Song', 'Album'], ['Song', 'Album']),
         'DirectlySamples': (['Song', 'Album'], ['Song', 'Album']),
         'PerformerOf': (['Person', 'MusicalGroup'], ['Song', 'Album']),
         'ComposerOf': (['Person', 'MusicalGroup'], ['Song', 'Album']),
-        'ProducerOf': (['Person', 'MusicalGroup'], ['Song', 'Album']),
-        'LyricistOf': (['Person', 'MusicalGroup'], ['Song', 'Album']),
+        'ProducerOf': (['Person', 'MusicalGroup', 'RecordLabel'], ['Song', 'Album', 'Person', 'MusicalGroup']),
+        'LyricistOf': (['Person'], ['Song', 'Album']),
         'MemberOf': (['Person'], ['MusicalGroup']),
         'RecordedBy': (['Song', 'Album'], ['RecordLabel']),
         'DistributedBy': (['Song', 'Album'], ['RecordLabel']),
@@ -1367,7 +1367,7 @@ def get_subgraph_for_node(graph, center_node_id, hop_level=1):
             two_hop_neighbors.update(set(graph.predecessors(neighbor_id)))
             two_hop_neighbors.update(set(graph.successors(neighbor_id)))
         
-        # 从二跳邻居中移除已经在一跳���中心节点集合中的节点
+        # 从二跳邻居中移除已经在一跳中心节点集合中的节点
         two_hop_neighbors -= nodes_to_include
         nodes_to_include.update(two_hop_neighbors)
 
