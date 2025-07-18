@@ -298,8 +298,8 @@ export default {
 
       // 计算图表宽度 - 最大宽度限制
       const minWidth = 480;
-      const maxWidth = 1000;
-      const width = Math.min(maxWidth, Math.max(minWidth, sortedYears.length * 40));
+      const maxWidth = 800;
+      const width = Math.min(maxWidth, Math.max(minWidth, sortedYears.length * 30));
 
       // 设置图表容器宽度
       const chartWrapper = document.querySelector('.chart-wrapper');
@@ -881,9 +881,9 @@ export default {
 
 .chart-wrapper {
   position: relative;
-  height: 500px; /* 固定高度 */
+  height: 300px; /* 固定高度 */
   width: 100%;
-  min-width: 625px; /* 最小宽度 */
+  min-width: 450px; /* 最小宽度 */
 }
 
 /* 自定义工具提示样式 */

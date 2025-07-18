@@ -2,7 +2,6 @@
   <div class="artist-prediction">
     <div class="header">
       <h4>Oceanus Folk Stars Prediction</h4>
-      <!-- 添加重新预测按钮 -->
       <button v-if="report" @click="resetPrediction" class="re-predict-btn">
         重新预测
       </button>
@@ -24,7 +23,6 @@
              class="weight-item selected" @click="removeWeight(weight.id)">
           <span class="order">{{ index + 1 }}</span>
           <span class="weight-label">{{ weight.label }}</span>
-          <span class="weight-description">{{ weight.description }}</span>
           <span class="remove-btn">×</span>
         </div>
       </div>
@@ -33,7 +31,6 @@
         <div v-for="weight in unselectedWeights" :key="weight.id"
              class="weight-item" @click="addWeight(weight.id)">
           <span class="weight-label">{{ weight.label }}</span>
-          <span class="weight-description">{{ weight.description }}</span>
         </div>
       </div>
 
@@ -73,8 +70,8 @@
                 <ArtistRadarChart
                   v-if="report.radar_data && report.radar_data[index]"
                   :artistData="report.radar_data[index]"
-                  :width="200"
-                  :height="200"
+                  :width="100"
+                  :height="100"
                 />
               </div>
             </div>
@@ -104,7 +101,7 @@ export default {
       loading: false,
       error: null,
       report: null,
-      showWeightSelection: true, // 控制权重选择区域的显示
+      showWeightSelection: true,
       weightOrder: [
         { id: 'influence_score', label: '影响力评分', description: '艺术家在行业中的影响力大小' },
         { id: 'creative_depth', label: '创作深度', description: '艺术家的创作能力和深度' },
@@ -113,11 +110,10 @@ export default {
         { id: 'oceanus', label: 'Oceanus作品', description: '与Oceanus Folk相关的作品数量和质量' },
         { id: 'collab', label: '合作能力', description: '与其他艺术家的合作广度和深度' }
       ],
-      selectedWeights: [] // 存储用户选择的权重顺序
+      selectedWeights: []
     };
   },
   computed: {
-    // 计算未选择的权重因素
     unselectedWeights() {
       return this.weightOrder.filter(weight =>
         !this.selectedWeights.some(selected => selected.id === weight.id)
@@ -125,25 +121,18 @@ export default {
     }
   },
   methods: {
-    // 添加权重因素（按点击顺序）
     addWeight(weightId) {
       const weight = this.weightOrder.find(w => w.id === weightId);
       if (weight) {
         this.selectedWeights.push(weight);
       }
     },
-
-    // 移除权重因素
     removeWeight(weightId) {
       this.selectedWeights = this.selectedWeights.filter(w => w.id !== weightId);
     },
-
-    // 重置权重排序
     resetWeights() {
       this.selectedWeights = [];
     },
-
-    // 运行预测
     async runPrediction() {
       this.loading = true;
       this.error = null;
@@ -153,7 +142,6 @@ export default {
         const weightPreferences = this.selectedWeights.map(item => item.id);
         const result = await loadOceanusDataAndPredict(weightPreferences);
         this.report = result;
-        // 预测完成后隐藏权重选择区域
         this.showWeightSelection = false;
         const predictedIds = result.predicted_stars.map(star => star.id);
         this.$emit('prediction-complete', predictedIds);
@@ -164,8 +152,6 @@ export default {
         this.loading = false;
       }
     },
-
-    // 重置整个预测
     resetPrediction() {
       this.showWeightSelection = true;
       this.report = null;
@@ -227,43 +213,46 @@ export default {
 .selection-header h3 {
   margin: 0;
   color: #2c3e50;
+  font-size: 1.1rem;
 }
 
 .selection-subtitle {
   color: #6c757d;
   margin-top: 5px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .selection-instruction {
   background-color: #e9ecef;
-  padding: 10px 15px;
+  padding: 8px 12px;
   border-radius: 4px;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
   color: #495057;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-align: center;
 }
 
 .selected-weights, .unselected-weights {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 15px;
 }
 
 .weight-item {
-  flex: 1 0 calc(33.333% - 10px);
-  min-width: 300px;
+  flex: 0 0 calc(50% - 8px);
+  min-width: 0;
   display: flex;
   align-items: center;
-  padding: 12px 15px;
+  padding: 8px 12px;
   background-color: white;
   border: 1px solid #dee2e6;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
+  height: 36px;
+  box-sizing: border-box;
 }
 
 .weight-item:hover {
@@ -274,16 +263,16 @@ export default {
 .weight-item.selected {
   border-color: #4a6cf7;
   background-color: #e0e7ff;
-  padding-left: 35px;
+  padding-left: 30px;
 }
 
 .order {
   position: absolute;
-  left: 12px;
+  left: 8px;
   top: 50%;
   transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   background-color: #4a6cf7;
   color: white;
   border-radius: 50%;
@@ -291,28 +280,25 @@ export default {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 .weight-label {
   font-weight: bold;
   color: #4a6cf7;
-  min-width: 100px;
-  margin-right: 10px;
-}
-
-.weight-description {
-  color: #6c757d;
-  font-size: 0.9rem;
-  flex-grow: 1;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 5px;
 }
 
 .remove-btn {
-  margin-left: 10px;
+  margin-left: auto;
   color: #dc3545;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
-  width: 20px;
+  width: 16px;
   text-align: center;
 }
 
@@ -329,6 +315,7 @@ export default {
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
+  font-size: 0.85rem;
 }
 
 .selection-buttons button:first-child {
@@ -369,6 +356,7 @@ button:disabled {
   border-radius: 4px;
   margin-bottom: 10px;
   word-break: break-word;
+  font-size: 0.9rem;
 }
 
 .predicted-stars {
@@ -376,20 +364,24 @@ button:disabled {
 }
 
 .stars-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
-  gap: 5px;
+  display: flex;
+  gap: 15px;
   width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .star-card {
-  padding: 20px;
-  border-radius: 10px;
+  width: 160px;
+  height: 200px;
+  padding: 10px;
+  border-radius: 8px;
   background-color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   box-sizing: border-box;
-  max-width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .star-header {
@@ -397,11 +389,13 @@ button:disabled {
   align-items: center;
   margin-bottom: 5px;
   flex-wrap: wrap;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .star-header .rank {
-  width: 25px;
-  height: 25px;
+  width: 20px;
+  height: 20px;
   background-color: #4a6cf7;
   color: white;
   border-radius: 50%;
@@ -409,15 +403,15 @@ button:disabled {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  margin-right: 10px;
+  margin-right: 5px;
   flex-shrink: 0;
+  font-size: 0.75rem;
 }
 
 .star-header .name {
   font-weight: bold;
-  font-size: 12px;
+  font-size: 0.8rem;
   flex-grow: 1;
-  min-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -425,60 +419,53 @@ button:disabled {
 
 .star-header .probability {
   background-color: #e0e7ff;
-  padding: 4px 12px;
-  border-radius: 20px;
+  padding: 2px 8px;
+  border-radius: 10px;
   font-weight: bold;
   color: #4a6cf7;
-  font-size: 12px;
+  font-size: 0.7rem;
   flex-shrink: 0;
+  margin-left: 4px;
 }
 
 .star-content {
   display: flex;
-  gap: 0px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex: 1;
+  gap: 8px;
+  padding-top: 5px;
 }
 
 .star-details {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 200px;
+  gap: 5px;
 }
 
-.strengths, .risks {
+.strengths {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 5px;
+  gap: 4px;
+  max-height: 60px;
+  overflow-y: auto;
 }
 
 .strength-tag {
   display: inline-block;
   background-color: #d1fae5;
   color: #047857;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 0.65rem;
   word-break: break-word;
   max-width: 100%;
-}
-
-.risk-tag {
-  display: inline-block;
-  background-color: #fee2e2;
-  color: #b91c1c;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 13px;
-  word-break: break-word;
-  max-width: 100%;
+  line-height: 1.3;
 }
 
 .star-radar {
-  width: 220px;
-  height: 220px;
+  height: 100px;
   flex-shrink: 0;
   display: flex;
   justify-content: center;
@@ -494,21 +481,13 @@ button:disabled {
   }
 
   .stars-container {
-    grid-template-columns: 1fr;
-  }
-
-  .star-content {
-    flex-direction: column;
-  }
-
-  .star-radar {
-    width: 100%;
-    height: 250px;
-    margin-top: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 100%;
   }
 
   .weight-item {
-    flex: 1 0 100%;
+    flex: 0 0 calc(50% - 8px);
   }
 
   .selection-buttons {
@@ -519,18 +498,13 @@ button:disabled {
   .selection-buttons button {
     width: 100%;
   }
-
-  .star-header .name {
-    white-space: normal;
-    min-width: auto;
-  }
 }
 
 @media (max-width: 480px) {
   .star-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 5px;
   }
 
   .star-header .rank,
@@ -545,6 +519,10 @@ button:disabled {
   .header button.re-predict-btn {
     width: 100%;
     margin-top: 10px;
+  }
+
+  .weight-item {
+    flex: 0 0 100%;
   }
 }
 </style>
