@@ -1,6 +1,25 @@
 <template>
   <div class="q2-sankey-container">
     <header class="q2-header">
+      <!-- 模式切换按钮 -->
+      <div class="mode-toggle-container">
+        <div class="mode-toggle-group">
+          <button
+            @click="setViewMode('direction')"
+            :class="['mode-toggle-button', 'left-button', { active: viewMode === 'direction' }]"
+          >
+            Direction Comparison
+          </button>
+          <button
+            @click="setViewMode('temporal')"
+            :class="['mode-toggle-button', 'right-button', { active: viewMode === 'temporal' }]"
+          >
+            Temporal Comparison
+          </button>
+        </div>
+      </div>
+
+      <!-- 全局控制滑块 -->
       <div class="global-controls">
         <div class="control-group">
           <div class="slider-group">
@@ -31,28 +50,28 @@
 
     <main class="q2-main">
       <div class="sankey-panels">
-        <!-- Outward Panel -->
+        <!-- 左侧面板 -->
         <div class="sankey-panel">
           <div class="panel-header">
             <h4 class="panel-title">
-              <span class="panel-icon">→</span>
-              Outward Influence
+              <span class="panel-icon">{{ leftPanelIcon }}</span>
+              {{ leftPanelTitle }}
             </h4>
           </div>
           <div class="panel-content">
-            <div v-if="loadingOutward" class="status">
+            <div v-if="loadingLeft" class="status">
               <div class="loading-spinner"></div>
-              <span>Loading outward data...</span>
+              <span>Loading data...</span>
             </div>
-            <div v-else-if="errorOutward" class="status error">
+            <div v-else-if="errorLeft" class="status error">
               <span class="error-icon">⚠</span>
-              {{ errorOutward }}
+              {{ errorLeft }}
             </div>
             <InfluenceSankey 
-              v-if="outwardData && !loadingOutward" 
-              :key="`outward-${topNGenres}-${topNArtists}`"
-              :data="outwardData" 
-              :currentView="'q2_2'" 
+              v-if="leftChartData && !loadingLeft" 
+              :key="`left-${viewMode}-${topNGenres}-${topNArtists}`"
+              :data="leftChartData" 
+              :currentView="leftViewType" 
               :topNGenres="topNGenres"
               :topNArtists="topNArtists"
               @link-clicked="handleSankeyClick" 
@@ -60,28 +79,28 @@
           </div>
         </div>
 
-        <!-- Inward Panel -->
+        <!-- 右侧面板 -->
         <div class="sankey-panel">
           <div class="panel-header">
             <h4 class="panel-title">
-              <span class="panel-icon">←</span>
-              Inward Influence
+              <span class="panel-icon">{{ rightPanelIcon }}</span>
+              {{ rightPanelTitle }}
             </h4>
           </div>
           <div class="panel-content">
-            <div v-if="loadingInward" class="status">
+            <div v-if="loadingRight" class="status">
               <div class="loading-spinner"></div>
-              <span>Loading inward data...</span>
+              <span>Loading data...</span>
             </div>
-            <div v-else-if="errorInward" class="status error">
+            <div v-else-if="errorRight" class="status error">
               <span class="error-icon">⚠</span>
-              {{ errorInward }}
+              {{ errorRight }}
             </div>
             <InfluenceSankey 
-              v-if="inwardData && !loadingInward" 
-              :key="`inward-${topNGenres}-${topNArtists}`"
-              :data="inwardData" 
-              :currentView="'q2_3'" 
+              v-if="rightChartData && !loadingRight" 
+              :key="`right-${viewMode}-${topNGenres}-${topNArtists}`"
+              :data="rightChartData" 
+              :currentView="rightViewType" 
               :topNGenres="topNGenres"
               :topNArtists="topNArtists"
               @link-clicked="handleSankeyClick" 
@@ -94,86 +113,153 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import InfluenceSankey from './visualizations/InfluenceSankey.vue'; 
 import { useGraphStore } from '@/stores/graphStore';
 
 const store = useGraphStore();
 
-// 数据状态
-const outwardData = ref(null);
-const inwardData = ref(null);
-const loadingOutward = ref(true);
-const loadingInward = ref(true);
-const errorOutward = ref(null);
-const errorInward = ref(null);
+// 四个数据集
+const sankeyDataSets = ref({
+  outwardAll: null,      // mc1_outward_all.json
+  inwardAll: null,       // mc1_inward_all.json
+  inwardPre2028: null,   // mc1_inward_pre2028.json
+  inwardPost2028: null   // mc1_inward_post2028.json (原mc1_q2_3_data_new.json)
+});
 
-// 全局控制变量 - 同时控制两个桑基图
-const topNGenres = ref(6);   // 默认显示5个流派
-const topNArtists = ref(10); // 默认显示10个艺术家
+// 当前显示模式
+const viewMode = ref('direction'); // 'direction' | 'temporal'
 
-const loadOutwardData = async () => {
-  loadingOutward.value = true;
-  errorOutward.value = null;
-  
+// 当前显示的数据
+const leftChartData = ref(null);
+const rightChartData = ref(null);
+
+// 加载状态
+const loadingLeft = ref(true);
+const loadingRight = ref(true);
+const errorLeft = ref(null);
+const errorRight = ref(null);
+
+// 全局控制变量
+const topNGenres = ref(6);
+const topNArtists = ref(10);
+
+// 计算属性：根据模式确定面板标题和图标
+const leftPanelTitle = computed(() => {
+  return viewMode.value === 'direction' ? 'Outward' : 'Pre-2028';
+});
+
+const rightPanelTitle = computed(() => {
+  return viewMode.value === 'direction' ? 'Inward' : 'Post-2028';
+});
+
+const leftPanelIcon = computed(() => {
+  return viewMode.value === 'direction' ? '→' : '←';
+});
+
+const rightPanelIcon = computed(() => {
+  return '←';
+});
+
+// 计算属性：确定当前视图类型（用于InfluenceSankey组件）
+const leftViewType = computed(() => {
+  return viewMode.value === 'direction' ? 'q2_2' : 'q2_3_pre';
+});
+
+const rightViewType = computed(() => {
+  return viewMode.value === 'direction' ? 'q2_3' : 'q2_3_post';
+});
+
+// 加载单个数据文件
+const loadDataFile = async (filename) => {
   try {
-    const response = await fetch('/mc1_q2_2_data_new.json');
+    const response = await fetch(`/${filename}`);
     if (!response.ok) {
-      throw new Error(`Failed to load outward data: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to load ${filename}: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
     
     // 验证数据结构
     if (!data.nodes || !data.links || !Array.isArray(data.nodes) || !Array.isArray(data.links)) {
-      throw new Error('Invalid data structure: missing nodes or links arrays');
+      throw new Error(`Invalid data structure in ${filename}: missing nodes or links arrays`);
     }
     
-    // 验证数据内容
-    console.log('Outward data sample nodes:', data.nodes.slice(0, 3));
-    console.log('Outward data sample links:', data.links.slice(0, 3));
-    
-    outwardData.value = data;
-    console.log('Outward data loaded successfully:', data.nodes.length, 'nodes,', data.links.length, 'links');
+    console.log(`${filename} loaded:`, data.nodes.length, 'nodes,', data.links.length, 'links');
+    return data;
   } catch (err) {
-    console.error('Error loading outward data:', err);
-    errorOutward.value = err.message;
-    outwardData.value = null;
-  } finally {
-    loadingOutward.value = false;
+    console.error(`Error loading ${filename}:`, err);
+    throw err;
   }
 };
 
-const loadInwardData = async () => {
-  loadingInward.value = true;
-  errorInward.value = null;
+// 加载所有数据
+const loadAllData = async () => {
+  console.log('Loading all sankey data files...');
   
   try {
-    const response = await fetch('/mc1_q2_3_data_new.json');
-    if (!response.ok) {
-      throw new Error(`Failed to load inward data: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json();
+    // 并行加载所有数据文件
+    const [outwardAll, inwardAll, inwardPre2028, inwardPost2028] = await Promise.all([
+      loadDataFile('mc1_outward_all.json'),
+      loadDataFile('mc1_inward_all.json'),
+      loadDataFile('mc1_inward_pre2028.json'),
+      loadDataFile('mc1_inward_post2028.json')
+    ]);
     
-    // 验证数据结构
-    if (!data.nodes || !data.links || !Array.isArray(data.nodes) || !Array.isArray(data.links)) {
-      throw new Error('Invalid data structure: missing nodes or links arrays');
-    }
+    sankeyDataSets.value = {
+      outwardAll,
+      inwardAll,
+      inwardPre2028,
+      inwardPost2028
+    };
     
-    // 验证数据内容
-    console.log('Inward data sample nodes:', data.nodes.slice(0, 3));
-    console.log('Inward data sample links:', data.links.slice(0, 3));
+    console.log('All data files loaded successfully');
     
-    inwardData.value = data;
-    console.log('Inward data loaded successfully:', data.nodes.length, 'nodes,', data.links.length, 'links');
+    // 更新当前显示的数据
+    updateChartData();
   } catch (err) {
-    console.error('Error loading inward data:', err);
-    errorInward.value = err.message;
-    inwardData.value = null;
-  } finally {
-    loadingInward.value = false;
+    console.error('Error loading data files:', err);
+    errorLeft.value = 'Failed to load data';
+    errorRight.value = 'Failed to load data';
   }
 };
 
+// 切换视图模式
+const setViewMode = (mode) => {
+  console.log('Switching view mode to:', mode);
+  viewMode.value = mode;
+  updateChartData();
+};
+
+// 更新图表数据
+const updateChartData = () => {
+  loadingLeft.value = true;
+  loadingRight.value = true;
+  errorLeft.value = null;
+  errorRight.value = null;
+  
+  try {
+    if (viewMode.value === 'direction') {
+      // 方向对比模式：Outward vs Inward (All)
+      leftChartData.value = sankeyDataSets.value.outwardAll;
+      rightChartData.value = sankeyDataSets.value.inwardAll;
+    } else {
+      // 时间对比模式：Inward (Pre-2028) vs Inward (Post-2028)
+      leftChartData.value = sankeyDataSets.value.inwardPre2028;
+      rightChartData.value = sankeyDataSets.value.inwardPost2028;
+    }
+    
+    console.log('Chart data updated for mode:', viewMode.value);
+  } catch (err) {
+    console.error('Error updating chart data:', err);
+    errorLeft.value = 'Error updating chart';
+    errorRight.value = 'Error updating chart';
+  } finally {
+    loadingLeft.value = false;
+    loadingRight.value = false;
+  }
+};
+
+// 处理桑基图点击事件
 const handleSankeyClick = (linkData) => {
   console.log("Sankey link clicked:", linkData);
   const { source, target, currentView } = linkData;
@@ -183,16 +269,34 @@ const handleSankeyClick = (linkData) => {
   // 根据链接类型判断交互类型
   if (source.name === 'Oceanus Folk' && 
       (target.type === 'genre' || target.type === 'Genre')) {
-    // Oceanus Folk → Genre （两个视图都可能有这种链接）
+    // Oceanus Folk → Genre
+    let interactionType;
+    if (currentView === 'q2_2') {
+      interactionType = 'outward_oceanus_to_genre';
+    } else if (currentView === 'q2_3' || currentView === 'q2_3_post') {
+      interactionType = 'inward_oceanus_to_genre';
+    } else if (currentView === 'q2_3_pre') {
+      interactionType = 'inward_pre2028_oceanus_to_genre';
+    }
+    
     payload = {
-      type: currentView === 'q2_2' ? 'outward_oceanus_to_genre' : 'inward_oceanus_to_genre',
+      type: interactionType,
       params: { genre: target.name }
     };
   } else if ((source.type === 'genre' || source.type === 'Genre') && 
              (target.type === 'artist' || target.type === 'Artist')) {
-    // Genre → Artist （两个视图都可能有这种链接）
+    // Genre → Artist
+    let interactionType;
+    if (currentView === 'q2_2') {
+      interactionType = 'outward_genre_to_artist';
+    } else if (currentView === 'q2_3' || currentView === 'q2_3_post') {
+      interactionType = 'inward_genre_to_artist';
+    } else if (currentView === 'q2_3_pre') {
+      interactionType = 'inward_pre2028_genre_to_artist';
+    }
+    
     payload = {
-      type: currentView === 'q2_2' ? 'outward_genre_to_artist' : 'inward_genre_to_artist',
+      type: interactionType,
       params: { 
         genre: source.name, 
         artist_id: target.original_id || target.id,
@@ -213,35 +317,14 @@ const handleSankeyClick = (linkData) => {
   }
 };
 
-// 监听数据变化和滑块变化，确保组件响应调整
-watch([topNGenres, topNArtists], ([newGenres, newArtists], [oldGenres, oldArtists]) => {
-  console.log(`Filter parameters changed: Genres=${newGenres} (was ${oldGenres}), Artists=${newArtists} (was ${oldArtists})`);
-  // Vue的响应式系统会自动重新渲染桑基图
-}, { immediate: false });
-
-// 监听数据加载状态，当数据加载完成后记录信息
-watch([() => outwardData.value, () => inwardData.value], ([outward, inward]) => {
-  if (outward && inward) {
-    console.log('Both datasets ready:', {
-      outward: { nodes: outward.nodes?.length, links: outward.links?.length },
-      inward: { nodes: inward.nodes?.length, links: inward.links?.length }
-    });
-  }
-}, { immediate: true });
+// 监听数据变化
+watch([topNGenres, topNArtists], ([newGenres, newArtists]) => {
+  console.log(`Filter parameters changed: Genres=${newGenres}, Artists=${newArtists}`);
+});
 
 onMounted(async () => {
   console.log('Q2SankeyView mounted, starting data load...');
-  
-  // 并行加载两个数据文件
-  try {
-    await Promise.all([
-      loadOutwardData(),
-      loadInwardData()
-    ]);
-    console.log('Both datasets loaded successfully');
-  } catch (err) {
-    console.error('Error loading datasets:', err);
-  }
+  await loadAllData();
 });
 </script>
 
@@ -260,11 +343,67 @@ onMounted(async () => {
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
 }
 
+/* 模式切换按钮样式 */
+.mode-toggle-container {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.mode-toggle-group {
+  display: inline-flex;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.mode-toggle-button {
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  outline: none;
+  position: relative;
+}
+
+.mode-toggle-button.left-button {
+  border-radius: 4px 0 0 4px;
+}
+
+.mode-toggle-button.right-button {
+  border-radius: 4px;
+}
+
+.mode-toggle-button:hover:not(.active) {
+  background-color: rgba(93, 156, 236, 0.1);
+  color: var(--color-text-primary);
+}
+
+.mode-toggle-button.active {
+  background-color: var(--color-primary-accent);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* 全局控制样式 */
 .global-controls {
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .control-group {
@@ -277,10 +416,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
-  background-color: var(--color-background);
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
 }
 
 .slider-group label {
@@ -428,10 +563,6 @@ onMounted(async () => {
     gap: 16px;
   }
   
-  .slider-group {
-    padding: 6px 10px;
-  }
-  
   .slider-group label {
     min-width: 75px;
     font-size: 0.9rem;
@@ -440,9 +571,18 @@ onMounted(async () => {
   .slider {
     width: 70px;
   }
+  
+  .mode-toggle-button {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 768px) {
+  .q2-header {
+    padding: 6px 12px;
+  }
+  
   .sankey-panels {
     flex-direction: column;
     gap: 12px;
@@ -451,6 +591,11 @@ onMounted(async () => {
   .control-group {
     flex-direction: column;
     gap: 12px;
+  }
+  
+  .mode-toggle-button {
+    padding: 4px 10px;
+    font-size: 0.75rem;
   }
 }
 </style>

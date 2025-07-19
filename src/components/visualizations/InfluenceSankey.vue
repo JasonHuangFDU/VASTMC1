@@ -44,11 +44,16 @@ const filterData = (originalData) => {
 
   const { nodes, links } = JSON.parse(JSON.stringify(originalData));
 
+  // 根据视图类型决定筛选逻辑
+  // q2_2: Outward视图
+  // q2_3, q2_3_pre, q2_3_post: Inward视图的不同时间段
   if (props.currentView === 'q2_2') {
     // Outward视图：筛选top N genres，每个genre下的top N artists
     return filterOutwardData(nodes, links);
-  } else if (props.currentView === 'q2_3') {
-    // Inward视图：筛选top N artists，显示相关genres
+  } else if (props.currentView === 'q2_3' || 
+             props.currentView === 'q2_3_pre' || 
+             props.currentView === 'q2_3_post') {
+    // Inward视图：筛选top N genres和相关的top N artists
     return filterInwardData(nodes, links);
   }
 
@@ -66,7 +71,7 @@ const filterOutwardData = (nodes, links) => {
     if (sourceNode && targetNode && 
         sourceNode.name === 'Oceanus Folk' && 
         (targetNode.type === 'genre' || targetNode.type === 'Genre')) {
-      genreInfluence.set(link.target, link.details?.work_count || link.value);
+      genreInfluence.set(link.target, link.details?.influence_edge_count || link.details?.work_count || link.value);
     }
   });
 
@@ -90,7 +95,8 @@ const filterOutwardData = (nodes, links) => {
     });
     
     const topArtistsForGenre = genreToArtistLinks
-      .sort((a, b) => (b.details?.work_count || b.value) - (a.details?.work_count || a.value))
+      .sort((a, b) => (b.details?.collaboration_edge_count || b.details?.work_count || b.value) - 
+                      (a.details?.collaboration_edge_count || a.details?.work_count || a.value))
       .slice(0, props.topNArtists)
       .map(link => link.target);
     
@@ -110,7 +116,7 @@ const filterOutwardData = (nodes, links) => {
     filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
   );
 
-  console.log(`Outward: Filtered to ${topGenreIds.length} genres and ${selectedArtistIds.size} artists`);
+  console.log(`${props.currentView}: Filtered to ${topGenreIds.length} genres and ${selectedArtistIds.size} artists`);
   console.log(`Filtered from ${nodes.length} to ${filteredNodes.length} nodes`);
   console.log(`Filtered from ${links.length} to ${filteredLinks.length} links`);
 
@@ -118,7 +124,7 @@ const filterOutwardData = (nodes, links) => {
 };
 
 const filterInwardData = (nodes, links) => {
-  console.log('filterInwardData called with:', { 
+  console.log(`filterInwardData called for ${props.currentView} with:`, { 
     nodes: nodes.length, 
     links: links.length,
     topNGenres: props.topNGenres,
@@ -131,8 +137,6 @@ const filterInwardData = (nodes, links) => {
   
   console.log('Adjusted filter params:', { adjustedTopNGenres, adjustedTopNArtists });
   
-  // Inward视图：也是 Oceanus Folk → Genres → Artists 的流向
-
   // 1. 计算每个Genre的影响值（从Oceanus Folk到Genre的work_count）
   const genreInfluence = new Map();
   
@@ -143,7 +147,7 @@ const filterInwardData = (nodes, links) => {
     if (sourceNode && targetNode && 
         sourceNode.name === 'Oceanus Folk' && 
         (targetNode.type === 'genre' || targetNode.type === 'Genre')) {
-      genreInfluence.set(link.target, link.details?.work_count || link.value);
+      genreInfluence.set(link.target, link.details?.influence_edge_count || link.details?.work_count || link.value);
     }
   });
 
@@ -184,7 +188,8 @@ const filterInwardData = (nodes, links) => {
       console.log(`Genre ${genreId} has ${genreToArtistLinks.length} artist links`);
       
       const topArtistsForGenre = genreToArtistLinks
-        .sort((a, b) => (b.details?.work_count || b.value || 1) - (a.details?.work_count || a.value || 1))
+        .sort((a, b) => (b.details?.collaboration_edge_count || b.details?.work_count || b.value || 1) - 
+                        (a.details?.collaboration_edge_count || a.details?.work_count || a.value || 1))
         .slice(0, adjustedTopNArtists)
         .map(link => link.target);
       
@@ -213,7 +218,7 @@ const filterInwardData = (nodes, links) => {
     filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
   );
 
-  console.log(`Inward: Filtered to ${topGenreIds.length} genres and ${selectedArtistIds.size} artists`);
+  console.log(`${props.currentView}: Filtered to ${topGenreIds.length} genres and ${selectedArtistIds.size} artists`);
   console.log(`Filtered from ${nodes.length} to ${filteredNodes.length} nodes`);
   console.log(`Filtered from ${links.length} to ${filteredLinks.length} links`);
 
@@ -271,7 +276,10 @@ const getTooltipContent = (link) => {
       )
       .join('');
     
-    return `<strong>${targetNode.name}</strong><br/>影响边总数: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${influenceList || '<div style="font-weight: 400; color: #666666;">Various Types</div>'}`;
+    // 根据视图类型调整标题
+    const edgeTypeLabel = props.currentView === 'q2_2' ? '影响边' : '受影响边';
+    
+    return `<strong>${targetNode.name}</strong><br/>${edgeTypeLabel}总数: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${influenceList || '<div style="font-weight: 400; color: #666666;">Various Types</div>'}`;
   }
   
   // Genre → Artist: 显示合作边数量和类型分布
@@ -353,7 +361,7 @@ const drawChart = () => {
 
   const sankeyLayout = sankey()
     .nodeId(d => d.id)
-    .nodeAlign(sankeyLeft) // 两个视图都使用左对齐，因为流向都是从左到右
+    .nodeAlign(sankeyLeft) // 所有视图都使用左对齐，因为流向都是从左到右
     .nodeWidth(10)
     .nodePadding(paddingPerNode)
     .extent([[8, 8], [width - 8, height - 8]])
@@ -425,7 +433,7 @@ const drawChart = () => {
 
         svg.selectAll('.node-text')
            .attr('opacity', nodeD => {
-               // 两个视图中，都只显示高亮的artist标签
+               // 所有视图中，都只显示高亮的artist标签
                if (nodeD.layer === 2 && 
                    (nodeD.type === 'artist' || nodeD.type === 'Artist')) {
                    return highlightedNodeIds.has(nodeD.id) ? 1 : 0;
@@ -450,7 +458,7 @@ const drawChart = () => {
         linkPaths.attr('stroke-opacity', 0.7).attr('stroke', appColors.sankeyLinkBase);
         svg.selectAll('.node-text')
            .attr('opacity', nodeD => {
-               // 两个视图中，artist标签都默认隐藏
+               // 所有视图中，artist标签都默认隐藏
                if (nodeD.layer === 2 && 
                    (nodeD.type === 'artist' || nodeD.type === 'Artist')) {
                    return 0;
@@ -504,17 +512,13 @@ const drawChart = () => {
     .attr('text-anchor', d => d.x0 < width / 2 ? 'start' : 'end')
     .attr('font-family', 'Inter, -apple-system, BlinkMacSystemFont, sans-serif')
     .attr('font-size', d => {
-        // Oceanus Folk和Genre保持10px，Artist改为0.9rem
-        if (d.name === 'Oceanus Folk' || d.type === 'genre' || d.type === 'Genre') {
-            return '10px';
-        } else {
-            return '10px';
-        }
+        // 所有节点都使用10px
+        return '10px';
     })
     .attr('font-weight', '600')
     .attr('fill', appColors.textPrimary)
     .attr('opacity', d => {
-        // 两个视图中，artist标签都默认隐藏
+        // 所有视图中，artist标签都默认隐藏
         if (d.layer === 2 && 
             (d.type === 'artist' || d.type === 'Artist')) {
             return 0;
