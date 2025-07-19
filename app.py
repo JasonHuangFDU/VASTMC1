@@ -1031,7 +1031,7 @@ def train_and_predict(data, node_mapping, artist_features_dict):
     results.sort(key=lambda x: x['probability'], reverse=True)
     return results
 
-@app.route('/predict', methods=['POST'])
+@app.route('/api/predict', methods=['POST'])
 def predict():
     try:
         # 获取前端发送的 JSON 数据

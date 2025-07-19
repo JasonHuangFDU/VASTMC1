@@ -56,7 +56,12 @@
           <canvas ref="mainChart" @mousemove="handleChartHover" @mouseleave="hideTooltip"></canvas>
         </div>
       </div>
-
+      <!-- 流派环形图区域 -->
+      <div v-if="comparisonData.length" class="genre-charts">
+        <div v-for="(artist, index) in comparisonData" :key="index" class="genre-chart-container">
+          <canvas :ref="el => genreChartRefs[index] = el"></canvas>
+        </div>
+      </div>
       <!-- 空状态提示 -->
       <div v-if="!loading && !comparisonData.length" class="empty-state">
         <div class="placeholder">
@@ -110,11 +115,12 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch} from 'vue';
 import * as d3 from 'd3';
 import Chart from 'chart.js/auto';
 import ArtistPotentialPrediction from './ArtistPotentialPrediction.vue';
 import { processArtistData } from '@/services/dataService';
+import { getGenreColor } from '@/utils/colors';
 
 // 定义默认艺术家的ID
 const DEFAULT_ARTIST_IDS = [17255, 17155, 17126];
@@ -136,6 +142,159 @@ export default {
     const chartWrapper = ref(null);
     let mainChartInstance = null;
     let sortedYears = [];
+
+    // 新增：流派环形图相关变量
+    const genreChartRefs = ref([null, null, null]);
+    let genreChartInstances = [null, null, null];
+
+    // 修改 getArtistGenreData 函数
+    const getArtistGenreData = (artist, year = null) => {
+      // 如果有悬停年份且年份不为空
+      if (year !== null && year !== '') {
+        // 如果该年份有数据，返回该年份的流派分布
+        if (artist.data.yearlyStats[year]) {
+          return artist.data.yearlyStats[year].genreDistribution || {};
+        }
+        // 如果该年份没有数据，返回空对象
+        return {};
+      }
+
+      // 如果没有悬停年份（初始状态），返回整个生涯的流派分布
+      const careerGenres = {};
+      Object.values(artist.data.yearlyStats).forEach(yearStats => {
+        Object.entries(yearStats.genreDistribution || {}).forEach(([genre, count]) => {
+          careerGenres[genre] = (careerGenres[genre] || 0) + count;
+        });
+      });
+      return careerGenres;
+    };
+
+    // 修改 renderGenreCharts 函数
+    const renderGenreCharts = () => {
+      // 销毁旧图表
+      destroyGenreCharts();
+
+      // 渲染三个艺术家的流派图
+      comparisonData.value.forEach((artist, index) => {
+        const canvas = genreChartRefs.value[index];
+        if (!canvas) return;
+
+        // 获取流派数据
+        const genreData = getArtistGenreData(artist, hoverYear.value);
+
+        // 检查是否有有效数据
+        const hasData = genreData && Object.keys(genreData).length > 0;
+
+        // 获取画布上下文
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 设置标题
+        ctx.font = 'bold 12px Arial';
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+
+        // 根据状态显示不同内容
+        if (hoverYear.value) {
+          // 有悬停年份
+          if (hasData) {
+            ctx.fillText(`Genres in ${hoverYear.value}`, canvas.width/2, 15);
+          } else {
+            ctx.fillText(`No genres in ${hoverYear.value}`, canvas.width/2, 15);
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#999';
+            ctx.fillText('(Showing career distribution instead)', canvas.width/2, 30);
+            // 回退到生涯数据
+            const careerData = getArtistGenreData(artist, null);
+            renderGenreChart(canvas, careerData);
+            return;
+          }
+        } else {
+          // 初始状态（无悬停）
+          ctx.fillText('Career Genre Distribution', canvas.width/2, 15);
+          if (!hasData) {
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#999';
+            ctx.fillText('No genre data available', canvas.width/2, canvas.height/2 + 15);
+            return;
+          }
+        }
+
+        // 渲染图表
+        renderGenreChart(canvas, genreData);
+      });
+    };
+
+    // 新增辅助函数：渲染单个环形图
+    const renderGenreChart = (canvas, genreData) => {
+      // 准备环形图数据
+      const labels = Object.keys(genreData);
+      const data = Object.values(genreData);
+
+      // 使用预设的颜色映射
+      const backgroundColor = labels.map(genre => getGenreColor(genre));
+
+      const chartData = {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor,
+          borderWidth: 1
+        }]
+      };
+
+      // 创建环形图实例
+      const index = genreChartRefs.value.findIndex(ref => ref === canvas);
+      if (index !== -1) {
+        genreChartInstances[index] = new Chart(canvas, {
+          type: 'doughnut',
+          data: chartData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  font: {
+                    size: 10
+                  },
+                  boxWidth: 12
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const value = context.raw;
+                    const percentage = Math.round((value / total) * 100);
+                    return `${context.label}: ${value} (${percentage}%)`;
+                  }
+                }
+              }
+            },
+            cutout: '60%'
+          }
+        });
+      }
+    };
+
+    // 新增：销毁流派图表
+    const destroyGenreCharts = () => {
+      genreChartInstances.forEach((instance, index) => {
+        if (instance) {
+          instance.destroy();
+          genreChartInstances[index] = null;
+        }
+      });
+    };
+
+    // 新增：监听对比数据变化，自动渲染流派图
+    watch(comparisonData, () => {
+      if (comparisonData.value.length) {
+        nextTick(renderGenreCharts);
+      }
+    }, { deep: true });
 
     // 悬停交互状态
     const showTooltip = ref(false);
@@ -291,8 +450,14 @@ export default {
         comparisonData.value = results;
         console.log("对比数据加载完成", results);
 
+        // 重置悬停状态
+        hoverYear.value = '';
+
         // 渲染图表
-        setTimeout(renderCharts, 100);
+        setTimeout(() => {
+          renderCharts();
+          renderGenreCharts(); // 确保初始渲染
+        }, 100);
       } catch (error) {
         console.error('加载对比数据失败:', error);
       } finally {
@@ -327,6 +492,8 @@ export default {
 
       // 渲染主图表
       renderMainChart();
+      // 渲染流派环形图
+      renderGenreCharts();
     };
 
     // 渲染主图表（影响力、作品发布、合作）
@@ -652,12 +819,16 @@ export default {
         left: `${left}px`,
         top: `${top}px`
       };
+      // 更新后渲染流派图
+      renderGenreCharts();
     };
 
     // 隐藏工具提示
     const hideTooltip = () => {
       showTooltip.value = false;
       hoverLine.value.show = false;
+      hoverYear.value = ''; // 重置悬停年份
+      renderGenreCharts(); // 重新渲染流派图
     };
 
     // 销毁所有图表实例
@@ -665,6 +836,7 @@ export default {
       if (mainChartInstance) {
         mainChartInstance.destroy();
         mainChartInstance = null;
+        destroyGenreCharts();
       }
     };
 
@@ -719,7 +891,8 @@ export default {
       handleChartHover,
       hideTooltip,
       getArtistColor,
-      handlePredictionComplete
+      handlePredictionComplete,
+      genreChartRefs
     };
   }
 };
@@ -745,7 +918,7 @@ export default {
 /* 艺术家选择面板 - 进一步减小高度 */
 .artist-selection {
   flex: 0 0 auto; /* 改为固定高度，不占用flex比例 */
-  height: 120px; /* 从140px减到120px */
+  height: 100px; /* 从140px减到100px */
   background-color: white;
   border-radius: 8px;
   padding: 8px; /* 从10px减到8px */
@@ -764,7 +937,37 @@ export default {
   min-height: 0; /* 允许收缩 */
   overflow: hidden;
 }
+/* 新增流派环形图样式 */
+.genre-charts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 0px;
+  height: 100px; /* 固定高度 */
+  background-color: white;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
 
+.genre-chart-container {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.year-indicator {
+  font-size: 12px;
+  color: #7f8c8d;
+  font-weight: normal;
+}
+
+.genre-chart-container canvas {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
 /* 艺术家潜力预测视图 - 保持占比 */
 .prediction-view {
   flex: 2.5; /* 保持2.5的占比 */
@@ -1127,6 +1330,14 @@ export default {
 
   .artist-stats {
     grid-template-columns: 1fr;
+  }
+  .genre-charts {
+    height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .genre-chart-container {
+    height: 200px;
   }
 }
 
