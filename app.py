@@ -270,6 +270,11 @@ def extract_features(G, node_mapping, label_mapping):
     
     # 计算影响力特征
     for node_id, data in G.nodes(data=True):
+        # 新增过滤条件：排除notability > 44的Person节点
+        notability = data.get('notability', 0)
+        if notability > 44:
+            print(notability)
+            continue  # 跳过这些节点
         node_type = data.get('Node Type', '')
         
         if node_type == 'Person':
@@ -748,6 +753,11 @@ def prepare_hetero_graph_data(G, artist_features_dict, node_mapping, weights):
     artist_nodes = []
     artist_features_list = []
     for node_id, data in G.nodes(data=True):
+        # 新增过滤条件：排除notability > 44的Person节点
+        notability = data.get('notability', 0)
+        if notability > 44:
+            continue
+
         if data['Node Type'] == 'Person' and node_id in artist_features_dict:
             feat = artist_features_dict[node_id]
             
@@ -959,7 +969,11 @@ def train_and_predict(data, node_mapping, artist_features_dict):
         
         name = artist_data.get('name', artist_data.get('stage_name', 'Unknown'))
         feat = artist_features_dict.get(artist_id, {})
-        
+
+        # 新增过滤条件：排除notability > 44的Person节点
+        notability = artist_data.get('notability', 0)
+        if notability > 44:
+            continue
         # 双重验证：只包含最近5年有活动的艺术家
         if feat.get('last_release_year', 0) < CURRENT_YEAR - 5:
             continue
@@ -1065,7 +1079,7 @@ def predict():
             'creative_depth': 'Creativity',
             'collab_diversity': 'Collab-Diversity',
             'oceanus_works': 'Oceanus',
-            'total_notable': 'Notablility',
+            'total_notable': 'Notability',
             'collaboration_score': 'Collab-Frequency'
         }
         
