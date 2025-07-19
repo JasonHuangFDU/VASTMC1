@@ -459,22 +459,63 @@ class WeightOptimizer(BaseEstimator, RegressorMixin):
             self.weights = params["weights"]
         return self
 
-# 5. 网格搜索优化权重系数（修改为接受用户权重偏好）
+# 5. 网格搜索优化权重系数（修改为接受用户权重字典）
 def optimize_weights(artist_features_dict, weight_preferences=None):
-    # 默认权重排序（如果用户未提供）
-    DEFAULT_WEIGHT_PREFS = [
-        'influence_score',
-        'creative_depth',
-        'label_weight',
-        'producer_count',
-        'oceanus',
-        'collab'
-    ]
-    
-    # 如果用户未提供权重偏好，使用默认值
-    if weight_preferences is None:
-        weight_preferences = DEFAULT_WEIGHT_PREFS
-    
+    # 如果用户提供了权重字典，直接使用
+    if weight_preferences and isinstance(weight_preferences, dict):
+        # 确保有6个权重项
+        if len(weight_preferences) != 6:
+            print(f"警告: 用户权重包含 {len(weight_preferences)} 个值，需要6个值")
+            # 使用默认值填充缺失项
+            default_weights = {
+                'influence_score': 0.20,
+                'creative_depth': 0.18,
+                'label_weight': 0.15,
+                'producer_count': 0.10,
+                'oceanus': 0.15,
+                'collab': 0.12
+            }
+            for key in default_weights:
+                if key not in weight_preferences:
+                    weight_preferences[key] = default_weights[key]
+        
+        print("\n使用用户权重字典:")
+        for key, value in weight_preferences.items():
+            print(f"{key}: {value:.4f}")
+        
+        # 将6个权重项映射到8个特征
+        mapped_weights = [
+            weight_preferences.get('influence_score', 0.20),  # influence_score
+            weight_preferences.get('creative_depth', 0.18),  # creative_depth
+            weight_preferences.get('label_weight', 0.15),  # label_weight
+            weight_preferences.get('oceanus', 0.15) / 2.0,  # oceanus_recent (oceanus的一半)
+            weight_preferences.get('collab', 0.12) / 2.0,  # collab_diversity (collab的一半)
+            weight_preferences.get('producer_count', 0.10),  # producer_count
+            weight_preferences.get('oceanus', 0.15) / 2.0,  # oceanus_ratio (oceanus的另一半)
+            weight_preferences.get('collab', 0.12) / 2.0   # collaboration_score (collab的另一半)
+        ]
+        
+        # 确保权重和为1
+        total_weight = sum(mapped_weights)
+        normalized_weights = [w / total_weight for w in mapped_weights]
+        
+        print("\n映射后的特征权重:")
+        feature_names = [
+            'influence_score',
+            'creative_depth',
+            'label_weight',
+            'oceanus_recent',
+            'collab_diversity',
+            'producer_count',
+            'oceanus_ratio',
+            'collaboration_score'
+        ]
+        for i, name in enumerate(feature_names):
+            print(f"{name}: {normalized_weights[i]:.4f}")
+        
+        return normalized_weights
+      
+    # 如果没有提供用户权重，使用默认优化逻辑
     # 准备数据
     features_list = []
     scores_list = []
@@ -1001,13 +1042,19 @@ def predict():
         
         graph_data = request_data['graphData']
         
-        # 获取用户权重偏好（如果有）
-        weight_preferences = request_data.get('weightPreferences')
+        # 获取权重ID数组和归一化权重值数组
+        weight_ids = request_data.get('weightIds')
+        normalized_weights = request_data.get('normalizedWeights')
+        
+        # 如果提供了权重ID和值，构建权重字典
+        weight_preferences = None
+        if weight_ids and normalized_weights and len(weight_ids) == len(normalized_weights):
+            # 将两个数组组合成字典
+            weight_preferences = dict(zip(weight_ids, normalized_weights))
+            print(f"用户权重偏好字典: {weight_preferences}")
         
         # 调试日志
         print(f"收到图谱数据: {len(graph_data.get('nodes', []))} 节点, {len(graph_data.get('edges', []))} 边")
-        if weight_preferences:
-            print(f"用户权重偏好: {weight_preferences}")
         
         # 使用接收到的数据构建图谱
         G, node_mapping, label_mapping = build_knowledge_graph(graph_data)

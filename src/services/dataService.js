@@ -71,17 +71,18 @@ export async function loadYearlyData() {
 
 
 // 修改函数以接受权重偏好参数
-export async function loadOceanusDataAndPredict(weightPreferences = null) {
+export async function loadOceanusDataAndPredict(weightIds, normalizedWeights) {
   try {
     console.log("加载 Oceanus 数据...");
     const oceanusData = await d3.json('/Oceanus.json');
     console.log("Oceanus 数据加载完成", oceanusData);
 
-    // 构建请求体，包含权重偏好
-    const requestBody = { graphData: oceanusData };
-    if (weightPreferences) {
-      requestBody.weightPreferences = weightPreferences;
-    }
+    // 构建请求体，包含权重ID和归一化权重值
+    const requestBody = {
+      graphData: oceanusData,
+      weightIds: weightIds,
+      normalizedWeights: normalizedWeights
+    };
 
     // 发送数据到后端进行预测
     const response = await fetch('http://localhost:5001/predict', {
