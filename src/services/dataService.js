@@ -15,17 +15,39 @@ export async function loadData() {
   return graph;
 }
 
-export async function fetchGraphLayout(payload) {
+import { ref } from 'vue';
+
+
+// Function to fetch the entire graph data from the static file
+export async function fetchFullGraph() {
   try {
-    // 调用后端的 /api/graph/layout 接口
-    const response = await axios.post(`${API_BASE_URL}/graph/layout`, payload);
-    return response.data;
+    // The full graph data is in a static JSON file in the public folder
+    const response = await fetch(`/MC1_graph_new.json`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
-    console.error("获取图布局时出错:", error);
-    // 重新抛出错误，以便 store 中的调用函数可以捕获它
+    console.error("Error fetching full graph data:", error);
     throw error;
   }
 }
+
+export async function fetchGraphLayout(payload) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/graph/layout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error('Network response was not ok');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching graph layout:', error);
+    return { error: error.message };
+  }
+}
+
 
 /**
  * 新增：为桑基图交互获取过滤后的图数据。
@@ -85,7 +107,7 @@ export async function loadOceanusDataAndPredict(weightIds, normalizedWeights) {
     };
 
     // 发送数据到后端进行预测
-    const response = await fetch('http://localhost:5001/predict', {
+    const response = await fetch(`${API_BASE_URL}/predict`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -355,5 +377,24 @@ export const getFocusCollaborationData = () => {
 export const getFocusInfluenceData = () => {
   return axios.get(`http://localhost:5001/api/focus/influence`);
 };
+
+/**
+ * Fetches a subgraph based on a click event from the Sankey chart.
+ * @param {string} sourceName - The name of the source node in the Sankey link.
+ * @param {string} targetName - The name of the target node in the Sankey link.
+ * @returns {Promise<object>} D3-compatible graph data.
+ */
+export async function fetchSankeyInteractionData(sourceName, targetName) {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/sankey_interaction`, {
+      source: sourceName,
+      target: targetName,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching subgraph for Sankey interaction (source: ${sourceName}, target: ${targetName}):`, error);
+    throw error;
+  }
+}
 
 

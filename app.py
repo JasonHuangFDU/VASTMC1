@@ -1442,13 +1442,15 @@ def get_subgraph_for_node(graph, center_node_id, hop_level=1):
                 
     return subgraph
 
-def format_graph_for_d3(graph, highlighted_nodes=None):
+def format_graph_for_d3(graph, highlighted_nodes=None, highlighted_links=None):
     """
     将NetworkX图对象转换为D3.js兼容的JSON格式。
-    V2: 实现边聚合、高亮、以及为作品节点添加贡献者信息。
+    V3: 增加了对高亮边的支持。
     """
     if highlighted_nodes is None:
         highlighted_nodes = set()
+    if highlighted_links is None:
+        highlighted_links = set()
 
     if graph is None:
         return {"nodes": [], "links": []}
@@ -1456,15 +1458,20 @@ def format_graph_for_d3(graph, highlighted_nodes=None):
     # --- 边聚合逻辑 ---
     bundled_links = {}
     for u, v, data in graph.edges(data=True):
-        # 使用排序后的元组作为key，确保(u,v)和(v,u)被视为不同的连接
         key = (u, v)
         if key not in bundled_links:
             bundled_links[key] = {
                 "source": u,
                 "target": v,
                 "relations": [],
-                "count": 0
+                "count": 0,
+                "highlight": False  # 默认不高亮
             }
+        
+        # 如果原始边在要高亮的集合里，则将聚合后的边标记为高亮
+        if (u, v) in highlighted_links:
+            bundled_links[key]["highlight"] = True
+
         bundled_links[key]["relations"].append(data.get('Edge Type', 'Unknown'))
         bundled_links[key]["count"] += 1
     
@@ -1512,31 +1519,39 @@ def format_graph_for_d3(graph, highlighted_nodes=None):
 
 
 # --- 新增：桑基图交互的API端点 ---
-@app.route('/api/filter-for-sankey', methods=['POST'])
-def filter_for_sankey():
+@app.route('/api/sankey_interaction', methods=['POST'])
+def sankey_interaction():
     """
     专门处理来自桑基图点击事件的过滤请求。
-    V5: 使用 deepcopy 来彻底杜绝任何可能的引用问题。
+    V8: 增加了对高亮边的支持。
     """
     if FULL_NETWORKX_GRAPH is None:
         return jsonify({"error": "Graph data is not available."}), 500
 
     req_data = request.json
-    filter_type = req_data.get('type')
-    params = req_data.get('params', {})
-    app.logger.info(f"收到桑基图过滤请求 V5: 类型='{filter_type}', 参数={params}")
+    app.logger.info(f"收到桑基图交互请求: {req_data}")
+    source_name = req_data.get('source')
+    target_name = req_data.get('target')
+    app.logger.info(f"收到桑基图交互请求: source='{source_name}', target='{target_name}'")
+
+    target_node_id = find_node_id_by_name(target_name)
+    is_genre_to_artist = False
+    if target_node_id and FULL_NETWORKX_GRAPH.has_node(target_node_id):
+        node_type = FULL_NETWORKX_GRAPH.nodes[target_node_id].get('Node Type')
+        if node_type in ['Person', 'MusicalGroup']:
+            is_genre_to_artist = True
 
     subgraph = nx.MultiDiGraph()
     highlighted_nodes = set()
-
+    highlighted_links = set()
+    
     INFLUENCE_EDGE_TYPES = {'InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'}
     CREATION_EDGE_TYPES = {'PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf', 'MemberOf'}
 
-    # --- 1. Outward: Oceanus Folk -> Genre ---
-    if filter_type == 'outward_oceanus_to_genre':
-        target_genre = params.get('genre')
-        if not target_genre:
-            return jsonify({"error": "Missing 'genre' parameter"}), 400
+    # --- 逻辑1: Oceanus Folk -> 其他流派 (Outward) ---
+    if source_name == 'Oceanus Folk' and not is_genre_to_artist:
+        target_genre = target_name
+        app.logger.info(f"处理 'Oceanus Folk' -> Genre '{target_genre}' (Outward) 交互")
 
         target_genre_works = {n for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre') == target_genre and d.get('Node Type') in ['Song', 'Album']}
         oceanus_works = {n for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre') == 'Oceanus Folk' and d.get('Node Type') in ['Song', 'Album']}
@@ -1544,101 +1559,79 @@ def filter_for_sankey():
         nodes_to_add = set()
         edges_to_add = []
         for u, v, data in FULL_NETWORKX_GRAPH.edges(data=True):
-            if u in target_genre_works and v in oceanus_works and data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
-                nodes_to_add.add(u)
+            if v in oceanus_works and u in target_genre_works and data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
                 nodes_to_add.add(v)
+                nodes_to_add.add(u)
                 edges_to_add.append((u, v, data))
+                highlighted_links.add((u, v))
         
         if nodes_to_add:
             subgraph.add_nodes_from((n, copy.deepcopy(FULL_NETWORKX_GRAPH.nodes[n])) for n in nodes_to_add)
             subgraph.add_edges_from(edges_to_add)
-
-    # --- 2. Outward: Genre -> Artist ---
-    elif filter_type == 'outward_genre_to_artist':
-        genre = params.get('genre')
-        artist_id = params.get('artist_id')
-        if not genre or not artist_id:
-            return jsonify({"error": "Missing 'genre' or 'artist_id' parameter"}), 400
-
-        if not FULL_NETWORKX_GRAPH.has_node(artist_id):
-            return jsonify({"nodes": [], "links": []})
-
-        subgraph.add_node(artist_id, **copy.deepcopy(FULL_NETWORKX_GRAPH.nodes[artist_id]))
         
-        for u, v, data in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True):
-            if data.get('Edge Type') in CREATION_EDGE_TYPES:
-                work_node = FULL_NETWORKX_GRAPH.nodes[v]
-                if work_node.get('Node Type') in ['Song', 'Album'] and work_node.get('genre') == genre:
-                    subgraph.add_node(v, **copy.deepcopy(work_node))
-                    subgraph.add_edge(u, v, **data)
+        highlighted_nodes.update(nodes_to_add)
 
-        for u, v, data in FULL_NETWORKX_GRAPH.in_edges(artist_id, data=True):
-            if data.get('Edge Type') in CREATION_EDGE_TYPES:
-                work_node = FULL_NETWORKX_GRAPH.nodes[u]
-                if work_node.get('Node Type') in ['Song', 'Album'] and work_node.get('genre') == genre:
-                    subgraph.add_node(u, **copy.deepcopy(work_node))
-                    subgraph.add_edge(u, v, **data)
+    # --- 逻辑2: 其他流派 -> 艺术家 (Outward) ---
+    elif is_genre_to_artist:
+        genre = source_name
+        artist_id = target_node_id
+        artist_name = target_name
+        app.logger.info(f"处理 Genre '{genre}' -> Artist '{artist_name}' (ID: {artist_id}) 交互")
 
-    # --- 3. Inward: Genre -> Artist ---
-    elif filter_type == 'inward_genre_to_artist':
-        genre = params.get('genre')
-        artist_id = params.get('artist_id')
-        if not genre or not artist_id:
-            return jsonify({"error": "Missing 'genre' or 'artist_id' parameter"}), 400
-
-        if not FULL_NETWORKX_GRAPH.has_node(artist_id):
-            return jsonify({"nodes": [], "links": []})
-
-        subgraph.add_node(artist_id, **copy.deepcopy(FULL_NETWORKX_GRAPH.nodes[artist_id]))
-
-        for u_artist, v_work, creation_data in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True):
-            if creation_data.get('Edge Type') in CREATION_EDGE_TYPES:
+        artist_works_in_genre = set()
+        for _, v_work, d_creation in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True):
+            if d_creation.get('Edge Type') in CREATION_EDGE_TYPES:
                 work_node = FULL_NETWORKX_GRAPH.nodes[v_work]
-                if work_node.get('Node Type') in ['Song', 'Album']:
-                    subgraph.add_node(v_work, **copy.deepcopy(work_node))
-                    subgraph.add_edge(u_artist, v_work, **creation_data)
-                    
-                    for u_work, v_inspiration, influence_data in FULL_NETWORKX_GRAPH.out_edges(v_work, data=True):
-                        if influence_data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
-                            inspiration_node = FULL_NETWORKX_GRAPH.nodes[v_inspiration]
-                            if inspiration_node.get('genre') == genre:
-                                subgraph.add_node(v_inspiration, **copy.deepcopy(inspiration_node))
-                                subgraph.add_edge(u_work, v_inspiration, **influence_data)
+                if work_node.get('Node Type') in ['Song', 'Album'] and work_node.get('genre') == genre:
+                    artist_works_in_genre.add(v_work)
+        for u_work, _, d_creation in FULL_NETWORKX_GRAPH.in_edges(artist_id, data=True):
+             if d_creation.get('Edge Type') in CREATION_EDGE_TYPES:
+                work_node = FULL_NETWORKX_GRAPH.nodes[u_work]
+                if work_node.get('Node Type') in ['Song', 'Album'] and work_node.get('genre') == genre:
+                    artist_works_in_genre.add(u_work)
 
-    # --- 4. Inward: Artist -> Oceanus Folk ---
-    elif filter_type == 'inward_artist_to_oceanus':
-        artist_id = params.get('artist_id')
-        if not artist_id:
-            return jsonify({"error": "Missing 'artist_id' parameter"}), 400
-
-        if not FULL_NETWORKX_GRAPH.has_node(artist_id):
-            return jsonify({"nodes": [], "links": []})
-
-        subgraph.add_node(artist_id, **copy.deepcopy(FULL_NETWORKX_GRAPH.nodes[artist_id]))
+        oceanus_works_source = {n for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre') == 'Oceanus Folk' and d.get('Node Type') in ['Song', 'Album']}
         
-        oceanus_works_by_artist = {v for u, v, d in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True) if d.get('Edge Type') in CREATION_EDGE_TYPES and FULL_NETWORKX_GRAPH.nodes[v].get('genre') == 'Oceanus Folk'}
+        nodes_to_add = set()
+        edges_to_add = []
 
-        for work_id in oceanus_works_by_artist:
-            subgraph.add_node(work_id, **copy.deepcopy(FULL_NETWORKX_GRAPH.nodes[work_id]))
-            for u, v, data in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True):
-                if v == work_id:
-                    subgraph.add_edge(u, v, **data)
+        for work_id in artist_works_in_genre:
+            for source_song, _, d_influence in FULL_NETWORKX_GRAPH.in_edges(work_id, data=True):
+                if source_song in oceanus_works_source and d_influence.get('Edge Type') in INFLUENCE_EDGE_TYPES:
+                    nodes_to_add.add(source_song)
+                    nodes_to_add.add(work_id)
+                    edges_to_add.append((source_song, work_id, d_influence))
+                    highlighted_links.add((source_song, work_id))
 
-            for u_work, v_inspiration, influence_data in FULL_NETWORKX_GRAPH.out_edges(work_id, data=True):
-                if influence_data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
-                    inspiration_node = FULL_NETWORKX_GRAPH.nodes[v_inspiration]
-                    if inspiration_node.get('genre') != 'Oceanus Folk':
-                        highlighted_nodes.add(work_id)
-                        subgraph.add_node(v_inspiration, **copy.deepcopy(inspiration_node))
-                        subgraph.add_edge(u_work, v_inspiration, **influence_data)
+        if nodes_to_add:
+            nodes_to_add.add(artist_id)
+            
+            for work_id in artist_works_in_genre:
+                if work_id in nodes_to_add:
+                    if FULL_NETWORKX_GRAPH.has_edge(artist_id, work_id):
+                        for key, data in FULL_NETWORKX_GRAPH.get_edge_data(artist_id, work_id).items():
+                            if data.get('Edge Type') in CREATION_EDGE_TYPES:
+                                edges_to_add.append((artist_id, work_id, data))
+                                highlighted_links.add((artist_id, work_id))
+                    if FULL_NETWORKX_GRAPH.has_edge(work_id, artist_id):
+                        for key, data in FULL_NETWORKX_GRAPH.get_edge_data(work_id, artist_id).items():
+                            if data.get('Edge Type') in CREATION_EDGE_TYPES:
+                                edges_to_add.append((work_id, artist_id, data))
+                                highlighted_links.add((work_id, artist_id))
+
+            subgraph.add_nodes_from((n, copy.deepcopy(FULL_NETWORKX_GRAPH.nodes[n])) for n in nodes_to_add)
+            subgraph.add_edges_from(edges_to_add)
+            
+            highlighted_nodes.update(nodes_to_add)
+    
     else:
-        return jsonify({"error": f"Unknown filter type: {filter_type}"}), 400
+        app.logger.warning(f"未处理的桑基图交互: source='{source_name}', target='{target_name}'")
+        return jsonify(format_graph_for_d3(nx.MultiDiGraph()))
 
     process_dynamic_node_attributes(subgraph, None)
-    return jsonify(format_graph_for_d3(subgraph, highlighted_nodes=highlighted_nodes))
+    app.logger.info(f"交互处理完毕, 返回 {subgraph.number_of_nodes()} 个节点, {subgraph.number_of_edges()} 条边. 高亮 {len(highlighted_nodes)} 个节点和 {len(highlighted_links)} 条边。")
+    return jsonify(format_graph_for_d3(subgraph, highlighted_nodes=highlighted_nodes, highlighted_links=highlighted_links))
 
-
-# --- API 路由 ---
 
 @app.route('/api/graph/meta', methods=['GET'])
 def get_graph_meta():
@@ -1670,7 +1663,7 @@ def get_graph_meta():
 @app.route('/api/graph/layout', methods=['POST'])
 def get_graph_layout():
     """
-    核心API：根据前端请求动态筛选和构建力导向图。
+    核心API：根据前端请求动态筛选和��建力导向图。
     V2: 使用deepcopy确保每次请求都在完全隔离的数据上操作，防止状态污染。
     """
     if FULL_NETWORKX_GRAPH is None:

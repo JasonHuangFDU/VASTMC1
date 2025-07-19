@@ -5,40 +5,54 @@
       <div class="hop-toggle-group">
         <button 
           @click="setHopLevel(1)" 
-          :class="['hop-toggle-button', { active: store.hopLevel === 1 }]"
+          :class="['hop-toggle-button', { active: store.hopLevel === 1 && !store.isSankeyFiltered }]"
+          :disabled="store.isSankeyFiltered"
         >
           One Hop
         </button>
         <button 
           @click="setHopLevel(2)" 
-          :class="['hop-toggle-button', { active: store.hopLevel === 2 }]"
+          :class="['hop-toggle-button', { active: store.hopLevel === 2 && !store.isSankeyFiltered }]"
+          :disabled="store.isSankeyFiltered"
         >
           Two Hops
         </button>
         <button 
           @click="setHopLevel(3)" 
-          :class="['hop-toggle-button', { active: store.hopLevel === 3 }]"
+          :class="['hop-toggle-button', { active: store.hopLevel === 3 && !store.isSankeyFiltered }]"
+          :disabled="store.isSankeyFiltered"
         >
           Three Hops
         </button>
         <button 
           @click="store.toggleCollaborationFocus()" 
           :class="['hop-toggle-button', { active: store.isCollaborationFocusActive }]"
+          :disabled="store.isSankeyFiltered"
         >
           Focus on Collaboration
         </button>
         <button 
           @click="store.toggleInfluenceFocus()" 
           :class="['hop-toggle-button', { active: store.isInfluenceFocusActive }]"
+          :disabled="store.isSankeyFiltered"
         >
           Focus on Influence
+        </button>
+        <!-- 新增：Sankey筛选重置按钮 -->
+        <button
+          v-if="store.isSankeyFiltered"
+          @click="store.resetSankeyFilter()"
+          class="hop-toggle-button reset-button"
+        >
+          Reset View
         </button>
       </div>
     </div>
 
     <div v-if="store.isLoading" class="loading-indicator">Calculating layout...</div>
-    <div v-if="!store.isLoading && (!store.graphData || store.graphData.nodes.length === 0)" class="empty-state">
-      No data matches the current filter criteria.
+    <div v-if="!store.isLoading && (!displayedGraphData || displayedGraphData.nodes.length === 0)" class="empty-state">
+      <span v-if="store.isSankeyFiltered">No influence path found for this selection.</span>
+      <span v-else>No data matches the current filter criteria.</span>
     </div>
     <div ref="tooltipRef" class="tooltip" style="opacity: 0;"></div>
     
@@ -105,6 +119,14 @@ const showGenreLegend = ref(false);
 const toggleNodeEdgeLegend = () => showNodeEdgeLegend.value = !showNodeEdgeLegend.value;
 const toggleGenreLegend = () => showGenreLegend.value = !showGenreLegend.value;
 
+// 新增：计算属性，用于决定显示哪个图数据
+const displayedGraphData = computed(() => {
+  if (store.isSankeyFiltered) {
+    return store.sankeyFilteredData;
+  }
+  return store.graphData;
+});
+
 const setHopLevel = (level) => {
   store.setHopLevel(level);
 };
@@ -128,7 +150,7 @@ function getNodeRadius(node) {
   } else {
     baseRadius = 15;
   }
-  // 如果节点被高亮，则将其半径增加50%
+  // 如果节点被高亮，则���其半径增加50%
   return node.highlight ? baseRadius * 1.5 : baseRadius;
 }
 
@@ -190,7 +212,7 @@ function renderGraph(data) {
   const nodes = JSON.parse(JSON.stringify(data.nodes));
   const links = JSON.parse(JSON.stringify(data.links));
 
-  // 新增：检查是否存在任何高亮节点，以确定是否激活高亮模式
+  // 检查是否存在任何高亮节点，以确定是否激活高亮模式
   const isHighlightActive = nodes.some(n => n.highlight);
 
   const nodeTypesInGraph = new Set(nodes.map(n => n.id === 17255 ? 'SailorShift' : n['Node Type']));
@@ -336,6 +358,7 @@ function renderGraph(data) {
     linkElements.classed('dimmed', false);
     tooltip.style('opacity', 0);
   }).on('click', (event, d) => {
+    if (store.isSankeyFiltered) return; // Disable click-to-center in Sankey mode
     store.selectCenterNode(d.id);
   });
 
@@ -384,7 +407,8 @@ function renderGraph(data) {
   });
 }
 
-watch(() => store.graphData, (newGraphData) => {
+// 修改：监听 displayedGraphData 而不是 store.graphData
+watch(() => displayedGraphData.value, (newGraphData) => {
   renderGraph(newGraphData);
   if (newGraphData && newGraphData.nodes.length > 0) {
     nextTick(() => {
@@ -424,6 +448,8 @@ onMounted(() => {
 .loading-indicator, .empty-state { 
   font-size: 0.9rem; 
   color: #6c757d; 
+  text-align: center;
+  padding: 20px;
 }
 
 .tooltip { 
@@ -551,10 +577,15 @@ onMounted(() => {
 
 .hop-toggle-group { 
   display: flex; 
+  gap: 12px;
   background-color: var(--color-background);
   border-radius: 8px;
   padding: 4px;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.button-subgroup {
+  display: flex;
 }
 
 .hop-toggle-button { 
@@ -570,31 +601,31 @@ onMounted(() => {
   position: relative; 
 }
 
+.hop-toggle-button:disabled {
+  color: #adb5bd;
+  cursor: not-allowed;
+  background-color: #f8f9fa;
+}
+
 .hop-toggle-button.active { 
   color: var(--color-surface);
   background-color: var(--color-primary-accent);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.hop-toggle-button:hover:not(.active) { 
+.hop-toggle-button:hover:not(.active):not(:disabled) { 
   background-color: var(--color-background); 
 }
 
-.hop-toggle-button.left-button { 
-  /* 移除边框分割线 */
+.hop-toggle-button.reset-button {
+  background-color: #e74c3c;
+  color: white;
+  font-weight: bold;
+}
+.hop-toggle-button.reset-button:hover {
+  background-color: #c0392b;
 }
 
-.hop-toggle-button.right-button { 
-  /* 移除边框分割线 */
-}
-
-.hop-toggle-button.active.left-button { 
-  /* 移除边框分割线 */
-}
-
-.hop-toggle-button.active.right-button { 
-  /* 移除边框分割线 */
-}
 
 .node-edge-legend-container { 
   top: 60px; 

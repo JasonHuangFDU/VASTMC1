@@ -1,20 +1,26 @@
 import { defineStore } from 'pinia';
 import { 
+    fetchFullGraph, // New
     fetchGraphLayout, 
     fetchFilterOptions, 
     processArtistData, 
-    getFilteredGraphForSankey, 
+    getFilteredGraphForSankey, // This will be replaced by a new service function
     fetchArtistSubgraph, 
     fetchFocusGraph,
     getFocusCollaborationData,
-    getFocusInfluenceData
+    getFocusInfluenceData,
+    fetchSankeyInteractionData // New service function
 } from '../services/dataService';
 import { debounce } from 'lodash-es';
 
 export const useGraphStore = defineStore('graph', {
   state: () => ({
+    fullGraph: null, // To store the complete graph data
     graphData: { nodes: [], links: [] },
     originalGraphData: null,
+    // New state for Sankey interaction
+    sankeyFilteredData: null,
+    isSankeyFiltered: false,
     filterOptions: { genres: [], node_types: [], edge_types: [], node_names: [], person_nodes: [] },
     selectedTimeRange: { start: 1981, end: 2040 },
     selectedGenres: [], 
@@ -43,7 +49,9 @@ export const useGraphStore = defineStore('graph', {
   actions: {
     async initializeStore() {
       if (this.isInitialized) return;
+      this.isLoading = true;
       await this.fetchFilterOptions();
+      await this.fetchFullGraph(); // Fetch the entire graph once
       this.searchQuery = 17255;
       this.selectedGenres = [];
       this.selectedNodeTypes = [];
@@ -53,8 +61,19 @@ export const useGraphStore = defineStore('graph', {
       const initialCenterNode = this.graphData.nodes.find(node => node.id === this.searchQuery);
       if (initialCenterNode) this.centerNode = initialCenterNode;
       this.isInitialized = true;
+      this.isLoading = false;
     },
 
+    async fetchFullGraph() {
+        try {
+            const fullData = await fetchFullGraph(); 
+            this.fullGraph = fullData;
+        } catch (e) {
+            this.error = 'Could not load the full graph data.';
+            console.error(e);
+        }
+    },
+    
     async fetchFilterOptions() {
         try {
             const options = await fetchFilterOptions();
@@ -69,6 +88,10 @@ export const useGraphStore = defineStore('graph', {
       this.isLoading = true;
       this.error = null;
       this.isRequestPending = true;
+      // When we update the main layout, we are no longer in Sankey-filtered mode.
+      this.isSankeyFiltered = false;
+      this.sankeyFilteredData = null;
+
       const payload = {
         centerNodeId: this.searchQuery,
         hopLevel: this.hopLevel,
@@ -82,7 +105,10 @@ export const useGraphStore = defineStore('graph', {
       try {
         const data = await fetchGraphLayout(payload);
         this.graphData = data.error ? { nodes: [], links: [] } : data;
-        if (!data.error) this.originalGraphData = JSON.parse(JSON.stringify(data));
+        if (!data.error) {
+            // Save the initial state of the graph for restoration later
+            this.originalGraphData = JSON.parse(JSON.stringify(data));
+        }
       } catch (e) {
         this.error = 'Failed to fetch graph layout: ' + e.toString();
         this.graphData = { nodes: [], links: [] };
@@ -126,6 +152,42 @@ export const useGraphStore = defineStore('graph', {
         this.updateGraphLayout();
     },
 
+    // --- SANKEY INTERACTION ACTIONS ---
+    async triggerSankeyInteraction(sourceName, targetName) {
+        this.isLoading = true;
+        this.error = null;
+        this._resetHighlights(); // Clear any previous focus states
+
+        try {
+            const subgraphData = await fetchSankeyInteractionData(sourceName, targetName);
+            
+            if (subgraphData && subgraphData.nodes && subgraphData.nodes.length > 0) {
+                this.sankeyFilteredData = subgraphData;
+                this.isSankeyFiltered = true;
+            } else {
+                this.sankeyFilteredData = { nodes: [], links: [] };
+                this.isSankeyFiltered = true; // Still true, to show the empty state
+                console.log("Sankey interaction returned no data, showing empty graph.");
+            }
+        } catch (e) {
+            this.error = `Failed to fetch subgraph for Sankey interaction: ${e.toString()}`;
+            console.error(this.error);
+            this.sankeyFilteredData = { nodes: [], links: [] };
+            this.isSankeyFiltered = true;
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
+    resetSankeyFilter() {
+        this.isSankeyFiltered = false;
+        this.sankeyFilteredData = null;
+        // Optionally, trigger a re-render of the original graph if its state could be stale
+        // For now, we assume the original graphData is still valid.
+        console.log("Sankey filter reset.");
+    },
+
+
     // --- FOCUS ACTIONS ---
     async _applyFocus(fetchFunction, activeStateFlag) {
       this._resetHighlights(activeStateFlag);
@@ -143,7 +205,7 @@ export const useGraphStore = defineStore('graph', {
           node.highlight = nodeIds.has(node.id);
         });
         this.graphData.links.forEach(link => {
-          const linkKey = `${link.source}-${link.target}`;
+          const linkKey = `${link.source.id || link.source}-${link.target.id || link.target}`;
           link.highlight = linkKeys.has(linkKey);
         });
         
@@ -157,8 +219,12 @@ export const useGraphStore = defineStore('graph', {
     },
 
     _resetHighlights(excludeFlag = null) {
-      this.graphData.nodes.forEach(n => n.highlight = false);
-      this.graphData.links.forEach(l => l.highlight = false);
+      if (this.graphData && this.graphData.nodes) {
+        this.graphData.nodes.forEach(n => n.highlight = false);
+      }
+      if (this.graphData && this.graphData.links) {
+        this.graphData.links.forEach(l => l.highlight = false);
+      }
       if (excludeFlag !== 'isCollaborationFocusActive') this.isCollaborationFocusActive = false;
       if (excludeFlag !== 'isInfluenceFocusActive') this.isInfluenceFocusActive = false;
     },
@@ -181,7 +247,34 @@ export const useGraphStore = defineStore('graph', {
       }
     },
     
-    // Other actions...
+    // --- SANKEY INTERACTION ACTION (OLD - to be removed or refactored) ---
+    async handleSankeyClick(payload) {
+        // payload is expected to be { type: '...', params: { ... } }
+        this.isLoading = true;
+        this.error = null;
+        this._resetHighlights(); // Clear any previous focus states
+
+        try {
+            // Call the service function that hits the backend endpoint
+            const subgraphData = await getFilteredGraphForSankey(payload);
+            
+            if (subgraphData && subgraphData.nodes && subgraphData.nodes.length > 0) {
+                // Replace the main graph data with the focused subgraph
+                this.graphData = subgraphData;
+            } else {
+                // If no data is returned, show an empty graph
+                this.graphData = { nodes: [], links: [] };
+                console.log("Sankey interaction returned no data, showing empty graph.");
+            }
+        } catch (e) {
+            this.error = `Failed to fetch subgraph for Sankey interaction: ${e.toString()}`;
+            console.error(this.error);
+            this.graphData = { nodes: [], links: [] }; // Clear graph on error
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
     async fetchFocusGraph() {
       this.isLoading = true;
       this.error = null;

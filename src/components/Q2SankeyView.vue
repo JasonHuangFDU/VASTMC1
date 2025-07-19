@@ -103,7 +103,7 @@
               :currentView="rightViewType" 
               :topNGenres="topNGenres"
               :topNArtists="topNArtists"
-              @link-clicked="handleSankeyClick" 
+              
             />
           </div>
         </div>
@@ -124,7 +124,7 @@ const sankeyDataSets = ref({
   outwardAll: null,      // mc1_outward_all.json
   inwardAll: null,       // mc1_inward_all.json
   inwardPre2028: null,   // mc1_inward_pre2028.json
-  inwardPost2028: null   // mc1_inward_post2028.json (原mc1_q2_3_data_new.json)
+  inwardPost2028: null   // mc1_q2_3_data_new.json (原mc1_q2_3_data_new.json)
 });
 
 // 当前显示模式
@@ -261,59 +261,15 @@ const updateChartData = () => {
 
 // 处理桑基图点击事件
 const handleSankeyClick = (linkData) => {
-  console.log("Sankey link clicked:", linkData);
-  const { source, target, currentView } = linkData;
+  // 只在 "Direction Comparison" (Outward) 模式下响应点击
+  if (viewMode.value !== 'direction') return;
 
-  let payload = null;
-
-  // 根据链接类型判断交互类型
-  if (source.name === 'Oceanus Folk' && 
-      (target.type === 'genre' || target.type === 'Genre')) {
-    // Oceanus Folk → Genre
-    let interactionType;
-    if (currentView === 'q2_2') {
-      interactionType = 'outward_oceanus_to_genre';
-    } else if (currentView === 'q2_3' || currentView === 'q2_3_post') {
-      interactionType = 'inward_oceanus_to_genre';
-    } else if (currentView === 'q2_3_pre') {
-      interactionType = 'inward_pre2028_oceanus_to_genre';
-    }
-    
-    payload = {
-      type: interactionType,
-      params: { genre: target.name }
-    };
-  } else if ((source.type === 'genre' || source.type === 'Genre') && 
-             (target.type === 'artist' || target.type === 'Artist')) {
-    // Genre → Artist
-    let interactionType;
-    if (currentView === 'q2_2') {
-      interactionType = 'outward_genre_to_artist';
-    } else if (currentView === 'q2_3' || currentView === 'q2_3_post') {
-      interactionType = 'inward_genre_to_artist';
-    } else if (currentView === 'q2_3_pre') {
-      interactionType = 'inward_pre2028_genre_to_artist';
-    }
-    
-    payload = {
-      type: interactionType,
-      params: { 
-        genre: source.name, 
-        artist_id: target.original_id || target.id,
-        artist_name: target.name
-      }
-    };
-  }
-
-  if (payload && store.filterGraphForSankey) {
-    try {
-      store.filterGraphForSankey(payload);
-      console.log('Graph filter applied:', payload);
-    } catch (err) {
-      console.error('Error applying graph filter:', err);
-    }
+  console.log("Outward Sankey link clicked:", linkData);
+  if (linkData && linkData.source && linkData.target) {
+      // 调用 store 中新的 action
+      store.triggerSankeyInteraction(linkData.source.name, linkData.target.name);
   } else {
-    console.warn("Sankey click did not match any known interaction patterns or store method not available.");
+      console.warn("Invalid linkData received from Sankey component:", linkData);
   }
 };
 
