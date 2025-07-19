@@ -25,7 +25,12 @@
     <div ref="tooltipRef" class="tooltip" style="opacity: 0;"></div>
     
     <!-- 图例部分 -->
-    <button @click="toggleNodeEdgeLegend" class="legend-toggle-button node-edge-toggle-button">{{ showNodeEdgeLegend ? 'Hide Node/Edge Legend' : 'Show Node/Edge Legend' }}</button>
+    <button 
+      @click="toggleNodeEdgeLegend" 
+      :class="['legend-toggle-button', 'node-edge-toggle-button', { active: showNodeEdgeLegend }]"
+    >
+      {{ showNodeEdgeLegend ? 'Hide Node/Edge Legend' : 'Show Node/Edge Legend' }}
+    </button>
     <div v-if="showNodeEdgeLegend" :key="`node-edge-${legendKey}`" class="legend-container node-edge-legend-container">
       <h3>Node & Edge Legend</h3>
       <div class="legend-section">
@@ -44,7 +49,12 @@
       </div>
     </div>
 
-    <button @click="toggleGenreLegend" class="legend-toggle-button genre-toggle-button">{{ showGenreLegend ? 'Hide Genre Legend' : 'Show Genre Legend' }}</button>
+    <button 
+      @click="toggleGenreLegend" 
+      :class="['legend-toggle-button', 'genre-toggle-button', { active: showGenreLegend }]"
+    >
+      {{ showGenreLegend ? 'Hide Genre Legend' : 'Show Genre Legend' }}
+    </button>
     <div v-if="showGenreLegend" :key="`genre-${legendKey}`" class="legend-container genre-legend-container">
       <h3>Genre Color Legend</h3>
       <div class="legend-section">
@@ -349,9 +359,40 @@ onMounted(() => {
 </script>
 
 <style>
-.influence-network-container { width: 100%; height: 80vh; min-height: 480px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background-color: #f8f9fa; }
-.loading-indicator, .empty-state { font-size: 1.5em; color: #6c757d; }
-.tooltip { position: absolute; text-align: left; padding: 8px; font: 12px sans-serif; background: rgba(0, 0, 0, 0.7); color: white; border-radius: 8px; pointer-events: none; z-index: 10; max-width: 300px; }
+.influence-network-container { 
+  width: 100%; 
+  height: 80vh; 
+  min-height: 480px; 
+  border: 1px solid #dee2e6; 
+  border-radius: 4px; 
+  overflow: hidden; 
+  position: relative; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  background-color: #f8f9fa; 
+}
+
+.loading-indicator, .empty-state { 
+  font-size: 0.9rem; 
+  color: #6c757d; 
+}
+
+.tooltip { 
+  position: absolute; 
+  text-align: left; 
+  padding: 10px 14px; 
+  font: 12px 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+  background-color: #FFFFFF; 
+  color: #333333; 
+  border-radius: 6px; 
+  pointer-events: none; 
+  z-index: 10; 
+  max-width: 300px; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: 1px solid #E0E0E0;
+  line-height: 1.4;
+}
 
 .link {
   fill: none;
@@ -381,25 +422,149 @@ onMounted(() => {
   opacity: 0.2;
 }
 
-.legend-container { position: absolute; background-color: rgba(255, 255, 255, 0.95); border: 1px solid #ccc; border-radius: 8px; padding: 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); font-family: sans-serif; z-index: 10; }
-.legend-container h3 { margin-top: 0; margin-bottom: 15px; font-size: 1.2em; text-align: center; }
-.legend-section { margin-bottom: 10px; }
-.legend-section h4 { margin-top: 0; margin-bottom: 8px; font-size: 1em; }
-.legend-item { display: flex; align-items: center; margin-bottom: 5px; }
-.legend-item svg { margin-right: 8px; flex-shrink: 0; }
-.legend-toggle-button { position: absolute; z-index: 11; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9em; }
-.node-edge-legend-container { top: 60px; left: 20px; }
-.genre-legend-container { top: 60px; right: 20px; }
-.node-edge-toggle-button { top: 20px; left: 20px; }
-.genre-toggle-button { top: 20px; right: 20px; }
+.legend-container { 
+  position: absolute; 
+  background-color: rgba(255, 255, 255, 0.95); 
+  border: 1px solid #ccc; 
+  border-radius: 8px; 
+  padding: 15px; 
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
+  font-family: sans-serif; 
+  z-index: 10; 
+  line-height: 1.4; 
+}
 
-.hop-toggle-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 11; }
-.hop-toggle-group { display: flex; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; background-color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-.hop-toggle-button { padding: 8px 16px; background-color: #f8f9fa; color: #6c757d; border: none; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; position: relative; }
-.hop-toggle-button.active { background-color: #007bff; color: white; }
-.hop-toggle-button:hover:not(.active) { background-color: #e9ecef; }
-.hop-toggle-button.left-button { border-right: 1px solid #ccc; }
-.hop-toggle-button.right-button { border-left: none; }
-.hop-toggle-button.active.left-button { border-right: 1px solid #007bff; }
-.hop-toggle-button.active.right-button { border-left: none; }
+.legend-container h3 { 
+  margin-top: 0; 
+  margin-bottom: 15px; 
+  font-size: 0.9rem; 
+  text-align: center; 
+  color: var(--color-text-primary);
+}
+
+.legend-section { 
+  margin-bottom: 10px; 
+}
+
+.legend-section h4 { 
+  margin-top: 0; 
+  margin-bottom: 8px; 
+  font-size: 0.9rem; 
+  color: var(--color-text-primary);
+}
+
+.legend-item { 
+  display: flex; 
+  align-items: center; 
+  margin-bottom: 0px; 
+  line-height: 1.2;
+}
+
+.legend-item svg { 
+  margin-right: 8px; 
+  flex-shrink: 0; 
+}
+
+.legend-item span {
+  color: var(--color-text-secondary);
+}
+
+.legend-item span {
+  color: var(--color-text-secondary, #6c757d);
+}
+
+.legend-toggle-button { 
+  position: absolute; 
+  z-index: 11; 
+  padding: 6px 14px; 
+  font-size: 14px;
+  font-weight: 500; 
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer; 
+  transition: all 0.2s ease-in-out; 
+}
+
+.legend-toggle-button.active { 
+  color: var(--color-surface);
+  background-color: var(--color-primary-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hop-toggle-container { 
+  position: absolute; 
+  top: 16px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  z-index: 11; 
+}
+
+.hop-toggle-group { 
+  display: flex; 
+  background-color: var(--color-background);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.hop-toggle-button { 
+  padding: 6px 14px; 
+  font-size: 14px;
+  font-weight: 500; 
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: none;
+  cursor: pointer; 
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out; 
+  position: relative; 
+}
+
+.hop-toggle-button.active { 
+  color: var(--color-surface);
+  background-color: var(--color-primary-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hop-toggle-button:hover:not(.active) { 
+  background-color: var(--color-background); 
+}
+
+.hop-toggle-button.left-button { 
+  /* 移除边框分割线 */
+}
+
+.hop-toggle-button.right-button { 
+  /* 移除边框分割线 */
+}
+
+.hop-toggle-button.active.left-button { 
+  /* 移除边框分割线 */
+}
+
+.hop-toggle-button.active.right-button { 
+  /* 移除边框分割线 */
+}
+
+.node-edge-legend-container { 
+  top: 60px; 
+  left: 20px; 
+}
+
+.genre-legend-container { 
+  top: 60px; 
+  right: 20px; 
+}
+
+.node-edge-toggle-button { 
+  top: 20px; 
+  left: 20px; 
+}
+
+.genre-toggle-button { 
+  top: 20px; 
+  right: 20px; 
+}
 </style>

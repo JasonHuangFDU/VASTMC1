@@ -1,35 +1,16 @@
-/* 其他样式保持不变 */
-.selection-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.selection-header h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #2c3e50;
-}
-
-.artist-selection h3 {
-  margin-top: 0;
-  color: #2c3e50;
-  font-size: 16px;
-  margin-bottom: 0px;
-}<template>
+<template>
   <div class="career-trajectory">
     <!-- 艺术家选择面板（占比 1） -->
     <div class="artist-selection">
       <!-- 将标题和按钮放在同一行 -->
       <div class="selection-header">
-        <h3>Select Three Artists to Compare Their Career Trajectories</h3>
+        <h3>Compare Career Trajectories</h3>
         <button
           class="compare-btn"
           :disabled="!canCompare"
           @click="loadComparisonData"
         >
-          COMPARE
+          Compare
         </button>
       </div>
 
@@ -835,6 +816,27 @@ export default {
   min-height: 0;
 }
 
+/* 其他样式保持不变 */
+.selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.selection-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #2c3e50;
+}
+
+.artist-selection h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 0px;
+}
+
 .selectors {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -917,27 +919,35 @@ export default {
   color: #e74c3c;
 }
 
+/* 统一按钮样式 - 与左栏按钮保持一致 */
 .compare-btn {
-  padding: 4px 12px; /* 从6px 16px减到4px 12px */
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.75rem; /* 从0.8rem减到0.75rem */
-  cursor: pointer;
-  transition: background-color 0.2s;
+  padding: 6px 14px;
+  font-size: 14px;
   font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.compare-btn:not(:disabled) {
+  color: var(--color-surface);
+  background-color: var(--color-primary-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .compare-btn:disabled {
-  background-color: #bdc3c7;
+  color: var(--color-text-secondary);
+  background-color: transparent;
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .compare-btn:not(:disabled):hover {
-  background-color: #2980b9;
   transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }
 
 /* 自定义工具提示样式 */

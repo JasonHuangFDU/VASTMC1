@@ -179,20 +179,23 @@ export default {
   font-weight: 600;
 }
 
-/* Re-predict按钮 */
+/* Re-predict按钮 - 使用统一样式 */
 .re-predict-btn {
-  background-color: #5D9CEC;
-  color: white;
-  padding: 3px 8px; /* 减小按钮大小 */
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-surface);
+  background-color: var(--color-primary-accent);
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.7rem; /* 减小字体 */
-  transition: background-color 0.2s;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .re-predict-btn:hover {
-  background-color: #4A89DA;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }
 
 /* 权重选择区域 */
@@ -273,44 +276,53 @@ export default {
   flex-shrink: 0;
 }
 
-/* Reset按钮 */
+/* Reset按钮 - 使用统一样式 */
 .reset-btn {
-  padding: 4px 12px; /* 减小按钮大小 */
-  background-color: #F0F0F0;
-  color: #666666;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.75rem; /* 减小字体 */
-  transition: background-color 0.2s;
+  transition: all 0.2s ease-in-out;
 }
 
 .reset-btn:hover {
-  background-color: #E0E0E0;
+  background-color: var(--color-background, #e9ecef);
 }
 
-/* 主按钮 */
+/* 主按钮 - 使用统一样式 */
 .primary-btn {
-  padding: 4px 12px; /* 减小按钮大小 */
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.75rem; /* 减小字体 */
-  transition: background-color 0.2s;
+  padding: 6px 14px;
+  font-size: 14px;
   font-weight: 500;
+  color: var(--color-surface);
+  background-color: var(--color-primary-accent);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .primary-btn:hover {
-  background-color: #2980b9;
   transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }
 
 .primary-btn:disabled {
-  background-color: #bdc3c7;
+  color: var(--color-text-secondary);
+  background-color: transparent;
   cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.primary-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 /* 错误消息 */

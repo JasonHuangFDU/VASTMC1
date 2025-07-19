@@ -284,7 +284,7 @@ onMounted(async () => {
 }
 
 .slider-group label {
-  font-size: 12px;
+  font-size: 0.9rem;
   color: var(--color-text-secondary);
   font-weight: 600;
   white-space: nowrap;
@@ -363,7 +363,7 @@ onMounted(async () => {
 }
 
 .panel-title {
-  font-size: 14px;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
@@ -373,7 +373,7 @@ onMounted(async () => {
 }
 
 .panel-icon {
-  font-size: 14px;
+  font-size: 0.9rem;
   color: var(--color-primary-accent);
   font-weight: 900;
   font-family: Arial, sans-serif;
@@ -395,7 +395,7 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  font-size: 13px;
+  font-size: 0.9rem;
   color: var(--color-text-secondary);
   text-align: center;
 }
@@ -419,8 +419,7 @@ onMounted(async () => {
 }
 
 .error-icon {
-  font-size: 20px;
-  color: #e74c3c;
+  font-size: 0.9rem;
 }
 
 /* 响应式设计 */
@@ -435,7 +434,7 @@ onMounted(async () => {
   
   .slider-group label {
     min-width: 75px;
-    font-size: 11px;
+    font-size: 0.9rem;
   }
   
   .slider {

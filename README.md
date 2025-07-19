@@ -8,7 +8,7 @@
 这一步如果直接将整个库pull到本地理论上不需要，不过再做一次也无妨
 - 在project目录下`cd oceanus-weaver`
 - 安装项目所需的所有基础库`npm install`
-- 安装 D3.js`npm install d3`
+- 安装 D3.js`npm install d3`npm
 
 ## 1.3 运行
 在相同目录下运行`npm run dev`

@@ -503,7 +503,14 @@ const drawChart = () => {
     .attr('dy', '0.35em')
     .attr('text-anchor', d => d.x0 < width / 2 ? 'start' : 'end')
     .attr('font-family', 'Inter, -apple-system, BlinkMacSystemFont, sans-serif')
-    .attr('font-size', '10px')
+    .attr('font-size', d => {
+        // Oceanus Folk和Genre保持10px，Artist改为0.9rem
+        if (d.name === 'Oceanus Folk' || d.type === 'genre' || d.type === 'Genre') {
+            return '10px';
+        } else {
+            return '10px';
+        }
+    })
     .attr('font-weight', '600')
     .attr('fill', appColors.textPrimary)
     .attr('opacity', d => {
@@ -572,7 +579,7 @@ watch([() => props.data, () => props.currentView, () => props.topNArtists, () =>
   color: #333333;
   padding: 10px 14px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 0.9rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   pointer-events: none;
   transition: opacity 0.2s ease;
