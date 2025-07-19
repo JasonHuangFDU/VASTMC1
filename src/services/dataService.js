@@ -128,9 +128,6 @@ export function processArtistData(graphData, artistId) {
 
   // 3. 收集艺术家相关作品和合作者
   const { works, collaborations, workReferencesByYear, artistStyleInfluencesByYear } = extractWorksAndCollabs(graphData, artistId);
-  // 4. 将调试数据添加到结果对象
-  result.debugData.workReferencesByYear = workReferencesByYear;
-  result.debugData.artistStyleInfluencesByYear = artistStyleInfluencesByYear;
 
   // 4. 计算年度指标
   calculateYearlyStats(result, works, collaborations, workReferencesByYear, artistStyleInfluencesByYear);
