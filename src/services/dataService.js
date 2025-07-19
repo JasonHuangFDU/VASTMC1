@@ -107,7 +107,7 @@ export async function loadOceanusDataAndPredict(weightIds, normalizedWeights) {
   }
 }
 
-//新增艺术家生涯轨迹数据处理函数
+//艺术家生涯轨迹数据处理函数
 /**
  * 处理艺术家生涯数据
  * @param {Object} graphData - 图数据 { nodes: [], links: [] }
@@ -127,10 +127,13 @@ export function processArtistData(graphData, artistId) {
   };
 
   // 3. 收集艺术家相关作品和合作者
-  const { works, collaborations } = extractWorksAndCollabs(graphData, artistId);
+  const { works, collaborations, workReferencesByYear, artistStyleInfluencesByYear } = extractWorksAndCollabs(graphData, artistId);
+  // 4. 将调试数据添加到结果对象
+  result.debugData.workReferencesByYear = workReferencesByYear;
+  result.debugData.artistStyleInfluencesByYear = artistStyleInfluencesByYear;
 
   // 4. 计算年度指标
-  calculateYearlyStats(result, works, collaborations);
+  calculateYearlyStats(result, works, collaborations, workReferencesByYear, artistStyleInfluencesByYear);
 
   return result;
 }
@@ -139,9 +142,28 @@ export function processArtistData(graphData, artistId) {
 function extractWorksAndCollabs(graphData, artistId) {
   const works = [];
   const collaborations = new Map();
+  // 按年份统计作品被引用次数
+  const workReferencesByYear = new Map();
+  // 按年份统计艺术家被模仿次数
+  const artistStyleInfluencesByYear = new Map();
+
+  // 创建节点ID到节点的映射表
+  const nodeMap = new Map();
+  graphData.nodes.forEach(node => nodeMap.set(node.id, node));
 
   // 查找艺术家参与的作品
   graphData.links.forEach(link => {
+    // 指标2: 艺术家被模仿统计 (在遍历所有链接时直接处理)
+    if (link.target === artistId && link['Edge Type'] === 'InStyleOf') {
+      const sourceNode = nodeMap.get(link.source);
+      if (sourceNode && sourceNode.release_date) {
+        const year = sourceNode.release_date;
+        const count = artistStyleInfluencesByYear.get(year) || 0;
+        artistStyleInfluencesByYear.set(year, count + 1);
+      }
+    }
+
+    // 查找艺术家参与的作品
     if (link.source === artistId &&
         ['PerformerOf', 'ComposerOf', 'LyricistOf', 'ProducerOf'].includes(link['Edge Type'])) {
 
@@ -164,9 +186,23 @@ function extractWorksAndCollabs(graphData, artistId) {
     }
   });
 
-  // 识别合作者
+  // 识别合作者并处理指标1
+  const referenceEdgeTypes = ['InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'];
+
   works.forEach(work => {
     graphData.links.forEach(link => {
+      // 指标1: 作品被引用统计 (在遍历作品链接时直接处理)
+      if (referenceEdgeTypes.includes(link['Edge Type']) &&
+          link.target === work.id) {
+        const sourceNode = nodeMap.get(link.source);
+        if (sourceNode && sourceNode.release_date) {
+          const year = sourceNode.release_date;
+          const count = workReferencesByYear.get(year) || 0;
+          workReferencesByYear.set(year, count + 1);
+        }
+      }
+
+      // 合作者识别 (保持原有逻辑)
       if (link.target === work.id &&
           ['PerformerOf', 'ComposerOf', 'LyricistOf', 'ProducerOf'].includes(link['Edge Type']) &&
           link.source !== artistId) {
@@ -186,11 +222,10 @@ function extractWorksAndCollabs(graphData, artistId) {
     });
   });
 
-  return { works, collaborations };
+  return { works, collaborations, workReferencesByYear, artistStyleInfluencesByYear };
 }
 
-// src/services/dataService.js
-function calculateYearlyStats(result, works, collaborations) {
+function calculateYearlyStats(result, works, collaborations, workReferencesByYear, artistStyleInfluencesByYear) {
   const stats = {};
 
   // 初始化时间范围
@@ -209,7 +244,8 @@ function calculateYearlyStats(result, works, collaborations) {
       genreDistribution: {},
       workCount: 0,        // 年度作品总数
       notableCount: 0,     // 年度notable作品数
-      nodeConnections: 0   // 年度新增连接节点数
+      workReferences: 0,   // 年度作品被引用次数
+      styleInfluences: 0   // 年度艺术家被模仿次数
     };
   }
 
@@ -242,6 +278,17 @@ function calculateYearlyStats(result, works, collaborations) {
     }
   });
 
+  // 添加间接影响力指标到年度数据
+  for (const year in stats) {
+    if (Object.prototype.hasOwnProperty.call(stats, year)) {
+      // 添加作品被引用次数
+      stats[year].workReferences = workReferencesByYear.get(parseInt(year)) || 0;
+
+      // 添加艺术家被模仿次数
+      stats[year].styleInfluences = artistStyleInfluencesByYear.get(parseInt(year)) || 0;
+    }
+  }
+
   // 计算年度影响力（修正公式）
   for (const year in stats) {
     if (Object.prototype.hasOwnProperty.call(stats, year)) {
@@ -249,8 +296,12 @@ function calculateYearlyStats(result, works, collaborations) {
       const workConnections = stats[year].workCount;
       const collabCount = collaborations.get(parseInt(year))?.count || 0;
 
-      // 应用公式：影响力 = 2 * notable作品数 + 总连接数
-      stats[year].influence = 2 * stats[year].notableCount + workConnections + collabCount;
+      // 应用公式：影响力 = 2 * notable作品数 + 总连接数 + 间接影响力指标
+      stats[year].influence = 2 * stats[year].notableCount +
+                             workConnections +
+                             collabCount +
+                             stats[year].workReferences +
+                             stats[year].styleInfluences;
     }
   }
 
