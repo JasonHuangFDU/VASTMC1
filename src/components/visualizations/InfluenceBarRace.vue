@@ -175,7 +175,7 @@ const updateChart = (yearData) => {
     .slice(0, n.value);
 
   xScale.domain(sortedData.map(d => `${d.name} (${d['node id']})`));
-  yScale.domain([0, 9]);
+  yScale.domain([0, 12]);
 
   svg.select('.x-axis').transition().duration(500).call(d3.axisBottom(xScale))
     .selectAll("text")
@@ -196,10 +196,11 @@ const updateChart = (yearData) => {
     .attr('y', d => yScale(d['Influence score']))
     .attr('height', d => chartHeight - yScale(d['Influence score']))
     .attr('fill', d => {
-      const isMax = props.maxInfluenceInfo &&
+      const isPeakYearBar = props.maxInfluenceInfo &&
                     d['node id'] === props.maxInfluenceInfo.node_id &&
                     String(currentYear.value) === String(props.maxInfluenceInfo.year);
-      return isMax ? 'red' : '#3498db';
+      const hasMaxScore = d['Influence score'] === 12;
+      return isPeakYearBar || hasMaxScore ? 'red' : '#3498db';
     })
     .on('mouseover', handleMouseOver)
     .on('mouseout', handleMouseOut)
@@ -253,10 +254,11 @@ function handleMouseOver(event, d) {
 function handleMouseOut(event, d) {
   if (wasPlayingBeforeHover.value) isPlaying.value = true;
 
-  const isMax = props.maxInfluenceInfo &&
+  const isPeakYearBar = props.maxInfluenceInfo &&
                 d['node id'] === props.maxInfluenceInfo.node_id &&
                 String(currentYear.value) === String(props.maxInfluenceInfo.year);
-  d3.select(event.currentTarget).attr('fill', isMax ? 'red' : '#3498db');
+  const hasMaxScore = d['Influence score'] === 12;
+  d3.select(event.currentTarget).attr('fill', isPeakYearBar || hasMaxScore ? 'red' : '#3498db');
 
   const tooltip = tooltipRef.value;
   if (!tooltip) return;

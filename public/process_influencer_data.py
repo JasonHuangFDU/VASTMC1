@@ -3,7 +3,7 @@ import json
 
 def process_influencer_data():
     graph_path = 'C:/Users/jasonHuang/Desktop/MC1_release/oceanus-weaver/public/graph_with_yearly_influence.json'
-    influencer_data_path = 'C:/Users/jasonHuang/Desktop/MC1_release/oceanus-weaver/public/influencer_data.json'
+    influencer_data_path = 'C:/Users/jasonHuang/Desktop/MC1_release/oceanus-weaver/public/influence_data.json'
 
     try:
         with open(graph_path, 'r', encoding='utf-8') as f:

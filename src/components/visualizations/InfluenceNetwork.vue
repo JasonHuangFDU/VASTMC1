@@ -284,6 +284,7 @@ function renderGraph(data) {
     }
     if (d['Node Type'] === 'Song' || d['Node Type'] === 'Album') {
       if (d.genre) content += `<br/>Genre: ${d.genre}`;
+      if (d.release_date) content += `<br/>Release Date: ${d.release_date}`;
       if (d.contributors) {
         for (const [role, artists] of Object.entries(d.contributors)) {
           if (artists.length > 0) {
