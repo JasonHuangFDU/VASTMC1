@@ -215,6 +215,29 @@ export const useGraphStore = defineStore('graph', {
         console.log("Sankey filter reset.");
     },
 
+    async showArtistComparison(artistId) {
+      this.isLoading = true;
+      this.error = null;
+      this._resetHighlights(); // Clear any previous focus states
+      this.isSankeyFiltered = false; // Ensure we exit any Sankey-specific view
+      
+      try {
+        const subgraphData = await fetchArtistSubgraph(artistId);
+        if (subgraphData && subgraphData.nodes && subgraphData.nodes.length > 0) {
+          this.graphData = subgraphData;
+        } else {
+          this.graphData = { nodes: [], links: [] };
+          console.log(`Comparison subgraph for artist ${artistId} returned no data.`);
+        }
+      } catch (e) {
+        this.error = `Failed to fetch comparison subgraph for artist ${artistId}: ${e.toString()}`;
+        console.error(this.error);
+        this.graphData = { nodes: [], links: [] };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
 
     // --- FOCUS ACTIONS ---
     async _applyFocus(fetchFunction, activeStateFlag) {

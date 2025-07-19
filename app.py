@@ -2112,10 +2112,12 @@ def focus_collaboration():
 def focus_influence():
     app.logger.info("[API] /api/focus/influence called (v8 - restoring correct search direction)")
     SAILOR_ID = 17255
+    IVY_ID =17260
     if not FULL_NETWORKX_GRAPH.has_node(SAILOR_ID):
         return jsonify({"error": "Sailor Shift not found"}), 404
 
     highlight_nodes = {SAILOR_ID}
+    highlight_nodes.add(IVY_ID)  # Include Ivy as a source of influence
     highlight_links = []
 
     influence_edge_types = {'InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'}
@@ -2126,7 +2128,11 @@ def focus_influence():
         v for u, v, d in FULL_NETWORKX_GRAPH.edges(SAILOR_ID, data=True)
         if d.get('Edge Type') in creation_edge_types
     }
-    influence_sources = sailor_works.union({SAILOR_ID})
+    ivy_works = {
+        v for u, v, d in FULL_NETWORKX_GRAPH.edges(IVY_ID, data=True)
+        if d.get('Edge Type') in creation_edge_types
+    }
+    influence_sources = sailor_works.union({SAILOR_ID}).union(ivy_works).union({IVY_ID})  # Include Ivy's works as well
     
     # 2. Find works influenced BY these sources
     for source_id in influence_sources:

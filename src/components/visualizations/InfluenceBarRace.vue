@@ -1,12 +1,12 @@
 <template>
   <div class="bar-race-container">
     
-    <!-- 1. 控制器区域 (侧边栏) -->
+    <!-- 1. Controls Area (Sidebar) -->
     <div class="controls">
       <button @click="togglePlay" class="control-btn">
         <svg v-if="isPlaying" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
         <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-        <span>{{ isPlaying ? '暂停' : '播放' }}</span>
+        <span>{{ isPlaying ? 'Pause' : 'Play' }}</span>
       </button>
 
       <div class="slider-container">
@@ -31,21 +31,21 @@
       </div>
 
       <button @click="jumpToMax" class="control-btn-text">
-        跳转到巅峰年份
+        Jump to Peak Year
       </button>
     </div>
 
-    <!-- 2. 图表区域 (右侧主区域) -->
+    <!-- 2. Chart Area (Main Right Area) -->
     <div class="chart-wrapper">
       <div v-if="loading" class="loading-overlay">
         <div class="spinner"></div>
-        <p>图表加载中...</p>
+        <p>Chart loading...</p>
       </div>
       <div ref="chartDom" class="chart"></div>
       <div class="year-watermark">{{ currentYear }}</div>
     </div>
     
-    <!-- 悬浮框移到外部 -->
+    <!-- Tooltip moved outside -->
     <div ref="tooltipRef" class="tooltip"></div>
   </div>
 </template>
@@ -56,7 +56,14 @@ import * as d3 from 'd3';
 import { useGraphStore } from '@/stores/graphStore'; // 新增：导入 store
 
 // --- Store ---
-const graphStore = useGraphStore(); // 新增：初始化 store
+const graphStore = useGraphStore(); // New: Initialize store
+
+// --- Color Palette ---
+const colors = {
+  default: '#5DADE2',
+  highlight: '#F1948A',
+  hover: '#3498DB'
+};
 
 // --- Props ---
 const props = defineProps({
@@ -64,7 +71,7 @@ const props = defineProps({
   maxInfluenceInfo: Object,
 });
 
-// --- 响应式状态 ---
+// --- Reactive State ---
 const isPlaying = ref(false);
 const wasPlayingBeforeHover = ref(false);
 const currentYearIndex = ref(0);
@@ -77,7 +84,7 @@ const loading = ref(true);
 const startYear = ref(1965);
 const endYear = ref(2040);
 
-// --- DOM 引用 ---
+// --- DOM References ---
 const chartDom = ref(null);
 const tooltipRef = ref(null);
 
@@ -88,7 +95,7 @@ let chartHeight;
 let svg;
 let xScale, yScale;
 
-// --- 核心业务逻辑函数 ---
+// --- Core Business Logic Functions ---
 
 const processData = (rawData) => {
   if (!rawData) return;
@@ -164,7 +171,7 @@ const initChart = () => {
     .attr("x", 0 - (chartHeight / 2))
     .attr("dy", "1em")
     .style("text-anchor", "middle")
-    .text("影响力分数");
+    .text("Influence Score");
 };
 
 const updateChart = (yearData) => {
@@ -190,6 +197,8 @@ const updateChart = (yearData) => {
 
   bars.enter().append('rect')
     .attr('class', 'bar')
+    .attr('rx', 3) // Add rounded corners
+    .attr('ry', 3) // Add rounded corners
     .merge(bars)
     .attr('x', d => xScale(`${d.name} (${d['node id']})`))
     .attr('width', xScale.bandwidth())
@@ -200,7 +209,7 @@ const updateChart = (yearData) => {
                     d['node id'] === props.maxInfluenceInfo.node_id &&
                     String(currentYear.value) === String(props.maxInfluenceInfo.year);
       const hasMaxScore = d['Influence score'] === 12;
-      return isPeakYearBar || hasMaxScore ? 'red' : '#3498db';
+      return isPeakYearBar || hasMaxScore ? colors.highlight : colors.default;
     })
     .on('mouseover', handleMouseOver)
     .on('mouseout', handleMouseOut)
@@ -231,7 +240,7 @@ function handleMouseOver(event, d) {
   wasPlayingBeforeHover.value = isPlaying.value;
   if (isPlaying.value) isPlaying.value = false;
 
-  d3.select(event.currentTarget).attr('fill', '#e67e22');
+  d3.select(event.currentTarget).attr('fill', colors.hover);
 
   const yearIndex = currentYear.value - 1965;
   const cumulativeNotability = d.notability_score.slice(0, yearIndex + 1).reduce((a, b) => a + b, 0);
@@ -258,7 +267,7 @@ function handleMouseOut(event, d) {
                 d['node id'] === props.maxInfluenceInfo.node_id &&
                 String(currentYear.value) === String(props.maxInfluenceInfo.year);
   const hasMaxScore = d['Influence score'] === 12;
-  d3.select(event.currentTarget).attr('fill', isPeakYearBar || hasMaxScore ? 'red' : '#3498db');
+  d3.select(event.currentTarget).attr('fill', isPeakYearBar || hasMaxScore ? colors.highlight : colors.default);
 
   const tooltip = tooltipRef.value;
   if (!tooltip) return;
@@ -270,7 +279,7 @@ function handleMouseOut(event, d) {
 // 新增：点击事件处理器
 function handleClick(event, d) {
   console.log(`Bar clicked for node ID: ${d['node id']}`);
-  graphStore.fetchSubgraphForArtist(d['node id']);
+  graphStore.showArtistComparison(d['node id']);
   // 如果正在播放，则暂停
   if (isPlaying.value) {
     isPlaying.value = false;
@@ -396,15 +405,18 @@ watch(n, () => {
   position: absolute;
   display: none;
   opacity: 0;
-  background-color: rgba(0, 0, 0, 0.75);
-  color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
+  background-color: #ffffff;
+  color: #374151;
+  padding: 10px 15px;
+  border-radius: 8px;
   font-size: 14px;
+  font-family: 'Nunito', sans-serif;
   pointer-events: none;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
   z-index: 20;
   white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
 }
 
 .slider-container {
@@ -566,15 +578,33 @@ label {
   100% { transform: rotate(360deg); }
 }
 
-.x-axis text, .y-axis text {
+/* === Axis Beautification === */
+:deep(.x-axis .domain),
+:deep(.y-axis .domain) {
+  stroke: #d1d5db; /* A light grey for the main axis line */
+  stroke-width: 1px;
+}
+
+:deep(.x-axis .tick line),
+:deep(.y-axis .tick line) {
+  stroke: #e5e7eb; /* An even lighter grey for tick lines */
+}
+
+:deep(.x-axis text),
+:deep(.y-axis text) {
+  font-family: 'Nunito', sans-serif;
   font-size: 12px;
-  fill: #666;
+  fill: #4b5563; /* A slightly darker, more saturated grey for better readability */
 }
-.y-axis-label {
+
+:deep(.y-axis-label) {
+  font-family: 'Nunito', sans-serif;
   font-size: 14px;
-  fill: #333;
-  font-weight: bold;
+  fill: #374151; /* Darker for the main label */
+  font-weight: 700;
 }
+
+
 .bar-label {
   font-size: 11px;
   fill: #333;
