@@ -1407,30 +1407,35 @@ def get_subgraph_for_node(graph, center_node_id, hop_level=1):
     获取中心节点及其N跳邻居组成的子图。
     hop_level=1: 一跳邻居
     hop_level=2: 二跳邻居
+    hop_level=3: 三跳邻居
     """
     if center_node_id is None or not graph.has_node(center_node_id):
         return nx.MultiDiGraph()  # 返回一个空图
 
     app.logger.info(f"为节点ID {center_node_id} 构建 {hop_level}-跳子图")
 
-    # 从中心节点开始
+    # 使用 ego_graph 可以更高效地处理多跳邻居
+    # 注意：ego_graph 默认不包含中心节点之外的边，我们需要手动构建子图
+    
     nodes_to_include = {center_node_id}
+    
+    # hop_level=0 只包含中心节点
+    if hop_level == 0:
+        return graph.subgraph(nodes_to_include).copy()
 
-    # 一跳邻居
-    one_hop_neighbors = set(graph.predecessors(center_node_id)) | set(graph.successors(center_node_id))
-    nodes_to_include.update(one_hop_neighbors)
-
-    # 如果需要二跳，继续扩展
-    if hop_level == 2:
-        two_hop_neighbors = set()
-        for neighbor_id in one_hop_neighbors:
-            # 添加每个一跳邻居的邻居
-            two_hop_neighbors.update(set(graph.predecessors(neighbor_id)))
-            two_hop_neighbors.update(set(graph.successors(neighbor_id)))
+    # 迭代查找邻居
+    current_level_nodes = {center_node_id}
+    for i in range(hop_level):
+        next_level_nodes = set()
+        for node_id in current_level_nodes:
+            # 添加邻居（前驱和后继）
+            next_level_nodes.update(graph.predecessors(node_id))
+            next_level_nodes.update(graph.successors(node_id))
         
-        # 从二跳邻居中移除已经在一跳中心节点集合中的节点
-        two_hop_neighbors -= nodes_to_include
-        nodes_to_include.update(two_hop_neighbors)
+        # 从新找到的邻居中移除已经包含的节点，剩下的就是下一层的节点
+        new_nodes = next_level_nodes - nodes_to_include
+        nodes_to_include.update(new_nodes)
+        current_level_nodes = new_nodes # 为下一次迭代做准备
 
     # 使用 .subgraph() 方法高效地创建子图，它会自动包含这些节点间的所有边
     subgraph = graph.subgraph(nodes_to_include).copy()
@@ -1705,6 +1710,91 @@ def get_graph_layout():
     return jsonify(response_json)
 
 
+@app.route('/api/graph/focus-sailor-collaborators', methods=['GET'])
+def get_focus_sailor_collaborators():
+    """
+    在Sailor的三跳子图中，查找并高亮那些与她合作过，并且其作品受她影响的艺术家。
+    """
+    if FULL_NETWORKX_GRAPH is None:
+        return jsonify({"error": "Graph data is not available."}), 500
+
+    SAILOR_SHIFT_ID = 17255
+    COLLABORATION_EDGES = {'PerformerOf', 'ComposerOf', 'LyricistOf', 'ProducerOf'}
+    INFLUENCE_EDGES = {'InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'}
+
+    app.logger.info("Starting focus search for Sailor Shift's collaborators...")
+
+    # 1. 获取Sailor的三跳子图以限制搜索范围
+    subgraph = get_subgraph_for_node(FULL_NETWORKX_GRAPH, SAILOR_SHIFT_ID, 3)
+    
+    # 2. 在子图中找到Sailor的所有作品
+    sailor_works = {
+        v for u, v, d in subgraph.edges(SAILOR_SHIFT_ID, data=True)
+        if d.get('Edge Type') in COLLABORATION_EDGES and subgraph.nodes[v].get('Node Type') in ['Song', 'Album']
+    }
+
+    # 3. 找到与Sailor在这些作品上合作过的艺术家
+    collaborators = set()
+    for work_id in sailor_works:
+        for u, _, d in subgraph.in_edges(work_id, data=True):
+            if u != SAILOR_SHIFT_ID and d.get('Edge Type') in COLLABORATION_EDGES and subgraph.nodes[u].get('Node Type') == 'Person':
+                collaborators.add(u)
+
+    app.logger.info(f"Found {len(collaborators)} potential collaborators in the 3-hop graph.")
+
+    # 4. 筛选出同时满足影响条件的合作者
+    final_artists = set()
+    influenced_works_to_highlight = set() 
+
+    for artist_id in collaborators:
+        artist_works = {
+            v for u, v, d in subgraph.edges(artist_id, data=True)
+            if d.get('Edge Type') in COLLABORATION_EDGES and subgraph.nodes[v].get('Node Type') in ['Song', 'Album']
+        }
+
+        is_influenced = False
+        for work_id in artist_works:
+            for _, target, d in subgraph.out_edges(work_id, data=True):
+                if d.get('Edge Type') in INFLUENCE_EDGES:
+                    if target == SAILOR_SHIFT_ID or target in sailor_works:
+                        is_influenced = True
+                        influenced_works_to_highlight.add(work_id)
+                        break
+            if is_influenced:
+                break
+        
+        if is_influenced:
+            final_artists.add(artist_id)
+
+    app.logger.info(f"Found {len(final_artists)} artists who meet both criteria.")
+
+    # 5. 构建最终用于高亮的子图
+    nodes_to_highlight = {SAILOR_SHIFT_ID}
+    nodes_to_highlight.update(final_artists)
+    
+    for artist_id in final_artists:
+        artist_works = {v for u, v, d in subgraph.edges(artist_id, data=True) if d.get('Edge Type') in COLLABORATION_EDGES}
+        shared_works = sailor_works.intersection(artist_works)
+        nodes_to_highlight.update(shared_works)
+
+    nodes_to_highlight.update(influenced_works_to_highlight)
+
+    final_subgraph = FULL_NETWORKX_GRAPH.subgraph(nodes_to_highlight).copy()
+
+    # 6. 将所有元素标记为高亮
+    for node_id in final_subgraph.nodes():
+        final_subgraph.nodes[node_id]['highlight'] = True
+    for u, v, k in final_subgraph.edges(keys=True):
+        final_subgraph.edges[u, v, k]['highlight'] = True
+
+    process_dynamic_node_attributes(final_subgraph, None)
+    response_json = format_graph_for_d3_path_highlight(final_subgraph)
+
+    app.logger.info(f"Focus graph generated, returning {len(response_json['nodes'])} nodes and {len(response_json['links'])} links.")
+    return jsonify(response_json)
+
+
+
 # --- 新增：条形图交互的API端点 ---
 @app.route('/api/subgraph/<int:artist_id>', methods=['GET'])
 def get_artist_subgraph_route(artist_id):
@@ -1851,6 +1941,106 @@ def format_graph_for_d3_path_highlight(graph):
         final_nodes.append(new_node_data)
 
     return {"nodes": final_nodes, "links": final_links}
+
+def get_three_hop_neighborhood(graph, start_node_id):
+    if start_node_id not in graph:
+        raise nx.NetworkXError(f"Node {start_node_id} not found in graph")
+
+    # 使用 networkx 的 ego_graph 函数可以轻松获取指定半径内的子图
+    three_hop_subgraph = nx.ego_graph(graph, start_node_id, radius=3)
+    
+    # 将子图转换为 node-link 数据格式，以便发送到前端
+    return nx.node_link_data(three_hop_subgraph)
+
+@app.route('/api/focus/collaboration')
+def focus_collaboration():
+    app.logger.info("[API] /api/focus/collaboration called (v2 - link object fix)")
+    SAILOR_ID = 17255
+    if not FULL_NETWORKX_GRAPH.has_node(SAILOR_ID):
+        return jsonify({"error": "Sailor Shift not found"}), 404
+
+    highlight_nodes = {SAILOR_ID}
+    highlight_links = []  # Return a list of link definitions
+
+    creation_edge_types = {'PerformerOf', 'LyricistOf', 'ComposerOf', 'ProducerOf'}
+
+    sailor_works = {
+        v for u, v, d in FULL_NETWORKX_GRAPH.edges(SAILOR_ID, data=True)
+        if d.get('Edge Type') in creation_edge_types and FULL_NETWORKX_GRAPH.nodes[v].get('Node Type') in ['Song', 'Album']
+    }
+
+    for artist_id, node_data in FULL_NETWORKX_GRAPH.nodes(data=True):
+        if node_data.get('Node Type') not in ['Person', 'MusicalGroup'] or artist_id == SAILOR_ID:
+            continue
+
+        artist_works = {
+            v for u, v, d in FULL_NETWORKX_GRAPH.edges(artist_id, data=True)
+            if d.get('Edge Type') in creation_edge_types and FULL_NETWORKX_GRAPH.nodes[v].get('Node Type') in ['Song', 'Album']
+        }
+        
+        common_works = artist_works.intersection(sailor_works)
+        if common_works:
+            highlight_nodes.add(artist_id)
+            highlight_nodes.update(common_works)
+            for work_id in common_works:
+                # Add link from Sailor to work
+                highlight_links.append({'source': SAILOR_ID, 'target': work_id})
+                # Add link from artist to work
+                highlight_links.append({'source': artist_id, 'target': work_id})
+
+    app.logger.info(f"[API] Collaboration: Found {len(highlight_nodes)} nodes and {len(highlight_links)} links.")
+    return jsonify({"nodes": list(highlight_nodes), "links": highlight_links})
+
+@app.route('/api/focus/influence')
+def focus_influence():
+    app.logger.info("[API] /api/focus/influence called (v8 - restoring correct search direction)")
+    SAILOR_ID = 17255
+    if not FULL_NETWORKX_GRAPH.has_node(SAILOR_ID):
+        return jsonify({"error": "Sailor Shift not found"}), 404
+
+    highlight_nodes = {SAILOR_ID}
+    highlight_links = []
+
+    influence_edge_types = {'InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'}
+    creation_edge_types = {'PerformerOf', 'LyricistOf', 'ComposerOf', 'ProducerOf'}
+
+    # 1. Identify Sailor's works and her as sources of influence
+    sailor_works = {
+        v for u, v, d in FULL_NETWORKX_GRAPH.edges(SAILOR_ID, data=True)
+        if d.get('Edge Type') in creation_edge_types
+    }
+    influence_sources = sailor_works.union({SAILOR_ID})
+    
+    # 2. Find works influenced BY these sources
+    for source_id in influence_sources:
+        for _, influenced_work_id, influence_data in FULL_NETWORKX_GRAPH.out_edges(source_id, data=True):
+            if influence_data.get('Edge Type') in influence_edge_types:
+                
+                # 3. Find the creator of the influenced work
+                for creator_id, _, creation_data in FULL_NETWORKX_GRAPH.in_edges(influenced_work_id, data=True):
+                    if creation_data.get('Edge Type') in creation_edge_types and FULL_NETWORKX_GRAPH.nodes[creator_id].get('Node Type') in ['Person', 'MusicalGroup']:
+                        
+                        # 4. Highlight the entire chain
+                        highlight_nodes.add(creator_id)
+                        highlight_nodes.add(influenced_work_id)
+                        highlight_nodes.add(source_id) # The Sailor work or Sailor herself
+
+                        # Add creation link for the influenced work
+                        highlight_links.append({'source': creator_id, 'target': influenced_work_id})
+                        # Add the influence link
+                        highlight_links.append({'source': source_id, 'target': influenced_work_id})
+                        
+                        # Add creation link for Sailor's work (if the source was a work)
+                        if source_id in sailor_works:
+                            highlight_links.append({'source': SAILOR_ID, 'target': source_id})
+
+    unique_links = [dict(t) for t in {tuple(d.items()) for d in highlight_links}]
+    app.logger.info(f"[API] Influence: Found {len(highlight_nodes)} nodes and {len(unique_links)} unique links.")
+    return jsonify({"nodes": list(highlight_nodes), "links": unique_links})
+
+
+
+
 
 if __name__ == '__main__':
     # 在第一次请求前加载数据

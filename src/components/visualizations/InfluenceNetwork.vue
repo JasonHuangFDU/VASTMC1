@@ -5,15 +5,33 @@
       <div class="hop-toggle-group">
         <button 
           @click="setHopLevel(1)" 
-          :class="['hop-toggle-button', 'left-button', { active: store.hopLevel === 1 }]"
+          :class="['hop-toggle-button', { active: store.hopLevel === 1 }]"
         >
           One Hop
         </button>
         <button 
           @click="setHopLevel(2)" 
-          :class="['hop-toggle-button', 'right-button', { active: store.hopLevel === 2 }]"
+          :class="['hop-toggle-button', { active: store.hopLevel === 2 }]"
         >
           Two Hops
+        </button>
+        <button 
+          @click="setHopLevel(3)" 
+          :class="['hop-toggle-button', { active: store.hopLevel === 3 }]"
+        >
+          Three Hops
+        </button>
+        <button 
+          @click="store.toggleCollaborationFocus()" 
+          :class="['hop-toggle-button', { active: store.isCollaborationFocusActive }]"
+        >
+          Focus on Collaboration
+        </button>
+        <button 
+          @click="store.toggleInfluenceFocus()" 
+          :class="['hop-toggle-button', { active: store.isInfluenceFocusActive }]"
+        >
+          Focus on Influence
         </button>
       </div>
     </div>
@@ -221,10 +239,23 @@ function renderGraph(data) {
 
   const linkElements = zoomGroup.append('g').selectAll('path').data(links).join('path')
     .attr('class', d => `link link-${getPrimaryLinkClass(d.relations)}`)
-    .style('stroke-width', d => d.highlight ? 4 : linkWidthScale(d.count))
+    .style('stroke-width', d => d.highlight ? 5 : linkWidthScale(d.count)) // 高亮时宽度为5，否则按比例
     .style('opacity', d => {
-      if (!isHighlightActive) return 0.6; // 默认状态使用CSS的透明度
-      return d.highlight ? 1 : 0.15; // 交互状态下应用高亮逻辑
+      if (!isHighlightActive) return 0.7; // 默认状态设为0.7
+      return d.highlight ? 1 : 0.15; // 交互状态下高亮为1，非高亮为0.15
+    })
+    .style('stroke', d => {
+        const primaryClass = getPrimaryLinkClass(d.relations);
+        if (d.highlight) {
+            // 为高亮状态定义更深的颜色
+            const highlightColors = {
+                'influence': '#3d5a80', // 深蓝
+                'collaboration': '#8a9a5b', // 暗橄榄绿
+                'membership': '#505050'  // 深灰
+            };
+            return highlightColors[primaryClass] || '#333';
+        }
+        return ALL_EDGE_LEGEND_INFO[primaryClass]?.color || '#ccc';
     })
     .style('stroke-dasharray', d => {
         const primaryClass = getPrimaryLinkClass(d.relations);
@@ -413,7 +444,7 @@ onMounted(() => {
 
 .link {
   fill: none;
-  stroke-opacity: 0.6;
+  stroke-opacity: 0.8;
   transition: stroke-opacity 0.3s ease, opacity 0.3s ease;
 }
 .link.hovered {

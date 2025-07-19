@@ -337,4 +337,26 @@ export async function loadInfluenceDataSailor() {
   return influenceData;
 }
 
+/**
+ * Fetches the focus graph of Sailor Shift's collaborators who were also influenced by her.
+ * @returns {Promise<object>} D3-compatible graph data.
+ */
+export async function fetchFocusGraph() {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/graph/focus-sailor-collaborators`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching focus graph:", error);
+    throw error;
+  }
+}
+
+export const getFocusCollaborationData = () => {
+  return axios.get(`http://localhost:5001/api/focus/collaboration`);
+};
+
+export const getFocusInfluenceData = () => {
+  return axios.get(`http://localhost:5001/api/focus/influence`);
+};
+
 
