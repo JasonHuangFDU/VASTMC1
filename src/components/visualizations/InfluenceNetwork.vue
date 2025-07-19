@@ -99,14 +99,19 @@ const linkWidthScale = d3.scaleSqrt().domain([1, 10]).range([2, 10]);
 
 function getNodeRadius(node) {
   if (!node) return 8;
+  let baseRadius;
   const nodeType = node['Node Type'];
   if (nodeType === 'Person' || nodeType === 'MusicalGroup' || nodeType === 'RecordLabel') {
     const score = node.influence_score;
     const numericScore = (typeof score === 'number' && isFinite(score)) ? score : 0;
-    return sizeScale(numericScore);
+    baseRadius = sizeScale(numericScore);
+  } else if (nodeType === 'Song' || nodeType === 'Album') {
+    baseRadius = 12;
+  } else {
+    baseRadius = 15;
   }
-  if (nodeType === 'Song' || nodeType === 'Album') return 12;
-  return 15;
+  // 如果节点被高亮，则将其半径增加50%
+  return node.highlight ? baseRadius * 1.5 : baseRadius;
 }
 
 const displayedNodeTypes = ref([]);
@@ -167,6 +172,9 @@ function renderGraph(data) {
   const nodes = JSON.parse(JSON.stringify(data.nodes));
   const links = JSON.parse(JSON.stringify(data.links));
 
+  // 新增：检查是否存在任何高亮节点，以确定是否激活高亮模式
+  const isHighlightActive = nodes.some(n => n.highlight);
+
   const nodeTypesInGraph = new Set(nodes.map(n => n.id === 17255 ? 'SailorShift' : n['Node Type']));
   const edgeClassesInGraph = new Set(links.map(l => getPrimaryLinkClass(l.relations)));
   const genresInGraph = new Set(nodes.map(n => n.genre).filter(Boolean));
@@ -213,7 +221,11 @@ function renderGraph(data) {
 
   const linkElements = zoomGroup.append('g').selectAll('path').data(links).join('path')
     .attr('class', d => `link link-${getPrimaryLinkClass(d.relations)}`)
-    .style('stroke-width', d => linkWidthScale(d.count))
+    .style('stroke-width', d => d.highlight ? 4 : linkWidthScale(d.count))
+    .style('opacity', d => {
+      if (!isHighlightActive) return 0.6; // 默认状态使用CSS的透明度
+      return d.highlight ? 1 : 0.15; // 交互状态下应用高亮逻辑
+    })
     .style('stroke-dasharray', d => {
         const primaryClass = getPrimaryLinkClass(d.relations);
         return ALL_EDGE_LEGEND_INFO[primaryClass]?.dasharray || '0';
@@ -224,10 +236,14 @@ function renderGraph(data) {
     .attr('d', d => getSymbolPath(getSymbol(d['Node Type']), Math.PI * Math.pow(getNodeRadius(d), 2)))
     .attr('fill', d => {
       if (d.id === 17255) return '#FF6F61';
-      return d.highlight ? '#ffc107' : (d.genre ? getGenreColor(d.genre) : '#cccccc');
+      return d.genre ? getGenreColor(d.genre) : '#cccccc';
     })
-    .attr('stroke', d => d.highlight ? '#e85a19' : (d.notable ? 'gold' : '#fff'))
-    .attr('stroke-width', d => d.highlight || d.notable ? 3 : 1.5);
+    .attr('stroke', d => d.notable ? 'gold' : '#fff')
+    .attr('stroke-width', d => d.highlight ? 4 : (d.notable ? 3 : 1.5))
+    .style('opacity', d => {
+      if (!isHighlightActive) return 1; // 默认状态完全不透明
+      return d.highlight ? 1 : 0.2; // 交互状态下应用高亮逻辑
+    });
 
   const tooltip = d3.select(tooltipRef.value);
 

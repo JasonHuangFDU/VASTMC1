@@ -264,6 +264,21 @@ function calculateYearlyStats(result, works, collaborations) {
   result.yearlyStats = stats;
 }
 
+/**
+ * Fetches a subgraph for a specific artist to interact with the bar race chart.
+ * @param {number} artistId - The ID of the artist to center the subgraph on.
+ * @returns {Promise<object>} D3-compatible graph data.
+ */
+export async function fetchArtistSubgraph(artistId) {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/subgraph/${artistId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching subgraph for artist ${artistId}:`, error);
+    throw error;
+  }
+}
+
 export async function loadInfluenceDataSailor() {
   console.log("Loading influence_data_Sailor.json...");
   const influenceData = await d3.json('/influence_data_Sailor.json');

@@ -1703,7 +1703,163 @@ def get_graph_layout():
     response_json = format_graph_for_d3(final_graph)
     app.logger.info(f"请求处理完毕，返回 {len(response_json['nodes'])} 个节点和 {len(response_json['links'])} 条边。")
     return jsonify(response_json)
+
+
+# --- 新增：条形图交互的API端点 ---
+@app.route('/api/subgraph/<int:artist_id>', methods=['GET'])
+def get_artist_subgraph_route(artist_id):
+    """
+    根据给定的艺术家ID和固定的Sailor Shift ID，提取并高亮显示他们之间的子图。
+    """
+    if FULL_NETWORKX_GRAPH is None:
+        return jsonify({"error": "Graph data is not available."}), 500
+
+    SAILOR_SHIFT_ID = 17255
+    print("节点id:", artist_id)
+    # 检查节点是否存在
+    if not FULL_NETWORKX_GRAPH.has_node(artist_id) or not FULL_NETWORKX_GRAPH.has_node(SAILOR_SHIFT_ID):
+        missing_nodes = []
+        if not FULL_NETWORKX_GRAPH.has_node(artist_id):
+            missing_nodes.append(artist_id)
+        if not FULL_NETWORKX_GRAPH.has_node(SAILOR_SHIFT_ID):
+            missing_nodes.append(SAILOR_SHIFT_ID)
+        return jsonify({"error": f"Node(s) not found in the graph: {missing_nodes}"}), 404
+
+    app.logger.info(f"为艺术家 {artist_id} 和 Sailor Shift {SAILOR_SHIFT_ID} 生成子图...")
+
+    # 1. 查找两个艺术家之间的所有最短路径
+    # 我们需要一个无向图来寻找路径，因为影响力可能是双向的或间接的
+    undirected_graph = FULL_NETWORKX_GRAPH.to_undirected()
+    paths = []
+    try:
+        # find all shortest paths
+        paths = list(nx.all_shortest_paths(undirected_graph, source=artist_id, target=SAILOR_SHIFT_ID))
+    except nx.NetworkXNoPath:
+        app.logger.warning(f"在 {artist_id} 和 {SAILOR_SHIFT_ID} 之间未找到路径。")
+        # 即使没有路径，我们仍然可以显示这两个节点及其直接邻居
+        paths = []
+
+
+    # 2. 收集路径上的所有节点和边
+    path_nodes = set()
+    path_edges = set()
+    if paths:
+        app.logger.info(f"找到 {len(paths)} 条最短路径。使用第一条路径进行高亮。")
+        # 我们只高亮第一条最短路径
+        main_path = paths[0]
+        for i in range(len(main_path)):
+            path_nodes.add(main_path[i])
+            if i < len(main_path) - 1:
+                u, v = main_path[i], main_path[i+1]
+                # 在原始有向图中查找所有连接这两个节点的边
+                if FULL_NETWORKX_GRAPH.has_edge(u, v):
+                    for key in FULL_NETWORKX_GRAPH[u][v]:
+                        path_edges.add((u, v, key))
+                # 也要检查反向边
+                if FULL_NETWORKX_GRAPH.has_edge(v, u):
+                     for key in FULL_NETWORKX_GRAPH[v][u]:
+                        path_edges.add((v, u, key))
+
+
+    # 3. 收集中心节点及其一跳邻居
+    nodes_to_include = {artist_id, SAILOR_SHIFT_ID}
+    for node_id in [artist_id, SAILOR_SHIFT_ID]:
+        # 只添加Song和Album类型的邻居
+        for neighbor in nx.all_neighbors(FULL_NETWORKX_GRAPH, node_id):
+            node_type = FULL_NETWORKX_GRAPH.nodes[neighbor].get("Node Type")
+            if node_type in ['Song', 'Album']:
+                nodes_to_include.add(neighbor)
+
+    # 合并路径节点和邻居节点
+    nodes_to_include.update(path_nodes)
+
+    # 4. 创建子图
+    subgraph = FULL_NETWORKX_GRAPH.subgraph(nodes_to_include).copy()
+
+    # 5. 高亮路径上的节点和边
+    for node_id in subgraph.nodes():
+        if node_id in path_nodes:
+            subgraph.nodes[node_id]['highlight'] = True
+        else:
+            subgraph.nodes[node_id]['highlight'] = False
+            
+    for u, v, k in subgraph.edges(keys=True):
+        if (u, v, k) in path_edges:
+            subgraph.edges[u, v, k]['highlight'] = True
+        else:
+            subgraph.edges[u, v, k]['highlight'] = False
+
+
+    # 6. 格式化为D3.js兼容的JSON
+    response_json = format_graph_for_d3_path_highlight(subgraph)
+
+    app.logger.info(f"子图生成完毕，返回 {len(response_json['nodes'])} 个节点和 {len(response_json['links'])} 条边。")
+    return jsonify(response_json)
+
+def format_graph_for_d3_path_highlight(graph):
+    """
+    将NetworkX图对象转换为D3.js兼容的JSON格式。
+    此版本专门处理带有 'highlight' 属性的节点和边。
+    """
+    if graph is None:
+        return {"nodes": [], "links": []}
+
+    # --- 边聚合逻辑 ---
+    bundled_links = {}
+    for u, v, data in graph.edges(data=True):
+        key = (u, v)
+        if key not in bundled_links:
+            bundled_links[key] = {
+                "source": u,
+                "target": v,
+                "relations": [],
+                "count": 0,
+                "highlight": False # 默认不高亮
+            }
+        # 如果任何一条原始边被高亮，则聚合后的边也高亮
+        if data.get('highlight'):
+            bundled_links[key]['highlight'] = True
+
+        bundled_links[key]["relations"].append(data.get('Edge Type', 'Unknown'))
+        bundled_links[key]["count"] += 1
     
+    final_links = list(bundled_links.values())
+
+    # --- 节点处理逻辑 ---
+    final_nodes = []
+    node_ids_in_graph = set(graph.nodes())
+
+    CONTRIBUTOR_ROLES = {
+        'PerformerOf': 'Performers', 'ComposerOf': 'Composers',
+        'ProducerOf': 'Producers', 'LyricistOf': 'Lyricists',
+    }
+
+    for node_id in node_ids_in_graph:
+        node_data = graph.nodes[node_id]
+        new_node_data = node_data.copy()
+
+        # 'highlight' 属性已经由 get_artist_subgraph_route 函数设置
+        if 'highlight' not in new_node_data:
+            new_node_data['highlight'] = False
+        
+        if new_node_data.get('Node Type') in ['Song', 'Album']:
+            contributors = defaultdict(list)
+            if FULL_NETWORKX_GRAPH.has_node(node_id):
+                for u, _, data in FULL_NETWORKX_GRAPH.in_edges(node_id, data=True):
+                    edge_type = data.get('Edge Type')
+                    if edge_type in CONTRIBUTOR_ROLES:
+                        role = CONTRIBUTOR_ROLES[edge_type]
+                        artist_node = FULL_NETWORKX_GRAPH.nodes[u]
+                        contributors[role].append({
+                            'id': artist_node['id'],
+                            'name': artist_node.get('name', 'Unknown')
+                        })
+            new_node_data['contributors'] = contributors
+        
+        final_nodes.append(new_node_data)
+
+    return {"nodes": final_nodes, "links": final_links}
+
 if __name__ == '__main__':
     # 在第一次请求前加载数据
     with app.app_context():

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchGraphLayout, fetchFilterOptions, processArtistData, getFilteredGraphForSankey } from '../services/dataService';
+import { fetchGraphLayout, fetchFilterOptions, processArtistData, getFilteredGraphForSankey, fetchArtistSubgraph } from '../services/dataService';
 import { debounce } from 'lodash-es';
 
 export const useGraphStore = defineStore('graph', {
@@ -174,6 +174,31 @@ export const useGraphStore = defineStore('graph', {
         }
       } catch (e) {
         this.error = 'Failed to fetch graph for Sankey interaction: ' + e.toString();
+        console.error(this.error);
+        this.graphData = { nodes: [], links: [] };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    /**
+     * 新增: 为条形图交互获取特定艺术家和Sailor Shift之间的子图
+     */
+    async fetchSubgraphForArtist(artistId) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        console.log(`Requesting subgraph for artist ID: ${artistId}`);
+        // This function will be added to dataService.js next
+        const data = await fetchArtistSubgraph(artistId); 
+        if (data.error) {
+          this.error = data.error;
+          this.graphData = { nodes: [], links: [] };
+        } else {
+          this.graphData = data;
+        }
+      } catch (e) {
+        this.error = 'Failed to fetch artist subgraph: ' + e.toString();
         console.error(this.error);
         this.graphData = { nodes: [], links: [] };
       } finally {

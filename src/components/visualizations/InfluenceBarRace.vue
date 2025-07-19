@@ -11,7 +11,7 @@
 
       <div class="slider-container">
         <div class="slider-header">
-          <label for="year-slider">���份</label>
+          <label for="year-slider">Year</label>
           <span class="year-display">{{ currentYear }}</span>
         </div>
         <input
@@ -268,7 +268,13 @@ function handleMouseOut(event, d) {
 // 新增：点击事件处理器
 function handleClick(event, d) {
   console.log(`Bar clicked for node ID: ${d['node id']}`);
-  graphStore.fetchAndSetArtistSubgraph(d['node id']);
+  graphStore.fetchSubgraphForArtist(d['node id']);
+  // 如果正在播放，则暂停
+  if (isPlaying.value) {
+    isPlaying.value = false;
+  }
+  // 关键：重置悬停前的播放状态，防止鼠标移出后自动播放
+  wasPlayingBeforeHover.value = false;
 }
 
 const play = () => {
