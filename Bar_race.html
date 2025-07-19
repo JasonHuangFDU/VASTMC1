@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bar Chart Race：Sailor Shift 影响者随时间排名</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+    .chart-title {
+      text-align: center;
+      font-size: 24px;
+      margin-top: 20px;
+      margin-bottom: 5px;
+    }
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 10px;
+    }
+    svg {
+      background-color: white;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+    .axis text {
+      font-size: 12px;
+    }
+    .bar-label {
+      font-size: 12px;
+      fill: #333;
+    }
+    .year-label {
+      font-size: 48px;
+      fill: rgba(0,0,0,0.1);
+      text-anchor: end;
+    }
+  </style>
+</head>
+<body>
+  <div class="chart-title">Bar Chart Race：Top Influencers of Sailor Shift Over Time</div>
+  <div class="chart-container">
+    <svg id="bar-chart-race" width="900" height="600"></svg>
+  </div>
+
+  <!-- 引入 D3.js v7 -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    // ──────────────────────────────────
+    // 配置部分
+    // ──────────────────────────────────
+    const svg = d3.select("#bar-chart-race");
+    const svgWidth = +svg.attr("width");
+    const svgHeight = +svg.attr("height");
+
+    const margin = { top: 80, right: 150, bottom: 50, left: 150 };
+    const width = svgWidth - margin.left - margin.right;
+    const height = svgHeight - margin.top - margin.bottom;
+
+    // 动画每一步（年份）之间的间隔毫秒数
+    const duration = 2000; // 2秒/年，可根据需要调整
+
+    // 最多显示多少条水平条（可调整，例如 top 5, top 10）
+    const topN = 5;
+
+    // ──────────────────────────────────
+    // 添加绘图区
+    // ──────────────────────────────────
+    const chartGroup = svg.append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // X 轴与 Y 轴占位
+    const xScale = d3.scaleLinear().range([0, width]);
+    const yScale = d3.scaleBand().range([0, height]).padding(0.2);
+
+    // 用于存储所有年份及对应数据
+    let yearList = [];        // 如 [2024, 2028, 2029, …]
+    let dataByYear = new Map(); // Map(年份 → [{id, value}, …])
+
+    // 颜色标尺：为不同的影响者 ID 分配颜色
+    const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
+
+    // Y 轴组件
+    const yAxisGroup = chartGroup.append("g")
+      .attr("class", "y-axis");
+
+    // X 轴组件
+    const xAxisGroup = chartGroup.append("g")
+      .attr("class", "x-axis")
+      .attr("transform", `translate(0, ${height})`);
+
+    // “静态“的年份大标签，显示在右下角
+    const yearLabel = svg.append("text")
+      .attr("class", "year-label")
+      .attr("x", svgWidth - margin.right)
+      .attr("y", margin.top + height - 20)
+      .text("");
+
+    // ──────────────────────────────────
+    // 读取 CSV 并启动动画
+    // ──────────────────────────────────
+    d3.csv("Bar_race.csv", d3.autoType).then(rawData => {
+      // 1. 将稠密表转成长表结构，同时过滤掉 value = 0
+      //    rawData 格式：[{ Year:2024, "9224":5, "9225":5, … }, { Year:2028, … }, …]
+      const longData = [];
+      rawData.forEach(row => {
+        const year = row.Year;
+        Object.entries(row).forEach(([key, val]) => {
+          if (key === "Year") return;
+          const v = (typeof val === "number" && !isNaN(val)) ? val : 0;
+          if (v > 0) {
+            longData.push({ year, id: key, value: v });
+          }
+        });
+      });
+
+      // 2. 按年份分组，并提取所有年份（升序）
+      dataByYear = d3.group(longData, d => d.year);
+      yearList = Array.from(dataByYear.keys()).sort(d3.ascending);
+
+      console.log("1.处理后的数据：", longData);
+      console.log("2.年份列表：", yearList);
+      console.log("3.按年份分组的数据：", dataByYear);
+
+      // 3. 为颜色标尺设置 domain：（所有不同的 ID）
+      //    把所有 ID 收集，再去重
+      const allIDs = Array.from(new Set(longData.map(d => d.id)));
+      colorScale.domain(allIDs);
+
+      // 4. 初始化并执行每一年动画
+      let yearIndex = 0;
+      updateYear(yearList[yearIndex]);  // 先绘制第一个年份
+      d3.interval(() => {
+        yearIndex = (yearIndex + 1) % yearList.length;
+        updateYear(yearList[yearIndex]);
+      }, duration);
+
+    }).catch(error => {
+      console.error("CSV 加载失败：", error);
+      alert("无法加载 CSV，请确认文件名和路径、并通过 HTTP 服务器访问。");
+    });
+
+    // ──────────────────────────────────
+    // 根据传入的年份，更新条形图
+    // ──────────────────────────────────
+    function updateYear(year) {
+      // 该年所有非零影响者数据
+      const yearData = dataByYear.get(year) || [];
+
+      // 对该年数据按 value 降序排序，取前 topN
+      const topData = Array.from(yearData)
+        .sort((a, b) => d3.descending(a.value, b.value))
+        .slice(0, topN);
+
+      // 获取该年最高值，供 xScale 调整
+      const maxValue = d3.max(topData, d => d.value) || 0;
+
+      // 更新 xScale 与 yScale 的 domain
+      xScale.domain([0, 15]);
+      yScale.domain(topData.map(d => d.id));
+
+      // 计算 X 轴的 ticks（最多 5 个刻度）
+      const xAxis = d3.axisBottom(xScale)
+        .ticks(5)
+        .tickFormat(d3.format("d"));
+
+      // 渲染 X 轴
+      xAxisGroup.transition()
+        .duration(duration / 2)
+        .call(xAxis);
+
+      // 渲染 Y 轴
+      const yAxis = d3.axisLeft(yScale)
+        .tickSize(0)    // 不要刻度线
+        .tickPadding(6);
+      yAxisGroup.transition()
+        .duration(duration / 2)
+        .call(yAxis)
+        .selectAll("text")  // 让 Y 轴文字悬浮在条形外部
+          .attr("dx", "-5")
+          .style("font-size", "12px");
+
+      // ─── 绘制条形（Bars） ───
+      // 绑定数据：以 id 为 key
+      const bars = chartGroup.selectAll(".bar")
+        .data(topData, d => d.id);
+
+      // 删除多余的条（如果前一个年份里某个 id 不再 topN，就移除）
+      bars.exit()
+        .transition()
+          .duration(duration / 2)
+          .attr("width", 0)
+          .attr("opacity", 0)
+          .remove();
+
+      // 更新现存条：位置与宽度随年份重绘
+      bars.transition()
+        .duration(duration / 2)
+        .attr("y", d => yScale(d.id))
+        .attr("width", d => xScale(d.value))
+        .attr("height", yScale.bandwidth())
+        .attr("fill", d => colorScale(d.id));
+
+      // 新增的条（曾未出现过的 id）需要 enter
+      bars.enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", 0)
+        .attr("y", d => yScale(d.id))
+        .attr("height", yScale.bandwidth())
+        .attr("width", 0)  // 先从 0 宽度过渡
+        .attr("fill", d => colorScale(d.id))
+        .attr("opacity", 0)
+        .transition()
+          .duration(duration / 2)
+          .attr("width", d => xScale(d.value))
+          .attr("opacity", 0.8);
+
+      // ─── 在条形末端加上数值标签 ───
+      const labels = chartGroup.selectAll(".bar-label")
+        .data(topData, d => d.id);
+
+      // 删除旧标签
+      labels.exit()
+        .transition()
+          .duration(duration / 2)
+          .attr("x", 0)
+          .attr("opacity", 0)
+          .remove();
+
+      // 更新现存标签位置与文本
+      labels.transition()
+        .duration(duration / 2)
+        .attr("y", d => yScale(d.id) + yScale.bandwidth() / 2 + 4)
+        .attr("x", d => xScale(d.value) + 5)
+        .text(d => d.value);
+
+      // 新增标签
+      labels.enter().append("text")
+        .attr("class", "bar-label")
+        .attr("y", d => yScale(d.id) + yScale.bandwidth() / 2 + 4)
+        .attr("x", 0)   // 从 0 过渡
+        .attr("fill", "#333")
+        .attr("opacity", 0)
+        .text(d => d.value)
+        .transition()
+          .duration(duration / 2)
+          .attr("x", d => xScale(d.value) + 5)
+          .attr("opacity", 1);
+
+      // ─── 更新右下角年份大标签 ───
+      yearLabel.text(year);
+    }
+  </script>
+</body>
+</html>

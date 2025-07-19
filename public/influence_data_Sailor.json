@@ -9552,8 +9552,9 @@
         }
     ],
     "max_info": {
-    "max_score": 11255,
-    "year": "max_info",
-    "influencer": "influencer"
+    "max_score": 9,
+    "year": 2034,
+    "influencer": 11255,
+    "name": "Joshua Taylor"
   }
 }

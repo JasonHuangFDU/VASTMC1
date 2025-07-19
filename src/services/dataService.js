@@ -263,3 +263,11 @@ function calculateYearlyStats(result, works, collaborations) {
   result.yearlyStats = stats;
 }
 
+export async function loadInfluenceDataSailor() {
+  console.log("Loading influence_data_Sailor.json...");
+  const influenceData = await d3.json('/influence_data_Sailor.json');
+  console.log("influence_data_Sailor.json loaded:", influenceData);
+  return influenceData;
+}
+
+

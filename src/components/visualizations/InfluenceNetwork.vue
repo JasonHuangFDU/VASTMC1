@@ -361,8 +361,8 @@ onMounted(() => {
 <style>
 .influence-network-container { 
   width: 100%; 
-  height: 80vh; 
-  min-height: 480px; 
+  height: 100%; 
+  min-height: 0; /* 允许flex item收缩 */
   border: 1px solid #dee2e6; 
   border-radius: 4px; 
   overflow: hidden; 
@@ -370,7 +370,7 @@ onMounted(() => {
   display: flex; 
   justify-content: center; 
   align-items: center; 
-  background-color: #f8f9fa; 
+  background-color: transparent; 
 }
 
 .loading-indicator, .empty-state { 

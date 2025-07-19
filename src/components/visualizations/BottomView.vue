@@ -1,12 +1,41 @@
 <template>
   <div class="bottom-view-container">
-    <h3>下方视图</h3>
-    <p>这是新创建的下方视图组件。</p>
+    <InfluenceBarRace :data="influenceData" :maxInfluenceInfo="maxInfluenceInfo" v-if="influenceData" />
+    <div v-else>加载影响力数据中...</div>
   </div>
 </template>
 
 <script setup>
-// 这里可以添加未来的逻辑
+import { ref, onMounted } from 'vue';
+import InfluenceBarRace from '@/components/visualizations/InfluenceBarRace.vue';
+import { loadInfluenceDataSailor } from '@/services/dataService';
+
+const influenceData = ref(null);
+const maxInfluenceInfo = ref(null);
+
+onMounted(async () => {
+  try {
+    const data = await loadInfluenceDataSailor();
+    console.log("加载的影响力数据:", data);
+    influenceData.value = data;
+
+    // 计算最大影响力信息
+    let maxScore = data['max_info'].max_score;
+    let maxNodeId = data['max_info'].influencer;
+    let maxYear = data['max_info'].year;
+    let maxName = data['max_info'].name;
+    console.log("最大影响力信息:", maxNodeId, maxName, maxYear, maxScore);
+    maxInfluenceInfo.value = {
+      node_id: maxNodeId,
+      name: maxName,
+      year: maxYear,
+      score: maxScore,
+    };
+
+  } catch (error) {
+    console.error("加载影响力数据失败:", error);
+  }
+});
 </script>
 
 <style scoped>

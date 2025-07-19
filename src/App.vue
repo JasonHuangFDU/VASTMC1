@@ -12,11 +12,12 @@
 
       <div class="resizer" @mousedown="startResizeLeft"></div>
 
-      <div class="center-column" :style="{ flex: 1 }">
-        <div class="top-view">
+      <div class="center-column">
+        <div class="top-view" :style="{ height: `${topViewHeight}px` }">
           <InfluenceNetwork />
         </div>
-        <div class="bottom-view">
+        <div class="resizer resizer-horizontal" @mousedown="startResizeCenter"></div>
+        <div class="bottom-view" :style="{ height: `${bottomViewHeight}px` }">
           <BottomView />
         </div>
       </div>
@@ -43,7 +44,7 @@ import BottomView from './components/visualizations/BottomView.vue';
 
 const store = useGraphStore();
 
-// 可调整大小的面板
+// 左右列可调整大小的面板
 const leftColumnWidth = ref(480);
 const rightColumnWidth = ref(480);
 const isResizingLeft = ref(false);
@@ -51,6 +52,13 @@ const isResizingRight = ref(false);
 
 const minWidth = 300;
 const maxWidth = 800;
+
+// 中间栏上下视图可调整大小的面板
+const topViewHeight = ref(400); // 初始顶部视图高度
+const bottomViewHeight = ref(400); // 初始底部视图高度
+const isResizingCenter = ref(false);
+
+const minHeight = 100; // 最小高度
 
 // 左侧面板拖拽逻辑
 const startResizeLeft = (e) => {
@@ -102,8 +110,66 @@ const stopResizeRight = () => {
   document.body.style.userSelect = '';
 };
 
+// 中间栏上下视图拖拽逻辑
+let initialMouseY = 0;
+let initialTopHeight = 0;
+let initialBottomHeight = 0;
+
+const startResizeCenter = (e) => {
+  isResizingCenter.value = true;
+  initialMouseY = e.clientY;
+  const centerColumn = e.currentTarget.parentNode;
+  const topView = centerColumn.querySelector('.top-view');
+  const bottomView = centerColumn.querySelector('.bottom-view');
+  initialTopHeight = topView.offsetHeight;
+  initialBottomHeight = bottomView.offsetHeight;
+
+  document.addEventListener('mousemove', handleResizeCenter);
+  document.addEventListener('mouseup', stopResizeCenter);
+  document.body.style.cursor = 'row-resize';
+  document.body.style.userSelect = 'none';
+};
+
+const handleResizeCenter = (e) => {
+  if (!isResizingCenter.value) return;
+
+  const dy = e.clientY - initialMouseY;
+
+  let newTopHeight = initialTopHeight + dy;
+  let newBottomHeight = initialBottomHeight - dy;
+
+  // 确保高度不小于最小高度
+  if (newTopHeight < minHeight) {
+    newTopHeight = minHeight;
+    newBottomHeight = initialTopHeight + initialBottomHeight - minHeight;
+  }
+  if (newBottomHeight < minHeight) {
+    newBottomHeight = minHeight;
+    newTopHeight = initialTopHeight + initialBottomHeight - minHeight;
+  }
+
+  topViewHeight.value = newTopHeight;
+  bottomViewHeight.value = newBottomHeight;
+};
+
+const stopResizeCenter = () => {
+  isResizingCenter.value = false;
+  document.removeEventListener('mousemove', handleResizeCenter);
+  document.removeEventListener('mouseup', stopResizeCenter);
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+};
+
 onMounted(() => {
   store.initializeStore();
+
+  // 初始化中间栏视图高度，确保它们填充可用空间
+  const centerColumn = document.querySelector('.center-column');
+  if (centerColumn) {
+    const totalHeight = centerColumn.offsetHeight - 6; // 减去水平resizer的高度
+    topViewHeight.value = totalHeight * 0.7; // 初始比例，可调整
+    bottomViewHeight.value = totalHeight * 0.3; // 初始比例，可调整
+  }
 });
 
 onUnmounted(() => {
@@ -112,6 +178,8 @@ onUnmounted(() => {
   document.removeEventListener('mouseup', stopResizeLeft);
   document.removeEventListener('mousemove', handleResizeRight);
   document.removeEventListener('mouseup', stopResizeRight);
+  document.removeEventListener('mousemove', handleResizeCenter);
+  document.removeEventListener('mouseup', stopResizeCenter);
 });
 </script>
 
@@ -217,27 +285,54 @@ main {
   opacity: 0.6;
 }
 
+.resizer-horizontal {
+  height: 6px;
+  width: 100%;
+  cursor: row-resize;
+}
+
+.resizer-horizontal::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 2px;
+  width: 40px;
+  background-color: var(--color-surface);
+  border-radius: 1px;
+  opacity: 0.6;
+}
+
 .center-column {
   display: flex;
   flex-direction: column;
   padding: 5px;
   overflow: hidden;
   background-color: var(--color-background);
+  flex-grow: 1; /* 确保中间列可以填充可用空间 */
 }
 
 .top-view {
-  flex: 1;
+  flex-grow: 0;
+  flex-shrink: 0;
   min-height: 0; /* 允许flex item收缩 */
+  background-color: var(--color-surface);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 5px; /* 与拖拽条的间距 */
 }
 
 .bottom-view {
-  flex: 7;
+  flex-grow: 0;
+  flex-shrink: 0;
   min-height: 0; /* 允许flex item收缩 */
-  border-top: 2px solid var(--color-border);
-  padding: 10px;
   background-color: var(--color-surface);
-  text-align: center;
-  color: var(--color-text-secondary);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-top: 5px; /* 与拖拽条的间距 */
 }
 
 /* 弹性布局设计 - 响应式高度分配 */
@@ -326,6 +421,16 @@ body.resizing {
 
 body.resizing * {
   cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.resizing-row {
+  cursor: row-resize !important;
+  user-select: none !important;
+}
+
+body.resizing-row * {
+  cursor: row-resize !important;
   user-select: none !important;
 }
 </style>
