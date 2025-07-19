@@ -456,7 +456,7 @@ onMounted(() => {
   text-align: left; 
   padding: 10px 14px; 
   font: 12px 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
-  background-color: #FFFFFF; 
+  background-color: rgba(255, 255, 255, 0.7); /* White background with 90% opacity */
   color: #333333; 
   border-radius: 6px; 
   pointer-events: none; 
@@ -465,6 +465,7 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   border: 1px solid #E0E0E0;
   line-height: 1.4;
+  backdrop-filter: blur(2px); /* Optional: Adds a blur effect to the background */
 }
 
 .link {

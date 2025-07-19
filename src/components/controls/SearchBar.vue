@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <button @click="store.resetView()" class="reset-button">Reset View</button>
+    <button @click="store.resetGraphView()" class="reset-button">Reset View</button>
   </div>
 </template>
 

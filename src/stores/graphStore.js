@@ -215,6 +215,29 @@ export const useGraphStore = defineStore('graph', {
         console.log("Sankey filter reset.");
     },
 
+    async resetGraphView() {
+      this.isLoading = true;
+      this.error = null;
+
+      // Reset all filters and view states to their defaults
+      this.searchQuery = 17255; // Default to Sailor Shift
+      this.hopLevel = 1;
+      this.selectedGenres = [];
+      this.selectedNodeTypes = [];
+      this.selectedEdgeTypes = [];
+      this.selectedTimeRange = { start: 1981, end: 2040 };
+
+      // Reset special view states
+      this.isSankeyFiltered = false;
+      this.sankeyFilteredData = null;
+      this._resetHighlights(); // This also resets focus flags
+
+      // Fetch the graph with the reset parameters
+      await this.updateGraphLayout();
+      
+      this.isLoading = false;
+    },
+
     async showArtistComparison(artistId) {
       this.isLoading = true;
       this.error = null;
