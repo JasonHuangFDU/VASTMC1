@@ -1523,23 +1523,23 @@ def format_graph_for_d3(graph, highlighted_nodes=None, highlighted_links=None):
 def sankey_interaction():
     """
     专门处理来自桑基图点击事件的过滤请求。
-    V8: 增加了对高亮边的支持。
+    V10: 修正Outward视图中"Genre -> Artist"的逻辑，正确显示艺术家作品对Oceanus Folk的影响。
     """
     if FULL_NETWORKX_GRAPH is None:
         return jsonify({"error": "Graph data is not available."}), 500
 
     req_data = request.json
     app.logger.info(f"收到桑基图交互请求: {req_data}")
-    source_name = req_data.get('source')
-    target_name = req_data.get('target')
-    app.logger.info(f"收到桑基图交互请求: source='{source_name}', target='{target_name}'")
+    
+    source_data = req_data.get('source', {})
+    target_data = req_data.get('target', {})
+    
+    source_name = source_data.get('name')
+    target_name = target_data.get('name')
+    target_id = target_data.get('id')
+    target_type = target_data.get('type')
 
-    target_node_id = find_node_id_by_name(target_name)
-    is_genre_to_artist = False
-    if target_node_id and FULL_NETWORKX_GRAPH.has_node(target_node_id):
-        node_type = FULL_NETWORKX_GRAPH.nodes[target_node_id].get('Node Type')
-        if node_type in ['Person', 'MusicalGroup']:
-            is_genre_to_artist = True
+    is_genre_to_artist = target_type in ['artist', 'Artist']
 
     subgraph = nx.MultiDiGraph()
     highlighted_nodes = set()
@@ -1571,24 +1571,148 @@ def sankey_interaction():
         
         highlighted_nodes.update(nodes_to_add)
 
-    # --- 逻辑2: 其他流派 -> 艺术家 (Outward) ---
+    # --- 逻辑2: 其他流派 -> 艺术家 (Outward) - 修正逻辑 ---
     elif is_genre_to_artist:
         genre = source_name
-        artist_id = target_node_id
+        artist_id = target_id
         artist_name = target_name
-        app.logger.info(f"处理 Genre '{genre}' -> Artist '{artist_name}' (ID: {artist_id}) 交互")
+        app.logger.info(f"处理 Genre '{genre}' -> Artist '{artist_name}' (ID: {artist_id}) 交互 (修正逻辑)")
 
+        if not artist_id or not FULL_NETWORKX_GRAPH.has_node(artist_id):
+            app.logger.warning(f"艺术家ID无效或在图中未找到: {artist_id}")
+            return jsonify(format_graph_for_d3(nx.MultiDiGraph()))
+
+        # 1. 找到该艺术家在该流派下的所有作品
         artist_works_in_genre = set()
+        # 检查出边
         for _, v_work, d_creation in FULL_NETWORKX_GRAPH.out_edges(artist_id, data=True):
             if d_creation.get('Edge Type') in CREATION_EDGE_TYPES:
                 work_node = FULL_NETWORKX_GRAPH.nodes[v_work]
                 if work_node.get('Node Type') in ['Song', 'Album'] and work_node.get('genre') == genre:
                     artist_works_in_genre.add(v_work)
+        # 检查入边 (例如 'MemberOf' 指向乐队)
         for u_work, _, d_creation in FULL_NETWORKX_GRAPH.in_edges(artist_id, data=True):
              if d_creation.get('Edge Type') in CREATION_EDGE_TYPES:
                 work_node = FULL_NETWORKX_GRAPH.nodes[u_work]
                 if work_node.get('Node Type') in ['Song', 'Album'] and work_node.get('genre') == genre:
                     artist_works_in_genre.add(u_work)
+
+        # 2. 找到所有 "Oceanus Folk" 流派的作品作为潜在的目标
+        oceanus_works_target = {n for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre') == 'Oceanus Folk' and d.get('Node Type') in ['Song', 'Album']}
+        
+        nodes_to_add = set()
+        edges_to_add = []
+
+        # 3. 查找从艺术家的作品出发，指向Oceanus Folk作品的影响边
+        for work_id in artist_works_in_genre:
+            # 查找从该作品出发的影响关系 (work_id -> target_song)
+            for _, target_song, d_influence in FULL_NETWORKX_GRAPH.out_edges(work_id, data=True):
+                if target_song in oceanus_works_target and d_influence.get('Edge Type') in INFLUENCE_EDGE_TYPES:
+                    nodes_to_add.add(work_id)
+                    nodes_to_add.add(target_song)
+                    edges_to_add.append((work_id, target_song, d_influence))
+                    highlighted_links.add((work_id, target_song))
+
+        # 4. 如果找到了影响链，构建最终的图
+        if nodes_to_add:
+            nodes_to_add.add(artist_id)
+            
+            # 添加艺术家和其相关作品之间的创作关系边
+            for work_id in artist_works_in_genre:
+                if work_id in nodes_to_add:
+                    if FULL_NETWORKX_GRAPH.has_edge(artist_id, work_id):
+                        for key, data in FULL_NETWORKX_GRAPH.get_edge_data(artist_id, work_id).items():
+                            if data.get('Edge Type') in CREATION_EDGE_TYPES:
+                                edges_to_add.append((artist_id, work_id, data))
+                                highlighted_links.add((artist_id, work_id))
+                    if FULL_NETWORKX_GRAPH.has_edge(work_id, artist_id):
+                        for key, data in FULL_NETWORKX_GRAPH.get_edge_data(work_id, artist_id).items():
+                            if data.get('Edge Type') in CREATION_EDGE_TYPES:
+                                edges_to_add.append((work_id, artist_id, data))
+                                highlighted_links.add((work_id, artist_id))
+
+            subgraph.add_nodes_from((n, copy.deepcopy(FULL_NETWORKX_GRAPH.nodes[n])) for n in nodes_to_add)
+            subgraph.add_edges_from(edges_to_add)
+            
+            highlighted_nodes.update(nodes_to_add)
+    
+    else:
+        app.logger.warning(f"未处理的桑基图交互: source='{source_name}', target='{target_name}'")
+        return jsonify(format_graph_for_d3(nx.MultiDiGraph()))
+
+    process_dynamic_node_attributes(subgraph, None)
+    app.logger.info(f"交互处理完毕, 返回 {subgraph.number_of_nodes()} 个节点, {subgraph.number_of_edges()} 条边. 高亮 {len(highlighted_nodes)} 个节点和 {len(highlighted_links)} 条边。")
+    return jsonify(format_graph_for_d3(subgraph, highlighted_nodes=highlighted_nodes, highlighted_links=highlighted_links))
+
+
+@app.route('/api/inward_sankey_interaction', methods=['POST'])
+def inward_sankey_interaction():
+    """
+    专门处理来自 Inward 桑基图点击事件的过滤请求。
+    """
+    if FULL_NETWORKX_GRAPH is None:
+        return jsonify({"error": "Graph data is not available."}), 500
+
+    req_data = request.json
+    app.logger.info(f"收到 Inward 桑基图���互请求: {req_data}")
+    
+    source_data = req_data.get('source', {})
+    target_data = req_data.get('target', {})
+    
+    source_name = source_data.get('name')
+    target_name = target_data.get('name')
+    target_id = target_data.get('id')
+    target_type = target_data.get('type')
+
+    is_genre_to_artist = target_type in ['artist', 'Artist']
+
+    subgraph = nx.MultiDiGraph()
+    highlighted_nodes = set()
+    highlighted_links = set()
+    
+    INFLUENCE_EDGE_TYPES = {'InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'}
+    CREATION_EDGE_TYPES = {'PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf', 'MemberOf'}
+
+    # --- 逻辑1: Oceanus Folk -> 其他流派 (Inward) ---
+    if source_name == 'Oceanus Folk' and not is_genre_to_artist:
+        target_genre = target_name
+        app.logger.info(f"处理 'Oceanus Folk' -> Genre '{target_genre}' (Inward) 交互")
+
+        oceanus_works = {n for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre') == 'Oceanus Folk' and d.get('Node Type') in ['Song', 'Album']}
+        target_genre_works = {n for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre') == target_genre and d.get('Node Type') in ['Song', 'Album']}
+        
+        nodes_to_add = set()
+        edges_to_add = []
+        # 查找从Oceanus Folk作品指向目标流派作品的影响关系
+        for u, v, data in FULL_NETWORKX_GRAPH.edges(data=True):
+            if u in oceanus_works and v in target_genre_works and data.get('Edge Type') in INFLUENCE_EDGE_TYPES:
+                nodes_to_add.add(u)
+                nodes_to_add.add(v)
+                edges_to_add.append((u, v, data))
+                highlighted_links.add((u, v))
+        
+        if nodes_to_add:
+            subgraph.add_nodes_from((n, copy.deepcopy(FULL_NETWORKX_GRAPH.nodes[n])) for n in nodes_to_add)
+            subgraph.add_edges_from(edges_to_add)
+        
+        highlighted_nodes.update(nodes_to_add)
+
+    # --- 逻辑2: 其他流派 -> 艺术家 (Inward) ---
+    elif is_genre_to_artist:
+        genre = source_name
+        artist_id = target_id
+        artist_name = target_name
+        app.logger.info(f"处理 Genre '{genre}' -> Artist '{artist_name}' (ID: {artist_id}) (Inward) 交互")
+
+        if not artist_id or not FULL_NETWORKX_GRAPH.has_node(artist_id):
+            app.logger.warning(f"艺术家ID无效或在图中未找到: {artist_id}")
+            return jsonify(format_graph_for_d3(nx.MultiDiGraph()))
+
+        artist_works_in_genre = {
+            work_id for work_id, data in FULL_NETWORKX_GRAPH.nodes(data=True)
+            if data.get('Node Type') in ['Song', 'Album'] and data.get('genre') == genre and
+            (FULL_NETWORKX_GRAPH.has_edge(artist_id, work_id) or FULL_NETWORKX_GRAPH.has_edge(work_id, artist_id))
+        }
 
         oceanus_works_source = {n for n, d in FULL_NETWORKX_GRAPH.nodes(data=True) if d.get('genre') == 'Oceanus Folk' and d.get('Node Type') in ['Song', 'Album']}
         
@@ -1625,11 +1749,11 @@ def sankey_interaction():
             highlighted_nodes.update(nodes_to_add)
     
     else:
-        app.logger.warning(f"未处理的桑基图交互: source='{source_name}', target='{target_name}'")
+        app.logger.warning(f"未处理的 Inward 桑基图交互: source='{source_name}', target='{target_name}'")
         return jsonify(format_graph_for_d3(nx.MultiDiGraph()))
 
     process_dynamic_node_attributes(subgraph, None)
-    app.logger.info(f"交互处理完毕, 返回 {subgraph.number_of_nodes()} 个节点, {subgraph.number_of_edges()} 条边. 高亮 {len(highlighted_nodes)} 个节点和 {len(highlighted_links)} 条边。")
+    app.logger.info(f"Inward 交互处理完毕, 返回 {subgraph.number_of_nodes()} 个节点, {subgraph.number_of_edges()} 条边.")
     return jsonify(format_graph_for_d3(subgraph, highlighted_nodes=highlighted_nodes, highlighted_links=highlighted_links))
 
 

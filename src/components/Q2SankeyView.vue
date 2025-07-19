@@ -103,7 +103,7 @@
               :currentView="rightViewType" 
               :topNGenres="topNGenres"
               :topNArtists="topNArtists"
-              
+              @link-clicked="handleInwardSankeyClick" 
             />
           </div>
         </div>
@@ -259,17 +259,35 @@ const updateChartData = () => {
   }
 };
 
-// 处理桑基图点击事件
-const handleSankeyClick = (linkData) => {
+// 处理Outward桑基图点击事件
+const handleSankeyClick = (eventData) => {
   // 只在 "Direction Comparison" (Outward) 模式下响应点击
   if (viewMode.value !== 'direction') return;
 
-  console.log("Outward Sankey link clicked:", linkData);
-  if (linkData && linkData.source && linkData.target) {
-      // 调用 store 中新的 action
-      store.triggerSankeyInteraction(linkData.source.name, linkData.target.name);
+  console.log("Outward Sankey link clicked:", eventData);
+  
+  const { source, target } = eventData;
+
+  if (source && target) {
+      // 桑基图的节点对象包含了所有原始数据，包括id和name
+      // 我们将整个节点对象传递给store，让store来决定如何使用
+      store.triggerSankeyInteraction(source, target);
   } else {
-      console.warn("Invalid linkData received from Sankey component:", linkData);
+      console.warn("Invalid data received from Sankey component:", eventData);
+  }
+};
+
+// 处理Inward桑基图点击事件
+const handleInwardSankeyClick = (eventData) => {
+  console.log("Inward Sankey link clicked:", eventData);
+  
+  const { source, target } = eventData;
+
+  if (source && target) {
+      // 调用 store 中为 inward 设计的新 action
+      store.triggerInwardSankeyInteraction(source, target);
+  } else {
+      console.warn("Invalid data received from Inward Sankey component:", eventData);
   }
 };
 

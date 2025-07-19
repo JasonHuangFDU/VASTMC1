@@ -9,7 +9,8 @@ import {
     fetchFocusGraph,
     getFocusCollaborationData,
     getFocusInfluenceData,
-    fetchSankeyInteractionData // New service function
+    fetchSankeyInteractionData,
+    fetchInwardSankeyInteractionData
 } from '../services/dataService';
 import { debounce } from 'lodash-es';
 
@@ -153,13 +154,14 @@ export const useGraphStore = defineStore('graph', {
     },
 
     // --- SANKEY INTERACTION ACTIONS ---
-    async triggerSankeyInteraction(sourceName, targetName) {
+    async triggerSankeyInteraction(sourceNode, targetNode) {
         this.isLoading = true;
         this.error = null;
         this._resetHighlights(); // Clear any previous focus states
 
         try {
-            const subgraphData = await fetchSankeyInteractionData(sourceName, targetName);
+            // 将节点对象传递给服务层
+            const subgraphData = await fetchSankeyInteractionData(sourceNode, targetNode);
             
             if (subgraphData && subgraphData.nodes && subgraphData.nodes.length > 0) {
                 this.sankeyFilteredData = subgraphData;
@@ -171,6 +173,32 @@ export const useGraphStore = defineStore('graph', {
             }
         } catch (e) {
             this.error = `Failed to fetch subgraph for Sankey interaction: ${e.toString()}`;
+            console.error(this.error);
+            this.sankeyFilteredData = { nodes: [], links: [] };
+            this.isSankeyFiltered = true;
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
+    async triggerInwardSankeyInteraction(sourceNode, targetNode) {
+        this.isLoading = true;
+        this.error = null;
+        this._resetHighlights();
+
+        try {
+            const subgraphData = await fetchInwardSankeyInteractionData(sourceNode, targetNode);
+            
+            if (subgraphData && subgraphData.nodes && subgraphData.nodes.length > 0) {
+                this.sankeyFilteredData = subgraphData;
+                this.isSankeyFiltered = true;
+            } else {
+                this.sankeyFilteredData = { nodes: [], links: [] };
+                this.isSankeyFiltered = true;
+                console.log("Inward Sankey interaction returned no data.");
+            }
+        } catch (e) {
+            this.error = `Failed to fetch subgraph for Inward Sankey interaction: ${e.toString()}`;
             console.error(this.error);
             this.sankeyFilteredData = { nodes: [], links: [] };
             this.isSankeyFiltered = true;

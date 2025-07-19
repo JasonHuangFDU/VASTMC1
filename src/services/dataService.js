@@ -380,19 +380,49 @@ export const getFocusInfluenceData = () => {
 
 /**
  * Fetches a subgraph based on a click event from the Sankey chart.
- * @param {string} sourceName - The name of the source node in the Sankey link.
- * @param {string} targetName - The name of the target node in the Sankey link.
+ * @param {object} sourceNode - The source node object from the Sankey layout.
+ * @param {object} targetNode - The target node object from the Sankey layout.
  * @returns {Promise<object>} D3-compatible graph data.
  */
-export async function fetchSankeyInteractionData(sourceName, targetName) {
+export async function fetchSankeyInteractionData(sourceNode, targetNode) {
   try {
-    const response = await axios.post(`${API_BASE_URL}/sankey_interaction`, {
-      source: sourceName,
-      target: targetName,
-    });
+    // 发送包含ID和名称的完整节点信息
+    const payload = {
+      source: {
+        id: sourceNode.original_id,
+        name: sourceNode.name,
+        type: sourceNode.type
+      },
+      target: {
+        id: targetNode.original_id,
+        name: targetNode.name,
+        type: targetNode.type
+      },
+    };
+    const response = await axios.post(`${API_BASE_URL}/sankey_interaction`, payload);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching subgraph for Sankey interaction (source: ${sourceName}, target: ${targetName}):`, error);
+    console.error(`Error fetching subgraph for Sankey interaction (source: ${sourceNode.name}, target: ${targetNode.name}):`, error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches a subgraph for an INWARD Sankey chart click event.
+ * @param {object} sourceNode - The source node object from the Sankey layout.
+ * @param {object} targetNode - The target node object from the Sankey layout.
+ * @returns {Promise<object>} D3-compatible graph data.
+ */
+export async function fetchInwardSankeyInteractionData(sourceNode, targetNode) {
+  try {
+    const payload = {
+      source: { id: sourceNode.original_id, name: sourceNode.name, type: sourceNode.type },
+      target: { id: targetNode.original_id, name: targetNode.name, type: targetNode.type },
+    };
+    const response = await axios.post(`${API_BASE_URL}/inward_sankey_interaction`, payload);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching subgraph for Inward Sankey interaction (source: ${sourceNode.name}, target: ${targetNode.name}):`, error);
     throw error;
   }
 }

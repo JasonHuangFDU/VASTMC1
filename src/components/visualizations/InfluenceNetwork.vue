@@ -358,7 +358,6 @@ function renderGraph(data) {
     linkElements.classed('dimmed', false);
     tooltip.style('opacity', 0);
   }).on('click', (event, d) => {
-    if (store.isSankeyFiltered) return; // Disable click-to-center in Sankey mode
     store.selectCenterNode(d.id);
   });
 
