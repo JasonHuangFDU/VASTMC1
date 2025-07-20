@@ -50,12 +50,8 @@
               </div>
             </div>
             <div class="star-radar">
-              <ArtistRadarChart
-                v-if="report.radar_data && report.radar_data[index]"
-                :artistData="report.radar_data[index]"
-                :width="80"
-                :height="80"
-              />
+              <!-- 直接嵌入雷达图容器 -->
+              <div :ref="el => radarContainers[index] = el" class="radar-chart"></div>
             </div>
           </div>
         </div>
@@ -65,15 +61,12 @@
 </template>
 
 <script>
+import * as d3 from 'd3';
 import { useGraphStore } from '@/stores/graphStore';
 import { loadOceanusDataAndPredict } from '@/services/dataService';
-import ArtistRadarChart from './ArtistRadarChart.vue';
 
 export default {
   name: 'ArtistPotentialPrediction',
-  components: {
-    ArtistRadarChart
-  },
   setup() {
     const graphStore = useGraphStore();
     return { graphStore };
@@ -92,7 +85,9 @@ export default {
         { id: 'oceanus', label: 'Oceanus Work' },
         { id: 'collab', label: 'Collaboration' }
       ],
-      weightScores: {}
+      weightScores: {},
+      radarContainers: [],  // 存储雷达图容器的引用
+      resizeObservers: []  // 存储ResizeObserver实例
     };
   },
   created() {
@@ -104,6 +99,19 @@ export default {
         return this.weightScores[weight.id] > 0;
       });
     }
+  },
+  watch: {
+    report(newVal) {
+      if (newVal && newVal.radar_data) {
+        this.$nextTick(() => {
+          this.renderAllRadars();
+        });
+      }
+    }
+  },
+  beforeUnmount() {
+    // 组件销毁时清理所有雷达图
+    this.cleanupAllRadars();
   },
   methods: {
     resetScores() {
@@ -118,6 +126,7 @@ export default {
       this.loading = true;
       this.error = null;
       this.report = null;
+      this.cleanupAllRadars();  // 清除之前的雷达图
 
       try {
         const totalScore = this.weightOrder.reduce((sum, weight) => {
@@ -149,6 +158,169 @@ export default {
       this.report = null;
       this.error = null;
       this.resetScores();
+      this.cleanupAllRadars();
+    },
+
+    // 渲染所有雷达图
+    renderAllRadars() {
+      if (!this.report || !this.report.radar_data) return;
+
+      this.report.radar_data.forEach((artistData, index) => {
+        const container = this.radarContainers[index];
+        if (container) {
+          this.renderRadar(container, artistData);
+        }
+      });
+    },
+
+    // 设置ResizeObserver监听
+    setupResizeObserver(container, artistData) {
+      // 清理现有的observer
+      const existingObserver = this.resizeObservers.find(ob => ob.container === container);
+      if (existingObserver) {
+        existingObserver.observer.disconnect();
+        this.resizeObservers = this.resizeObservers.filter(ob => ob.container !== container);
+      }
+
+      // 创建新的observer
+      const observer = new ResizeObserver(entries => {
+        for (let entry of entries) {
+          if (entry.target === container) {
+            this.renderRadar(container, artistData);
+          }
+        }
+      });
+
+      observer.observe(container);
+      this.resizeObservers.push({ container, observer });
+
+      // 初始渲染
+      this.renderRadar(container, artistData);
+    },
+
+
+    // 清理所有雷达图
+    cleanupAllRadars() {
+      // 断开所有ResizeObserver
+      this.resizeObservers.forEach(ob => ob.observer.disconnect());
+      this.resizeObservers = [];
+
+      this.radarContainers.forEach(container => {
+        if (container) {
+          d3.select(container).selectAll("*").remove();
+        }
+      });
+      this.radarContainers = [];
+    },
+
+    // 渲染单个雷达图
+    renderRadar(container, artistData) {
+      if (!artistData || Object.keys(artistData.data).length === 0) return;
+      // 清除现有图表
+      d3.select(container).selectAll("*").remove();
+      // 获取容器实际尺寸
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (width === 0 || height === 0) return;
+
+      const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      const radius = Math.min(innerWidth, innerHeight) / 2;
+
+      const svg = d3.select(container)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${margin.left + innerWidth/2},${margin.top + innerHeight/2})`);
+
+      // 获取特征名称和数据
+      const features = Object.keys(artistData.data);
+      const values = Object.values(artistData.data);
+      const levels = 4; // 减少层级数量以适应小尺寸
+
+      // 角度比例尺
+      const angleSlice = (Math.PI * 2) / features.length;
+
+      // 半径比例尺 (数据已经是0-100范围)
+      const rScale = d3.scaleLinear()
+        .domain([0, 100])
+        .range([0, radius]);
+
+      // 创建雷达网格
+      for (let level = 1; level <= levels; level++) {
+        const levelFactor = radius * level / levels;
+
+        // 绘制网格圆环
+        svg.append("circle")
+          .attr("r", levelFactor)
+          .attr("fill", "none")
+          .attr("stroke", "#e0e7ff")
+          .attr("stroke-width", "0.5px");
+
+        // 添加刻度标签（仅在最外层显示）
+        if (level === levels) {
+          svg.append("text")
+            .attr("x", 0)
+            .attr("y", -levelFactor + 5)
+            .attr("font-size", "8px") // 减小字体
+            .attr("fill", "#64748b")
+            .text(100);
+        }
+      }
+
+      // 绘制轴线
+      features.forEach((feature, i) => {
+        const angle = angleSlice * i + Math.PI / 3;
+
+        // 绘制轴线
+        svg.append("line")
+          .attr("x1", 0)
+          .attr("y1", 0)
+          .attr("x2", radius * Math.cos(angle))
+          .attr("y2", radius * Math.sin(angle))
+          .attr("stroke", "#e0e7ff")
+          .attr("stroke-width", "0.5px");
+
+        // 添加特征标签
+        const labelAngle = angleSlice * i;
+        const labelRadius = radius + 8; // 减小标签距离
+
+        svg.append("text")
+          .attr("x", labelRadius * Math.cos(labelAngle))
+          .attr("y", labelRadius * Math.sin(labelAngle))
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .attr("font-size", "9px") // 减小字体
+          .attr("fill", "#4b5563")
+          .text(feature);
+      });
+
+      // 准备雷达图数据
+      const coordinates = features.map((feature, i) => ({
+        axis: feature,
+        value: values[i],
+        angle: angleSlice * i + Math.PI / 2
+      }));
+
+      // 创建雷达图线条生成器
+      const line = d3.lineRadial()
+        .angle(d => d.angle)
+        .radius(d => rScale(d.value))
+        .curve(d3.curveLinearClosed);
+
+      // 绘制雷达区域
+      svg.append("path")
+        .datum(coordinates)
+        .attr("d", line)
+        .attr("fill", "#4a6cf7")
+        .attr("fill-opacity", 0.1)
+        .attr("stroke", "#4a6cf7")
+        .attr("stroke-width", 1);
+
+      // 添加数据点（小尺寸下去除数据点）
+      // 添加数据值标签（小尺寸下去除数值标签）
     }
   }
 };
@@ -342,19 +514,19 @@ export default {
   flex: 1;
   display: flex;
   overflow: hidden;
+  align-items: flex-start; /* 新增 */
 }
 
 .predicted-stars {
   flex: 1;
   display: flex;
-  align-items: center;
 }
 
 /* 星级容器 - 横向布局 */
 .stars-container {
   width: 100%;
   display: flex;
-  gap: 6px; /* 减小间距 */
+  gap: 3px; /* 减小间距 */
   padding: 0 2px; /* 减小内边距 */
   justify-content: space-between;
 }
@@ -365,8 +537,8 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px; /* 减小间距 */
-  padding: 6px; /* 减小内边距 */
+  gap: 10px; /* 减小间距 */
+  padding: 4px; /* 减小内边距 */
   background-color: #F8F9FA;
   border-radius: 6px;
   border: 1px solid #E0E0E0;
@@ -435,11 +607,16 @@ export default {
   text-overflow: ellipsis;
 }
 
-/* 雷达图 */
+/* 雷达图容器 */
 .star-radar {
-  width: 70px; /* 减小尺寸 */
-  height: 70px; /* 减小尺寸 */
+  width: 100%;
+  aspect-ratio: 1/1; /* 保持正方形比例 */
   flex-shrink: 0;
+}
+
+.radar-chart {
+  height: 100%;
+  width: 100%;
 }
 
 /* 响应式设计 - 权重选择框在小屏幕上变为单列 */
@@ -453,18 +630,18 @@ export default {
     flex-direction: column;
     gap: 4px; /* 减小间距 */
   }
-  
+
   .star-card {
     flex-direction: row;
     justify-content: space-between;
     padding: 4px; /* 减小内边距 */
   }
-  
+
   .star-info {
     text-align: left;
     flex: 1;
   }
-  
+
   .star-strengths {
     flex-direction: row;
     gap: 3px; /* 减小间距 */
@@ -475,14 +652,14 @@ export default {
   .weight-items {
     grid-template-columns: 1fr; /* 小屏幕显示1列 */
   }
-  
+
   /* 进一步压缩星级卡片 */
   .star-rank {
     width: 18px;
     height: 18px;
     font-size: 0.65rem;
   }
-  
+
   .star-radar {
     width: 60px;
     height: 60px;
@@ -494,15 +671,15 @@ export default {
   .header h4 {
     font-size: 0.85rem;
   }
-  
+
   .selection-header h4 {
     font-size: 0.75rem;
   }
-  
+
   .weight-label {
     font-size: 0.7rem;
   }
-  
+
   .score-select {
     padding: 3px;
     font-size: 0.7rem;
