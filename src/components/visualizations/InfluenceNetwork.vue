@@ -335,6 +335,12 @@ function renderGraph(data) {
         content += `<br/>Notability Score: ${d.influence_score.toFixed(2)}`;
       }
     }
+    if (d['Node Type'] === 'Person' || d['Node Type'] === 'MusicalGroup') {
+      if (d.max_genre !== undefined) {
+        content += `<br/>Major Genre: ${d.max_genre}`;
+      }
+    }
+    
     if (d['Node Type'] === 'Song' || d['Node Type'] === 'Album') {
       if (d.genre) content += `<br/>Genre: ${d.genre}`;
       if (d.release_date) content += `<br/>Release Date: ${d.release_date}`;

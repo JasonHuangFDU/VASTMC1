@@ -42,7 +42,8 @@ def process_influencer_data():
 
                 nodes_list_for_year.append({
                     'node id': int(node_id),
-                    'Influence score': influence_score,
+                    'Influence score': influence_score['score'],
+                    'songs_id': influence_score.get('songs_id'),
                     'name': name,
                     'max_genre': max_genre,
                     'notability_score': notability_score,
