@@ -174,15 +174,18 @@ const getSymbolPath = (symbolType, size = 100) => d3.symbol().type(symbolType).s
 const ALL_EDGE_LEGEND_INFO = {
   'influence': { name: 'Inspiration', color: '#9FC1E8', dasharray: '6, 3' },
   'collaboration': { name: 'Creation', color: '#B7D962', dasharray: '0' },
-  'membership': { name: 'Commercial', color: '#6c757d', dasharray: '2, 2' },
+  'commercial': { name: 'Commercial', color: '#6c757d', dasharray: '2, 2' },
+  'membership': { name: 'Membership', color: '#DDA0DD', dasharray: '5, 5' },
 };
 
 const getPrimaryLinkClass = (relations) => {
   const influenceTypes = ['InStyleOf', 'CoverOf', 'DirectlySamples', 'InterpolatesFrom', 'LyricalReferenceTo'];
-  const collaborationTypes = ['PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf', 'MemberOf'];
+  const collaborationTypes = ['PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf'];
+  const membershipTypes = ['MemberOf'];
   if (relations.some(r => influenceTypes.includes(r))) return 'influence';
   if (relations.some(r => collaborationTypes.includes(r))) return 'collaboration';
-  return 'membership';
+  if (relations.some(r => membershipTypes.includes(r))) return 'membership';
+  return 'commercial';
 };
 
 const handleResize = () => {
@@ -274,7 +277,8 @@ function renderGraph(data) {
             const highlightColors = {
                 'influence': '#3d5a80', // 深蓝
                 'collaboration': '#8a9a5b', // 暗橄榄绿
-                'membership': '#505050'  // 深灰
+                'commercial': '#505050',  // 深��
+                'membership': '#8A2BE2' // 深紫
             };
             return highlightColors[primaryClass] || '#333';
         }
@@ -488,12 +492,12 @@ onMounted(() => {
 }
 .link.link-influence { stroke: #9FC1E8; }
 .link.link-collaboration { stroke: #B7D962; }
-.link.link-membership { stroke: #aaaaaa; }
+.link.link-commercial { stroke: #aaaaaa; }
 
 .arrow-head { transition: fill-opacity 0.3s ease; }
 .arrow-head.link-influence { fill: #9FC1E8; }
 .arrow-head.link-collaboration { fill: #B7D962; }
-.arrow-head.link-membership { fill: #aaaaaa; }
+.arrow-head.link.link-commercial { fill: #aaaaaa; }
 
 .node {
   cursor: pointer;
