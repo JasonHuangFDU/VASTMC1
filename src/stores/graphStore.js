@@ -127,8 +127,11 @@ export const useGraphStore = defineStore('graph', {
     },
 
     setHopLevel(level) {
-        if (this.hopLevel !== level) {
+        if (this.hopLevel !== level || this.isCollaborationFocusActive || this.isInfluenceFocusActive) {
             this.hopLevel = level;
+            // Deactivate any special focus modes when a hop level is explicitly set.
+            this.isCollaborationFocusActive = false;
+            this.isInfluenceFocusActive = false;
             this.updateGraphLayout();
         }
     },
@@ -304,20 +307,62 @@ export const useGraphStore = defineStore('graph', {
     },
 
     async toggleCollaborationFocus() {
+      // If it's currently active, we want to turn it off and restore the original graph.
       if (this.isCollaborationFocusActive) {
-        this._resetHighlights();
-        this.graphData = { ...this.graphData };
+        this.isCollaborationFocusActive = false;
+        // Restore the graph to its state before the focus was applied.
+        // The originalGraphData is saved after every layout update.
+        if (this.originalGraphData) {
+            this.graphData = JSON.parse(JSON.stringify(this.originalGraphData));
+        }
+        this.isLoading = false;
       } else {
-        await this._applyFocus(getFocusCollaborationData, 'isCollaborationFocusActive');
+        // If it's not active, we fetch the special collaboration graph.
+        this.isLoading = true;
+        this.error = null;
+        this._resetHighlights(); // Clear other focus states like influence focus
+
+        try {
+          const response = await getFocusCollaborationData();
+          // The backend now returns a full graph object, not just IDs.
+          // We replace the current graphData with this new focused graph.
+          this.graphData = response.data;
+          this.isCollaborationFocusActive = true;
+        } catch (e) {
+          this.error = `Failed to fetch collaboration focus data: ${e.toString()}`;
+          this.graphData = { nodes: [], links: [] }; // Clear graph on error
+        } finally {
+          this.isLoading = false;
+        }
       }
     },
 
     async toggleInfluenceFocus() {
+      // If it's currently active, we want to turn it off and restore the original graph.
       if (this.isInfluenceFocusActive) {
-        this._resetHighlights();
-        this.graphData = { ...this.graphData };
+        this.isInfluenceFocusActive = false;
+        // Restore the graph to its state before the focus was applied.
+        if (this.originalGraphData) {
+            this.graphData = JSON.parse(JSON.stringify(this.originalGraphData));
+        }
+        this.isLoading = false;
       } else {
-        await this._applyFocus(getFocusInfluenceData, 'isInfluenceFocusActive');
+        // If it's not active, we fetch the special influence graph.
+        this.isLoading = true;
+        this.error = null;
+        this._resetHighlights(); // Clear other focus states
+
+        try {
+          const response = await getFocusInfluenceData();
+          // The backend returns a full graph object to replace the current view.
+          this.graphData = response.data;
+          this.isInfluenceFocusActive = true;
+        } catch (e) {
+          this.error = `Failed to fetch influence focus data: ${e.toString()}`;
+          this.graphData = { nodes: [], links: [] }; // Clear graph on error
+        } finally {
+          this.isLoading = false;
+        }
       }
     },
     

@@ -1827,6 +1827,157 @@ def get_graph_layout():
     return jsonify(response_json)
 
 
+@app.route('/api/focus/collaboration', methods=['GET'])
+def focus_collaboration():
+    """
+    新功能：构建并返回以Sailor为中心的二跳合作网络。
+    只包含Sailor与他人合作的作品，排除她独立创作的作品。
+    高亮显示：
+    - Sailor (ID 17255)
+    - 与Sailor及其他艺术家共同合作的作品
+    - 参与这些合作的其他音乐人
+    - 以及它们之间的所有连接
+    """
+    if FULL_NETWORKX_GRAPH is None:
+        return jsonify({"error": "Graph data is not available."}), 500
+
+    SAILOR_ID = 17255
+    COLLABORATION_EDGES = {'LyricistOf', 'ComposerOf', 'ProducerOf'}
+
+    app.logger.info("构建 Sailor 的过滤后二跳合作网络...")
+
+    if not FULL_NETWORKX_GRAPH.has_node(SAILOR_ID):
+        app.logger.error(f"Sailor (ID: {SAILOR_ID}) 在图中未找到。")
+        return jsonify({"nodes": [], "links": []})
+
+    # 1. 找到所有与Sailor相关的作品
+    all_sailor_works = set()
+    for _, work_id, data in FULL_NETWORKX_GRAPH.out_edges(SAILOR_ID, data=True):
+        if data.get('Edge Type') in COLLABORATION_EDGES and FULL_NETWORKX_GRAPH.nodes[work_id].get('Node Type') in ['Song', 'Album']:
+            all_sailor_works.add(work_id)
+    for work_id, _, data in FULL_NETWORKX_GRAPH.in_edges(SAILOR_ID, data=True):
+        if data.get('Edge Type') in COLLABORATION_EDGES and FULL_NETWORKX_GRAPH.nodes[work_id].get('Node Type') in ['Song', 'Album']:
+            all_sailor_works.add(work_id)
+
+    # 2. 筛选出真正有合作者的作品
+    collaborative_works = set()
+    collaborators = set()
+    for work_id in all_sailor_works:
+        work_contributors = set()
+        # 查找该作品的所有贡献者
+        for person_id, _, data in FULL_NETWORKX_GRAPH.in_edges(work_id, data=True):
+            if data.get('Edge Type') in COLLABORATION_EDGES and FULL_NETWORKX_GRAPH.nodes[person_id].get('Node Type') == 'Person':
+                work_contributors.add(person_id)
+        
+        # 如果贡献者中除了Sailor还有其他人，则为合作作品
+        if len(work_contributors - {SAILOR_ID}) > 0:
+            collaborative_works.add(work_id)
+            collaborators.update(work_contributors)
+
+    app.logger.info(f"找到 {len(collaborative_works)} 个真正的合作作品。")
+    
+    # 3. 构建最终的节点集
+    # 移除Sailor自身，因为她会通过SAILOR_ID单独添加
+    collaborators.discard(SAILOR_ID)
+    nodes_in_subgraph = {SAILOR_ID} | collaborative_works | collaborators
+    
+    app.logger.info(f"过滤后的二跳网络共包含 {len(nodes_in_subgraph)} 个节点。")
+
+    # 4. 构建子图
+    subgraph = FULL_NETWORKX_GRAPH.subgraph(nodes_in_subgraph).copy()
+
+    # 5. 高亮所有节点和边
+    highlighted_nodes = set(subgraph.nodes())
+    highlighted_links = set()
+    for u, v in subgraph.edges():
+        highlighted_links.add((u, v))
+
+    # 6. 动态计算节点属性并格式化输出
+    process_dynamic_node_attributes(subgraph, None)
+    response_json = format_graph_for_d3(subgraph, highlighted_nodes, highlighted_links)
+
+    app.logger.info(f"过滤后的二跳合作网络生成完毕，返回 {len(response_json['nodes'])} 个节点和 {len(response_json['links'])} 条边。")
+    return jsonify(response_json)
+
+
+@app.route('/api/focus/influence', methods=['GET'])
+def focus_influence():
+    """
+    新功能：构建并返回以Sailor的创作为中心的二跳影响力网络。
+    只包含由Sailor创作(歌曲或专辑)，且被其他艺人演唱的作品。
+    高亮显示：
+    - Sailor (ID 17255)
+    - Sailor创作并被他人演唱的作品 (Song/Album)
+    - 演唱这些作品的艺人 (Person/MusicalGroup)
+    - 以及它们之间的所有连接
+    """
+    if FULL_NETWORKX_GRAPH is None:
+        return jsonify({"error": "Graph data is not available."}), 500
+
+    SAILOR_ID = 17255
+    CREATION_EDGES = {'LyricistOf', 'ComposerOf', 'ProducerOf'}
+    PERFORMANCE_EDGE = 'PerformerOf'
+    WORK_NODE_TYPES = ['Song', 'Album']
+    ARTIST_NODE_TYPES = ['Person', 'MusicalGroup']
+
+    app.logger.info("构建 Sailor 的最终过滤版二跳影响力网络...")
+
+    if not FULL_NETWORKX_GRAPH.has_node(SAILOR_ID):
+        app.logger.error(f"Sailor (ID: {SAILOR_ID}) 在图中未找到。")
+        return jsonify({"nodes": [], "links": []})
+
+    # 1. 找到所有由 Sailor 创作的作品 (Song 和 Album)
+    sailor_created_works = set()
+    # 检查出边和入边以确保完整性
+    for u, v, data in FULL_NETWORKX_GRAPH.edges(SAILOR_ID, data=True):
+        if data.get('Edge Type') in CREATION_EDGES and FULL_NETWORKX_GRAPH.nodes[v].get('Node Type') in WORK_NODE_TYPES:
+            sailor_created_works.add(v)
+    for u, v, data in FULL_NETWORKX_GRAPH.in_edges(SAILOR_ID, data=True):
+        if data.get('Edge Type') in CREATION_EDGES and FULL_NETWORKX_GRAPH.nodes[u].get('Node Type') in WORK_NODE_TYPES:
+            sailor_created_works.add(u)
+
+    # 2. 筛选出被其他艺人演唱的作品，并收集所有相关节点
+    nodes_to_include = {SAILOR_ID}
+    works_to_highlight = set()
+    performers_to_highlight = set()
+
+    for work_id in sailor_created_works:
+        # 找到这个作品的所有表演者
+        performers_of_work = {
+            performer_id for performer_id, _, data in FULL_NETWORKX_GRAPH.in_edges(work_id, data=True)
+            if data.get('Edge Type') == PERFORMANCE_EDGE and FULL_NETWORKX_GRAPH.nodes[performer_id].get('Node Type') in ARTIST_NODE_TYPES
+        }
+        
+        # 检查是否有除Sailor之外的表演者
+        if len(performers_of_work - {SAILOR_ID}) > 0:
+            works_to_highlight.add(work_id)
+            performers_to_highlight.update(performers_of_work)
+
+    app.logger.info(f"找到 {len(works_to_highlight)} 个由Sailor创作并被他人演唱的作品。")
+
+    # 3. 构建最终的节点集
+    nodes_to_include.update(works_to_highlight)
+    nodes_to_include.update(performers_to_highlight)
+    
+    app.logger.info(f"最终影响力网络共包含 {len(nodes_to_include)} 个节点。")
+
+    # 4. 构建子图
+    subgraph = FULL_NETWORKX_GRAPH.subgraph(nodes_to_include).copy()
+
+    # 5. 高亮所有节点和边
+    highlighted_nodes = set(subgraph.nodes())
+    highlighted_links = set()
+    for u, v in subgraph.edges():
+        highlighted_links.add((u, v))
+
+    # 6. 动态计算节点属性并格式化输出
+    process_dynamic_node_attributes(subgraph, None)
+    response_json = format_graph_for_d3(subgraph, highlighted_nodes, highlighted_links)
+
+    app.logger.info(f"最终影响力网络生成完毕，返回 {len(response_json['nodes'])} 个节��和 {len(response_json['links'])} 条边。")
+    return jsonify(response_json)
+
+
 @app.route('/api/graph/focus-sailor-collaborators', methods=['GET'])
 def get_focus_sailor_collaborators():
     """
@@ -2068,7 +2219,7 @@ def get_three_hop_neighborhood(graph, start_node_id):
     
     # 将子图转换为 node-link 数据格式，以便发送到前端
     return nx.node_link_data(three_hop_subgraph)
-
+"""
 @app.route('/api/focus/collaboration')
 def focus_collaboration():
     app.logger.info("[API] /api/focus/collaboration called (v2 - link object fix)")
@@ -2094,7 +2245,6 @@ def focus_collaboration():
             v for u, v, d in FULL_NETWORKX_GRAPH.edges(artist_id, data=True)
             if d.get('Edge Type') in creation_edge_types and FULL_NETWORKX_GRAPH.nodes[v].get('Node Type') in ['Song', 'Album']
         }
-        
         common_works = artist_works.intersection(sailor_works)
         if common_works:
             highlight_nodes.add(artist_id)
@@ -2160,7 +2310,7 @@ def focus_influence():
     unique_links = [dict(t) for t in {tuple(d.items()) for d in highlight_links}]
     app.logger.info(f"[API] Influence: Found {len(highlight_nodes)} nodes and {len(unique_links)} unique links.")
     return jsonify({"nodes": list(highlight_nodes), "links": unique_links})
-
+"""
 
 
 

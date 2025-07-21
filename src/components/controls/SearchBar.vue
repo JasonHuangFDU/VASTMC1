@@ -81,12 +81,12 @@
         <button @click="toggleDropdown('edgeTypes')" class="dropdown-toggle">Edge Types ({{ selectedEdgeTypes.length || 'All' }})</button>
         <div v-if="activeDropdown === 'edgeTypes'" class="dropdown-menu edge-type-dropdown">
           <div class="dropdown-item aggregate-item">
-            <input type="checkbox" id="edge-group-influence" v-model="influenceEdges" />
-            <label for="edge-group-influence">Influence Edges</label>
+            <input type="checkbox" id="edge-group-inspiration" v-model="inspirationEdges" />
+            <label for="edge-group-inspiration">Inspiration Edges</label>
           </div>
           <div class="dropdown-item aggregate-item">
-            <input type="checkbox" id="edge-group-collaboration" v-model="collaborationEdges" />
-            <label for="edge-group-collaboration">Collaboration Edges</label>
+            <input type="checkbox" id="edge-group-create" v-model="createEdges" />
+            <label for="edge-group-create">Create Edges</label>
           </div>
           <div class="dropdown-item aggregate-item">
             <input type="checkbox" id="edge-group-commercial" v-model="commercialEdges" />
@@ -123,8 +123,8 @@ const {
 } = storeToRefs(store);
 
 // --- 边类型分组 ---
-const INFLUENCE_EDGES = ['InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'];
-const COLLABORATION_EDGES = ['PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf', 'MemberOf'];
+const INSPIRATION_EDGES = ['InStyleOf', 'InterpolatesFrom', 'CoverOf', 'LyricalReferenceTo', 'DirectlySamples'];
+const CREATE_EDGES = ['PerformerOf', 'ComposerOf', 'ProducerOf', 'LyricistOf'];
 const COMMERCIAL_EDGES = ['RecordedBy', 'DistributedBy'];
 
 // --- 聚合选择的计算属性 ---
@@ -146,8 +146,8 @@ const createEdgeGroupComputer = (edgeGroup) => {
   });
 };
 
-const influenceEdges = createEdgeGroupComputer(INFLUENCE_EDGES);
-const collaborationEdges = createEdgeGroupComputer(COLLABORATION_EDGES);
+const inspirationEdges = createEdgeGroupComputer(INSPIRATION_EDGES);
+const createEdges = createEdgeGroupComputer(CREATE_EDGES);
 const commercialEdges = createEdgeGroupComputer(COMMERCIAL_EDGES);
 
 

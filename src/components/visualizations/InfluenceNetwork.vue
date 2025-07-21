@@ -5,36 +5,36 @@
       <div class="hop-toggle-group">
         <button 
           @click="setHopLevel(1)" 
-          :class="['hop-toggle-button', { active: store.hopLevel === 1 && !store.isSankeyFiltered }]"
-          :disabled="store.isSankeyFiltered"
+          :class="['hop-toggle-button', { active: store.hopLevel === 1 && !store.isSankeyFiltered && !store.isCollaborationFocusActive && !store.isInfluenceFocusActive }]"
+          :disabled="store.isSankeyFiltered || store.isCollaborationFocusActive || store.isInfluenceFocusActive"
         >
           One Hop
         </button>
         <button 
           @click="setHopLevel(2)" 
-          :class="['hop-toggle-button', { active: store.hopLevel === 2 && !store.isSankeyFiltered }]"
+          :class="['hop-toggle-button', { active: (store.hopLevel === 2 || store.isCollaborationFocusActive || store.isInfluenceFocusActive) && !store.isSankeyFiltered }]"
           :disabled="store.isSankeyFiltered"
         >
           Two Hops
         </button>
         <button 
           @click="setHopLevel(3)" 
-          :class="['hop-toggle-button', { active: store.hopLevel === 3 && !store.isSankeyFiltered }]"
-          :disabled="store.isSankeyFiltered"
+          :class="['hop-toggle-button', { active: store.hopLevel === 3 && !store.isSankeyFiltered && !store.isCollaborationFocusActive && !store.isInfluenceFocusActive }]"
+          :disabled="store.isSankeyFiltered || store.isCollaborationFocusActive || store.isInfluenceFocusActive"
         >
           Three Hops
         </button>
         <button 
           @click="store.toggleCollaborationFocus()" 
           :class="['hop-toggle-button', { active: store.isCollaborationFocusActive }]"
-          :disabled="store.isSankeyFiltered"
+          :disabled="store.isSankeyFiltered || store.isInfluenceFocusActive"
         >
           Focus on Collaboration
         </button>
         <button 
           @click="store.toggleInfluenceFocus()" 
           :class="['hop-toggle-button', { active: store.isInfluenceFocusActive }]"
-          :disabled="store.isSankeyFiltered"
+          :disabled="store.isSankeyFiltered || store.isCollaborationFocusActive"
         >
           Focus on Influence
         </button>
