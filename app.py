@@ -2145,4 +2145,4 @@ if __name__ == '__main__':
     load_graph_data()
     # 运行Flask应用
     # 注意：在生产环境中，应使用Gunicorn或uWSGI等WSGI服务器
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)
