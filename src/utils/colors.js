@@ -24,7 +24,7 @@ export const appColors = {
     '#9FC1E8', // 3: 柔和蓝
     '#CCB8D2', // 4: 柔和紫罗兰
     '#8DE3C7', // 5: 柔和薄荷绿
-    '#FFC599', // 6: 柔和蜜桃色
+    '#d9f7c2ff', // 6: 柔和蜜桃色
     '#A0A0A0', // 7: 中性灰
     '#6A9B9B', // 8: 柔和青
     '#D3A9C8', // 9: 柔和玫粉紫
@@ -49,7 +49,7 @@ export const appColors = {
   // --- 特定实体颜色 ---
   // 如果某些特定艺术家或流派需要固定颜色，可以在这里定义
   sailorShift: '#FF6F61', // Sailor Shift 的专属颜色，更鲜明一些以突出
-  oceanusFolk: '#6B7A8F', // Oceanus Folk 的专属颜色，沉稳的蓝灰色
+  oceanusFolk: '#FFC599', // Oceanus Folk 的专属颜色，沉稳的蓝灰色
   
   // --- 节点类型颜色 (桑基图) ---
   // 这些颜色可以帮助区分不同类型的节点（例如：艺术家、流派）

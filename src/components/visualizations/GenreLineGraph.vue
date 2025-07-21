@@ -24,7 +24,7 @@
     </div>
     
     <div class="chart-body">
-      <div v-if="loading" class="loading-text">正在加载图表数据...</div>
+      <div v-if="loading" class="loading-text">Loading...</div>
       <VChart
         v-else
         class="chart"
@@ -125,7 +125,7 @@ const chartOption = computed(() => {
   }));
   
   const lineSeries = {
-    name: showNotableOnly.value ? 'Notable影响总数' : '影响总数', 
+    name: showNotableOnly.value ? 'Notable影响总数' : 'Influence', 
     type: 'line', 
     smooth: true,
     symbol: 'circle',
