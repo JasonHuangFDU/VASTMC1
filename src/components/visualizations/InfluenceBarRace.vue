@@ -1,617 +1,264 @@
 <template>
-  <div class="bar-race-container">
-    
-    <!-- 1. Controls Area (Sidebar) -->
-    <div class="controls">
-      <button @click="togglePlay" class="control-btn">
-        <svg v-if="isPlaying" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-        <span>{{ isPlaying ? 'Pause' : 'Play' }}</span>
-      </button>
-
-      <div class="slider-container">
-        <div class="slider-header">
-          <label for="year-slider">Year</label>
-          <span class="year-display">{{ currentYear }}</span>
-        </div>
-        <input
-          type="range"
-          id="year-slider"
-          :min="startYear"
-          :max="endYear"
-          v-model.number="currentYear"
-          class="year-slider"
-          @input="handleYearSliderChange"
-        />
-      </div>
-
-      <div class="top-n-container">
-        <label for="top-n-input">Top</label>
-        <input type="number" id="top-n-input" v-model.number="n" min="3" max="20" class="top-n-input" @change="updateTopN" />
-      </div>
-
-      <button @click="jumpToMax" class="control-btn-text">
-        Jump to Peak Year
-      </button>
-    </div>
-
-    <!-- 2. Chart Area (Main Right Area) -->
-    <div class="chart-wrapper">
-      <div v-if="loading" class="loading-overlay">
-        <div class="spinner"></div>
-        <p>Chart loading...</p>
-      </div>
-      <div ref="chartDom" class="chart"></div>
-      <div class="year-watermark">{{ currentYear }}</div>
-    </div>
-    
-    <!-- Tooltip moved outside -->
+  <div class="bubble-chart-container">
+    <div ref="chartRef" class="chart"></div>
     <div ref="tooltipRef" class="tooltip"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, watch, nextTick, onUnmounted } from 'vue';
 import * as d3 from 'd3';
-import { useGraphStore } from '@/stores/graphStore'; // 新增：导入 store
-
-// --- Store ---
-const graphStore = useGraphStore(); // New: Initialize store
-
-// --- Color Palette ---
-const colors = {
-  default: '#5DADE2',
-  highlight: '#F1948A',
-  hover: '#3498DB'
-};
+import { appColors } from '@/utils/colors.js';
 
 // --- Props ---
 const props = defineProps({
-  data: Object,
-  maxInfluenceInfo: Object,
+  data: {
+    type: Object,
+    required: true,
+  },
 });
 
-// --- Reactive State ---
-const isPlaying = ref(false);
-const wasPlayingBeforeHover = ref(false);
-const currentYearIndex = ref(0);
-const n = ref(5);
-const years = ref([]);
-const intervalId = ref(null);
-const currentYear = ref(0);
-const loading = ref(true);
-
-const startYear = ref(1965);
-const endYear = ref(2040);
-
 // --- DOM References ---
-const chartDom = ref(null);
+const chartRef = ref(null);
 const tooltipRef = ref(null);
 
-// --- D3 Chart Variables ---
-const margin = { top: 20, right: 30, bottom: 100, left: 60 };
-let chartWidth;
-let chartHeight;
-let svg;
-let xScale, yScale;
+// --- D3 Simulation Reference ---
+let simulation = null;
 
-// --- Core Business Logic Functions ---
+// --- Chart Logic ---
+const drawChart = () => {
+  if (!props.data || !chartRef.value) return;
 
-const processData = (rawData) => {
-  if (!rawData) return;
-  const yearKeys = Object.keys(rawData).filter(key => key !== 'max_info').sort();
-  years.value = yearKeys;
-
-  if (years.value.length > 0) {
-    startYear.value = parseInt(years.value[0]);
-    endYear.value = parseInt(years.value[years.value.length - 1]);
-    if (currentYear.value < startYear.value || currentYear.value > endYear.value) {
-        currentYear.value = startYear.value;
-        currentYearIndex.value = 0;
-    }
+  if (simulation) {
+    simulation.stop();
   }
-};
 
-const togglePlay = () => {
-  isPlaying.value = !isPlaying.value;
-};
+  // 1. --- Data Processing ---
+  const rawData = props.data;
+  const allPersons = new Set();
+  const flatData = Object.entries(rawData)
+    .filter(([key]) => !isNaN(key))
+    .flatMap(([year, entries]) => {
+      return entries.map(d => {
+        allPersons.add(d.name);
+        return {
+          ...d,
+          year: +year,
+          'Influence score': +d['Influence score'],
+        };
+      });
+    });
 
-const jumpToMax = () => {
-  if (props.maxInfluenceInfo && years.value.length > 0) {
-    const maxYear = String(props.maxInfluenceInfo.year);
-    const index = years.value.indexOf(maxYear);
-    if (index !== -1) {
-      if (isPlaying.value) isPlaying.value = false;
-      currentYear.value = parseInt(maxYear);
-      currentYearIndex.value = index;
-    }
-  }
-};
+  if (flatData.length === 0) return;
+  
+  const nodes = flatData.map(d => ({...d}));
+  const uniqueYears = [...new Set(nodes.map(d => d.year))].sort((a, b) => a - b);
 
-const handleYearSliderChange = () => {
-  const index = years.value.indexOf(String(currentYear.value));
-  if (index !== -1) currentYearIndex.value = index;
-  if (isPlaying.value) isPlaying.value = false;
-};
+  // 2. --- Color Scale ---
+  const personColor = d3.scaleOrdinal(appColors.categoryPalette).domain(Array.from(allPersons));
 
-const updateTopN = () => {
-  if (props.data && props.data[currentYear.value]) {
-    updateChart(props.data[currentYear.value]);
-  }
-};
+  // 3. --- Dimensions & SVG Setup ---
+  d3.select(chartRef.value).select('svg').remove();
 
-// --- 图表和播放控制 ---
+  const margin = { top: 40, right: 40, bottom: 80, left: 60 }; // Increased bottom margin
+  const width = chartRef.value.clientWidth - margin.left - margin.right;
+  const height = chartRef.value.clientHeight - margin.top - margin.bottom;
 
-const initChart = () => {
-  if (!chartDom.value) return;
-  d3.select(chartDom.value).select('svg').remove();
-
-  const containerWidth = chartDom.value.clientWidth;
-  const containerHeight = chartDom.value.clientHeight;
-  chartWidth = containerWidth - margin.left - margin.right;
-  chartHeight = containerHeight - margin.top - margin.bottom;
-
-  svg = d3.select(chartDom.value)
+  const svg = d3.select(chartRef.value)
     .append('svg')
-    .attr('width', containerWidth)
-    .attr('height', containerHeight)
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom)
     .append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
 
-  xScale = d3.scaleBand().range([0, chartWidth]).padding(0.1);
-  yScale = d3.scaleLinear().range([chartHeight, 0]);
+  // 4. --- Scales ---
+  const [minYear, maxYear] = d3.extent(nodes, d => d.year);
+  const maxInfluence = d3.max(nodes, d => d['Influence score']);
 
-  svg.append('g').attr('class', 'x-axis').attr('transform', `translate(0,${chartHeight})`);
-  svg.append('g').attr('class', 'y-axis');
+  const xScale = d3.scaleLinear()
+    .domain([minYear - 1, maxYear + 1])
+    .range([0, width]);
 
-  svg.append("text")
-    .attr("class", "y-axis-label")
-    .attr("transform", "rotate(-90)")
-    .attr("y", 0 - margin.left + 20)
-    .attr("x", 0 - (chartHeight / 2))
-    .attr("dy", "1em")
-    .style("text-anchor", "middle")
-    .text("Influence Score");
-};
+  const yScale = d3.scaleLinear()
+    .domain([0, maxInfluence * 1.1])
+    .range([height, 0]);
 
-const updateChart = (yearData) => {
-  if (!yearData || !svg) return;
+  const radiusScale = d3.scaleSqrt()
+    .domain([0, maxInfluence])
+    .range([4, 45]);
 
-  const sortedData = yearData
-    .sort((a, b) => b['Influence score'] - a['Influence score'])
-    .slice(0, n.value);
+  // 5. --- Axes ---
+  const xAxis = d3.axisBottom(xScale)
+    .tickValues(uniqueYears)
+    .tickFormat(d3.format('d'))
+    .tickSize(-height) // Create grid lines
+    .tickPadding(15); // Increased padding for ticks
+    
+  const yAxis = d3.axisLeft(yScale)
+    .tickValues([3, 6])
+    .tickSize(-width) // Create grid lines
+    .tickPadding(10);
 
-  xScale.domain(sortedData.map(d => `${d.name} (${d['node id']})`));
-  yScale.domain([0, 78]);
+  const xAxisGroup = svg.append('g')
+    .attr('class', 'x-axis axis-grid')
+    .attr('transform', `translate(0,${height})`)
+    .call(xAxis);
 
-  svg.select('.x-axis').transition().duration(500).call(d3.axisBottom(xScale))
-    .selectAll("text")
-    .attr("transform", "rotate(0)")
-    .style("text-anchor", "middle")
-    .attr("dx", "0em")
-    .attr("dy", "1em");
+  const yAxisGroup = svg.append('g')
+    .attr('class', 'y-axis axis-grid')
+    .call(yAxis);
 
-  svg.select('.y-axis').transition().duration(500).call(d3.axisLeft(yScale));
+  // Hide domain lines for a cleaner look
+  xAxisGroup.select('.domain').remove();
+  yAxisGroup.select('.domain').remove();
 
-  const bars = svg.selectAll('.bar').data(sortedData, d => d['node id']);
+  svg.append('text').attr('class', 'axis-label').attr('text-anchor', 'middle').attr('x', width / 2).attr('y', height + margin.bottom - 25).text('Year');
+  svg.append('text').attr('class', 'axis-label').attr('text-anchor', 'middle').attr('transform', 'rotate(-90)').attr('x', -height / 2).attr('y', -margin.left + 20).text('Influence Score');
 
-  bars.enter().append('rect')
-    .attr('class', 'bar')
-    .attr('rx', 3) // Add rounded corners
-    .attr('ry', 3) // Add rounded corners
-    .merge(bars)
-    .attr('x', d => xScale(`${d.name} (${d['node id']})`))
-    .attr('width', xScale.bandwidth())
-    .attr('y', d => yScale(d['Influence score']))
-    .attr('height', d => chartHeight - yScale(d['Influence score']))
-    .attr('fill', d => {
-      const isPeakYearBar = props.maxInfluenceInfo &&
-                    d['node id'] === props.maxInfluenceInfo.node_id &&
-                    String(currentYear.value) === String(props.maxInfluenceInfo.year);
-      const hasMaxScore = d['Influence score'] === 78;
-      return isPeakYearBar || hasMaxScore ? colors.highlight : colors.default;
-    })
+  // 6. --- Tooltip & Hover Handlers ---
+  const tooltip = d3.select(tooltipRef.value);
+
+  const handleMouseOver = (event, d) => {
+    tooltip.style('opacity', 1);
+    d3.select(event.currentTarget).attr('stroke', 'black').attr('stroke-width', 2).style('opacity', 1);
+    d.fx = d.x;
+    d.fy = d.y;
+  };
+
+  const handleMouseMove = (event, d) => {
+    tooltip.html(`<strong>${d.name}</strong><br>Year: ${d.year}<br>Influence: ${d['Influence score']}`)
+      .style('left', `${event.pageX + 15}px`)
+      .style('top', `${event.pageY - 10}px`);
+  };
+
+  const handleMouseOut = (event, d) => {
+    tooltip.style('opacity', 0);
+    d3.select(event.currentTarget).attr('stroke', 'none').style('opacity', 0.8);
+    d.fx = null;
+    d.fy = null;
+  };
+
+  // 7. --- Draw Bubbles ---
+  const bubbles = svg.append('g')
+    .selectAll('circle')
+    .data(nodes)
+    .join('circle')
+    .attr('class', 'bubble')
+    .attr('r', d => radiusScale(d['Influence score']))
+    .attr('fill', d => personColor(d.name))
+    .style('opacity', 0.8) // Use style for opacity
     .on('mouseover', handleMouseOver)
-    .on('mouseout', handleMouseOut)
-    .on('click', handleClick); // 新增：点击事件
+    .on('mousemove', handleMouseMove)
+    .on('mouseout', handleMouseOut);
 
-  bars.exit().transition().duration(500)
-    .attr('height', 0)
-    .attr('y', chartHeight)
-    .remove();
-
-  const labels = svg.selectAll('.bar-label').data(sortedData, d => d['node id']);
-
-  labels.enter().append('text')
-    .attr('class', 'bar-label')
-    .merge(labels)
-    .transition().duration(500)
-    .attr('x', d => xScale(`${d.name} (${d['node id']})`) + xScale.bandwidth() / 2)
-    .attr('y', d => yScale(d['Influence score']) - 5)
-    .text(d => d['Influence score']);
-
-  labels.exit().transition().duration(500)
-    .attr('y', chartHeight)
-    .remove();
+  // 8. --- Force Simulation ---
+  simulation = d3.forceSimulation(nodes)
+    .force('x', d3.forceX(d => xScale(d.year)).strength(0.8))
+    .force('y', d3.forceY(d => yScale(d['Influence score'])).strength(0.8))
+    .force('collide', d3.forceCollide(d => radiusScale(d['Influence score']) + 2).strength(0.9))
+    .on('tick', () => {
+      bubbles
+        .each(d => {
+          const radius = radiusScale(d['Influence score']);
+          d.x = Math.max(radius, Math.min(width - radius, d.x));
+          d.y = Math.max(radius, Math.min(height - radius, d.y));
+        })
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y);
+    });
 };
 
-// --- 事件处理器 ---
-function handleMouseOver(event, d) {
-  wasPlayingBeforeHover.value = isPlaying.value;
-  if (isPlaying.value) isPlaying.value = false;
-
-  d3.select(event.currentTarget).attr('fill', colors.hover);
-
-  const yearIndex = currentYear.value - 1965;
-  const cumulativeNotability = d.notability_score.slice(0, yearIndex + 1).reduce((a, b) => a + b, 0);
-
-  const tooltip = tooltipRef.value;
-  if (!tooltip) return;
-  
-  tooltip.innerHTML = `
-    <strong>ID:</strong> ${d['node id']}<br>
-    <strong>Name:</strong> ${d.name}<br>
-    <strong>Influence Score:</strong> ${d['Influence score']}<br>
-    <strong>Notability (${currentYear.value}):</strong> ${cumulativeNotability}
-  `;
-  tooltip.style.display = 'block';
-  tooltip.style.opacity = 1;
-  tooltip.style.left = `${event.pageX + 15}px`;
-  tooltip.style.top = `${event.pageY - 28}px`;
-}
-
-function handleMouseOut(event, d) {
-  if (wasPlayingBeforeHover.value) isPlaying.value = true;
-
-  const isPeakYearBar = props.maxInfluenceInfo &&
-                d['node id'] === props.maxInfluenceInfo.node_id &&
-                String(currentYear.value) === String(props.maxInfluenceInfo.year);
-  const hasMaxScore = d['Influence score'] === 78;
-  d3.select(event.currentTarget).attr('fill', isPeakYearBar || hasMaxScore ? colors.highlight : colors.default);
-
-  const tooltip = tooltipRef.value;
-  if (!tooltip) return;
-
-  tooltip.style.display = 'none';
-  tooltip.style.opacity = 0;
-}
-
-// 新增：点击事件处理器
-function handleClick(event, d) {
-  console.log(`Bar clicked for node ID: ${d['node id']}`);
-  graphStore.showArtistComparison(d['node id']);
-  // 如果正在播放，则暂停
-  if (isPlaying.value) {
-    isPlaying.value = false;
-  }
-  // 关键：重置悬停前的播放状态，防止鼠标移出后自动播放
-  wasPlayingBeforeHover.value = false;
-}
-
-const play = () => {
-  if (intervalId.value) clearInterval(intervalId.value);
-  intervalId.value = setInterval(() => {
-    let nextIndex = currentYearIndex.value + 1;
-    if (nextIndex >= years.value.length) nextIndex = 0;
-    currentYearIndex.value = nextIndex;
-    currentYear.value = parseInt(years.value[nextIndex]);
-  }, 1500);
-};
-
-const pause = () => {
-  clearInterval(intervalId.value);
-  intervalId.value = null;
-};
-
-// --- 生命周期钩子和侦听器 ---
-
+// --- Lifecycle Hooks ---
 onMounted(() => {
-  loading.value = true;
-  initChart();
-  processData(props.data);
-  if (years.value.length > 0) {
-    updateChart(props.data[currentYear.value]);
-    togglePlay();
-  }
-  loading.value = false;
+  nextTick(() => {
+    drawChart();
+  });
+});
 
+onUnmounted(() => {
+  if (simulation) {
+    simulation.stop();
+  }
+});
+
+// --- Watchers ---
+watch(() => props.data, () => {
+  nextTick(() => {
+    drawChart();
+  });
+}, { deep: true });
+
+// --- Responsive Chart ---
+onMounted(() => {
   const resizeObserver = new ResizeObserver(() => {
-    initChart();
-    if (props.data && props.data[currentYear.value]) {
-      updateChart(props.data[currentYear.value]);
+    nextTick(() => {
+      drawChart();
+    });
+  });
+  if (chartRef.value) {
+    resizeObserver.observe(chartRef.value);
+  }
+  onUnmounted(() => {
+    if (chartRef.value) {
+      resizeObserver.unobserve(chartRef.value);
     }
   });
-  if (chartDom.value) resizeObserver.observe(chartDom.value);
-
-  onUnmounted(() => {
-    pause();
-    if (chartDom.value) resizeObserver.unobserve(chartDom.value);
-  });
-});
-
-watch(() => props.data, (newData) => {
-  processData(newData);
-  if (years.value.length > 0) {
-    updateChart(newData[currentYear.value]);
-  }
-});
-
-watch(isPlaying, (newVal) => {
-  if (newVal) play();
-  else pause();
-});
-
-watch(currentYear, (newYear) => {
-  if (props.data && props.data[newYear]) {
-    updateChart(props.data[newYear]);
-    const index = years.value.indexOf(String(newYear));
-    if (index !== -1) currentYearIndex.value = index;
-  }
-});
-
-watch(n, () => {
-  if (props.data && props.data[currentYear.value]) {
-    updateChart(props.data[currentYear.value]);
-  }
 });
 
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
-
-.bar-race-container {
-  position: relative;
-  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: row;
-  gap: 1.5rem;
+.bubble-chart-container {
   width: 100%;
   height: 100%;
-  box-sizing: border-box;
-}
-
-.controls {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 1.5rem;
-  flex-shrink: 0;
-  width: 260px;
-  padding: 1.5rem;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
-
-.chart-wrapper {
-  position: relative;
-  background: #fff;
-  border-radius: 12px;
-  flex-grow: 1;
-  min-width: 0;
+  justify-content: center;
+  align-items: center;
+  background-color: #FFFFFF; /* Pure white background */
+  font-family: 'Nunito', sans-serif;
 }
 
 .chart {
   width: 100%;
-  height: 100%; 
+  height: 100%;
 }
 
 .tooltip {
   position: absolute;
-  display: none;
   opacity: 0;
-  background-color: #ffffff;
-  color: #374151;
-  padding: 10px 15px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: 'Nunito', sans-serif;
-  pointer-events: none;
-  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-  z-index: 20;
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-}
-
-.slider-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.slider-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.year-display {
-  font-weight: 700;
-  font-size: 1.2rem;
-  color: #2c3e50;
-  background-color: #e9ecef;
-  padding: 0.2rem 0.6rem;
-  border-radius: 6px;
-}
-
-.top-n-container {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 1rem;
-}
-
-@media (max-width: 860px) {
-  .bar-race-container { 
-    flex-direction: column; 
-    height: auto;
-  }
-  
-  .controls { 
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  
-  .top-n-container {
-    justify-content: space-between;
-  }
-}
-
-.control-btn, .control-btn-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-.control-btn {
-  background: linear-gradient(45deg, #3498db, #2980b9);
+  background-color: rgba(0, 0, 0, 0.75);
   color: white;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
-}
-.control-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
-}
-.control-btn-text {
-  background: none;
-  color: #3498db;
-}
-.control-btn-text:hover {
-  background-color: rgba(52, 152, 219, 0.1);
-}
-
-label {
-  font-weight: 700;
-  color: #555;
-}
-
-.year-slider {
-  width: 100%;
-  -webkit-appearance: none; appearance: none;
-  height: 8px;
-  background: #e9ecef;
-  border-radius: 4px;
-  outline: none;
-  transition: background 0.2s;
-}
-.year-slider::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 20px; height: 20px;
-  background: #fff;
-  border: 3px solid #3498db;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-.year-slider:hover::-webkit-slider-thumb {
-  transform: scale(1.1);
-}
-
-.top-n-input {
-  width: 60px;
-  padding: 0.5rem;
-  border: 1px solid #ced4da;
+  padding: 8px 12px;
   border-radius: 6px;
-  text-align: center;
-  font-size: 1rem;
-  font-weight: 700;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.top-n-input:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-}
-
-.year-watermark {
-  position: absolute;
-  bottom: 5%; right: 5%;
-  font-size: clamp(60px, 15vw, 150px);
-  font-weight: 900;
-  color: rgba(0, 0, 0, 0.07);
-  z-index: 0;
+  font-size: 14px;
   pointer-events: none;
-  user-select: none;
-}
-
-.loading-overlay {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(255, 255, 255, 0.8);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  transition: opacity 0.2s ease-in-out;
+  white-space: nowrap;
   z-index: 10;
 }
-.spinner {
-  width: 50px; height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #3498db;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-.loading-overlay p {
-  margin-top: 1rem;
-  font-size: 1rem;
-  color: #555;
-}
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* === Axis Beautification === */
-:deep(.x-axis .domain),
-:deep(.y-axis .domain) {
-  stroke: #d1d5db; /* A light grey for the main axis line */
-  stroke-width: 1px;
-}
-
-:deep(.x-axis .tick line),
-:deep(.y-axis .tick line) {
-  stroke: #e5e7eb; /* An even lighter grey for tick lines */
-}
-
-:deep(.x-axis text),
-:deep(.y-axis text) {
-  font-family: 'Nunito', sans-serif;
-  font-size: 12px;
-  fill: #4b5563; /* A slightly darker, more saturated grey for better readability */
-}
-
-:deep(.y-axis-label) {
-  font-family: 'Nunito', sans-serif;
+:deep(.axis-label) {
   font-size: 14px;
-  fill: #374151; /* Darker for the main label */
-  font-weight: 700;
+  fill: #666666; /* textSecondary */
+  font-weight: 400; /* Normal weight */
 }
 
-
-.bar-label {
-  font-size: 11px;
-  fill: #333;
-  font-weight: bold;
+:deep(.axis-grid .tick text) {
+  font-size: 12px;
+  fill: #666666; /* textSecondary */
 }
-.bar {
-  transition: fill 0.2s ease;
-  cursor: pointer; /* 新增：显示可点击光标 */
+
+:deep(.axis-grid .tick line) {
+  stroke: #E0E0E0; /* border color */
+  stroke-dasharray: 2,2; /* Dashed grid lines */
+}
+
+.bubble {
+  cursor: pointer;
+  transition: opacity 0.2s ease, stroke 0.2s ease;
+}
+
+.bubble:hover {
+  opacity: 1;
 }
 </style>

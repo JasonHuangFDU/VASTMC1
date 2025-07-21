@@ -8,14 +8,14 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import InfluenceBarRace from '@/components/visualizations/InfluenceBarRace.vue';
-import { loadInfluenceDataSailor } from '@/services/dataService';
+import { loadInfluenceData } from '@/services/dataService';
 
 const influenceData = ref(null);
 const maxInfluenceInfo = ref(null);
 
 onMounted(async () => {
   try {
-    const data = await loadInfluenceDataSailor();
+    const data = await loadInfluenceData();
     console.log("加载的影响力数据:", data);
     influenceData.value = data;
 

@@ -356,6 +356,13 @@ export async function loadInfluenceDataSailor() {
   return influenceData;
 }
 
+export async function loadInfluenceData() {
+  console.log("Loading influence_data.json...");
+  const influenceData = await d3.json('/influence_data.json');
+  console.log("influence_data.json loaded:", influenceData);
+  return influenceData;
+}
+
 /**
  * Fetches the focus graph of Sailor Shift's collaborators who were also influenced by her.
  * @returns {Promise<object>} D3-compatible graph data.
