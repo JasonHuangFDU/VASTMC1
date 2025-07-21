@@ -126,7 +126,7 @@ import { processArtistData } from '@/services/dataService';
 import { getGenreColor } from '@/utils/colors';
 
 // 定义默认艺术家的ID
-const DEFAULT_ARTIST_IDS = [17255, 17155, 17126];
+const DEFAULT_ARTIST_IDS = [17255, 17349, 17355];
 
 export default {
   name: 'CareerTrajectory',
@@ -340,6 +340,13 @@ export default {
         console.log('图数据加载完成', graphData.value);
 
         selectedArtists.value = [...DEFAULT_ARTIST_IDS];
+        // +++ 新增代码：设置默认艺术家的名称到搜索输入框 +++
+        selectedArtists.value.forEach((id, index) => {
+          const artist = graphData.value.nodes.find(node => node.id === id);
+          if (artist) {
+            artistSearchInputs.value[index] = artist.name;
+          }
+        });
 
         nextTick(() => {
           console.log("加载默认艺术家对比数据");
@@ -451,7 +458,7 @@ export default {
     // 渲染主图表
     const renderMainChart = () => {
       const datasets = [];
-      const verticalOffsets = [0, 0.2, 0.4];
+      const verticalOffsets = [0, 0.3, 0.6];
 
       comparisonData.value.forEach((artist, index) => {
         const color = getArtistColor(index);

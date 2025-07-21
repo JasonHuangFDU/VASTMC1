@@ -223,7 +223,7 @@ export default {
       const height = container.clientHeight;
       if (width === 0 || height === 0) return;
 
-      const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+      const margin = { top: 30, right: 30, bottom: 30, left: 30 };
       const innerWidth = width - margin.left - margin.right;
       const innerHeight = height - margin.top - margin.bottom;
       const radius = Math.min(innerWidth, innerHeight) / 2;
