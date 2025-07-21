@@ -1,7 +1,7 @@
 <template>
   <div class="bottom-view-container">
     <InfluenceBarRace :data="influenceData" :maxInfluenceInfo="maxInfluenceInfo" v-if="influenceData" />
-    <div v-else>加载影响力数据中...</div>
+    <div v-else>Loading data</div>
   </div>
 </template>
 
@@ -16,15 +16,15 @@ const maxInfluenceInfo = ref(null);
 onMounted(async () => {
   try {
     const data = await loadInfluenceData();
-    console.log("加载的影响力数据:", data);
+    //console.log("加载的影响力数据:", data);
     influenceData.value = data;
 
     // 计算最大影响力信息
-    let maxScore = data['max_info'].max_score;
-    let maxNodeId = data['max_info'].influencer;
-    let maxYear = data['max_info'].year;
-    let maxName = data['max_info'].name;
-    console.log("最大影响力信息:", maxNodeId, maxName, maxYear, maxScore);
+    let maxScore = null;
+    let maxNodeId = null;
+    let maxYear = null;
+    let maxName = null;
+    //console.log("最大影响力信息:", maxNodeId, maxName, maxYear, maxScore);
     maxInfluenceInfo.value = {
       node_id: maxNodeId,
       name: maxName,

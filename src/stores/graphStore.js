@@ -10,7 +10,8 @@ import {
     getFocusCollaborationData,
     getFocusInfluenceData,
     fetchSankeyInteractionData,
-    fetchInwardSankeyInteractionData
+    fetchInwardSankeyInteractionData,
+    fetchCollaborationGraph
 } from '../services/dataService';
 import { debounce } from 'lodash-es';
 
@@ -366,6 +367,26 @@ export const useGraphStore = defineStore('graph', {
       }
     },
     
+    async showCollaborationWithSailor(artistId) {
+        this.isLoading = true;
+        this.error = null;
+        this._resetHighlights();
+
+        try {
+            const collaborationData = await fetchCollaborationGraph(artistId);
+            if (collaborationData && collaborationData.nodes && collaborationData.nodes.length > 0) {
+                this.graphData = collaborationData;
+            } else {
+                this.error = "该艺术家与Sailor没有找到符合条件的合作作品。";
+            }
+        } catch (e) {
+            this.error = `获取合作网络失败: ${e.toString()}`;
+            this.graphData = { nodes: [], links: [] };
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
     // --- SANKEY INTERACTION ACTION (OLD - to be removed or refactored) ---
     async handleSankeyClick(payload) {
         // payload is expected to be { type: '...', params: { ... } }

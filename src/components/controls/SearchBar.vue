@@ -6,7 +6,7 @@
         <input
           id="search-input-field"
           type="text"
-          v-model="localSearchQuery"
+          v-model="inputText"
           @input="updateSuggestions"
           @focus="showSuggestions = true"
           placeholder="Type to search..." 
@@ -153,23 +153,26 @@ const commercialEdges = createEdgeGroupComputer(COMMERCIAL_EDGES);
 
 // --- Component Local State ---
 const activeDropdown = ref(null);
-const localSearchQuery = ref(searchQuery.value || '');
+const inputText = ref(''); // Renamed from localSearchQuery for clarity
 const suggestions = ref([]);
 const showSuggestions = ref(false);
 
 // --- Watchers ---
-// This watcher synchronizes the local input field with the store's centerNode.
-watch(() => store.centerNode, (newNode) => {
-  if (newNode) {
-    // If there is a center node, display its name and id.
-    localSearchQuery.value = `${newNode.name} (${newNode.id})`;
+// This watcher synchronizes the local input field WITH the store's state
+watch(searchQuery, (newId) => {
+  if (newId) {
+    const node = store.filterOptions.node_names.find(n => n.id === newId);
+    if (node) {
+      inputText.value = `${node.name} (id: ${node.id})`;
+    } else if (!inputText.value.includes(`(id: ${newId})`)) {
+      // Fallback if name isn't loaded yet, or if it's just an ID
+      inputText.value = `(id: ${newId})`;
+    }
   } else {
-    // If the center node is cleared, clear the input field.
-    localSearchQuery.value = '';
+    inputText.value = '';
   }
-}, {
-  deep: true
-});
+}, { immediate: true });
+
 
 // --- Computed Properties ---
 const availableYears = computed(() => {
@@ -182,18 +185,17 @@ const availableYears = computed(() => {
 
 // --- Methods ---
 const updateSuggestions = () => {
-  if (!localSearchQuery.value) {
+  if (!inputText.value) {
     suggestions.value = [];
     return;
   }
 
-  const query = localSearchQuery.value.toLowerCase();
-  // Access the full list of nodes from filterOptions
+  const query = inputText.value.toLowerCase();
   const allNodes = store.filterOptions.node_names || [];
   
   suggestions.value = allNodes.filter(node => 
     node && node.name && node.name.toLowerCase().includes(query)
-  );
+  ).slice(0, 10); // Limit suggestions for performance
 };
 
 const toggleDropdown = (dropdownName) => {
@@ -206,27 +208,31 @@ const closeDropdowns = () => {
 };
 
 const confirmSearch = () => {
-  store.setSearchQuery(localSearchQuery.value);
-  store.updateGraphLayout(); // Explicitly trigger the update
+  // Find the first suggestion that matches the current input text
+  const match = suggestions.value.length > 0 ? suggestions.value[0] : null;
+  if (match) {
+    store.selectCenterNode(match.id);
+  }
   showSuggestions.value = false;
 };
 
 const clearSearch = () => {
-  localSearchQuery.value = '';
-  // This only clears the local input. The user must click "Confirm" to apply.
+  inputText.value = '';
+  store.selectCenterNode(null); // Clear the center node in the store
   showSuggestions.value = false;
 };
 
 const selectSuggestion = (suggestion) => {
-  // suggestion is now an object: { name: '...', id: '...' }
-  localSearchQuery.value = `${suggestion.name} (id: ${suggestion.id})`;
-  store.selectCenterNode(suggestion.id); // Use the action that updates immediately
+  inputText.value = `${suggestion.name} (id: ${suggestion.id})`;
+  store.selectCenterNode(suggestion.id);
   showSuggestions.value = false;
 };
 
 // --- Lifecycle Hook ---
 onMounted(() => {
-  store.initializeStore();
+  if (!store.isInitialized) {
+    store.initializeStore();
+  }
 });
 </script>
 

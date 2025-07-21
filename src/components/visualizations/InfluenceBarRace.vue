@@ -9,6 +9,7 @@
 import { ref, onMounted, watch, nextTick, onUnmounted } from 'vue';
 import * as d3 from 'd3';
 import { appColors } from '@/utils/colors.js';
+import { useGraphStore } from '@/stores/graphStore';
 
 // --- Props ---
 const props = defineProps({
@@ -18,12 +19,27 @@ const props = defineProps({
   },
 });
 
+// --- Store ---
+const store = useGraphStore();
+
 // --- DOM References ---
 const chartRef = ref(null);
 const tooltipRef = ref(null);
 
 // --- D3 Simulation Reference ---
 let simulation = null;
+
+// --- Event Handlers ---
+const handleBubbleClick = (event, d) => {
+  console.log('Bubble clicked:', d);
+  if (d && d.id) {
+    
+    console.log(`Bubble clicked for artist ID: ${d.node}, Name: ${d.name}`);
+    store.showCollaborationWithSailor(d.id);
+  } else {
+    console.warn('Clicked bubble is missing an ID.', d);
+  }
+};
 
 // --- Chart Logic ---
 const drawChart = () => {
@@ -53,6 +69,10 @@ const drawChart = () => {
   
   const nodes = flatData.map(d => ({...d}));
   const uniqueYears = [...new Set(nodes.map(d => d.year))].sort((a, b) => a - b);
+
+  // Find top two nodes for highlighting
+  const sortedNodes = [...nodes].sort((a, b) => b['Influence score'] - a['Influence score']);
+  const topTwoIds = new Set(sortedNodes.slice(0, 2).map(d => d.id));
 
   // 2. --- Color Scale ---
   const personColor = d3.scaleOrdinal(appColors.categoryPalette).domain(Array.from(allPersons));
@@ -133,7 +153,10 @@ const drawChart = () => {
 
   const handleMouseOut = (event, d) => {
     tooltip.style('opacity', 0);
-    d3.select(event.currentTarget).attr('stroke', 'none').style('opacity', 0.8);
+    d3.select(event.currentTarget)
+      .attr('stroke', topTwoIds.has(d.id) ? 'gold' : 'none')
+      .attr('stroke-width', topTwoIds.has(d.id) ? 3 : 0)
+      .style('opacity', 0.8);
     d.fx = null;
     d.fy = null;
   };
@@ -146,10 +169,13 @@ const drawChart = () => {
     .attr('class', 'bubble')
     .attr('r', d => radiusScale(d['Influence score']))
     .attr('fill', d => personColor(d.name))
-    .style('opacity', 0.8) // Use style for opacity
+    .style('opacity', 0.8)
+    .attr('stroke', d => topTwoIds.has(d.id) ? 'gold' : 'none')
+    .attr('stroke-width', d => topTwoIds.has(d.id) ? 3 : 0)
     .on('mouseover', handleMouseOver)
     .on('mousemove', handleMouseMove)
-    .on('mouseout', handleMouseOut);
+    .on('mouseout', handleMouseOut)
+    .on('click', handleBubbleClick);
 
   // 8. --- Force Simulation ---
   simulation = d3.forceSimulation(nodes)

@@ -210,7 +210,7 @@ function extractWorksAndCollabs(graphData, artistId) {
 
   works.forEach(work => {
     graphData.links.forEach(link => {
-      // 指标1: 作品被引用统计 (在遍历作品链接时直接处理)
+      // 指标1: 作品被引用统计 (在遍历作品链接��直接处理)
       if (referenceEdgeTypes.includes(link['Edge Type']) &&
           link.target === work.id) {
         const sourceNode = nodeMap.get(link.source);
@@ -434,4 +434,14 @@ export async function fetchInwardSankeyInteractionData(sourceNode, targetNode) {
   }
 }
 
-
+export async function fetchCollaborationGraph(artistId) {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/collaboration_graph`, {
+      params: { artist_id: artistId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching collaboration graph for artist ${artistId}:`, error);
+    throw error;
+  }
+}

@@ -24,17 +24,18 @@
         >
           Three Hops
         </button>
+        <div class="button-separator"></div>
         <button 
           @click="store.toggleCollaborationFocus()" 
           :class="['hop-toggle-button', { active: store.isCollaborationFocusActive }]"
-          :disabled="store.isSankeyFiltered || store.isInfluenceFocusActive"
+          :disabled="store.isSankeyFiltered"
         >
           Focus on Collaboration
         </button>
         <button 
           @click="store.toggleInfluenceFocus()" 
           :class="['hop-toggle-button', { active: store.isInfluenceFocusActive }]"
-          :disabled="store.isSankeyFiltered || store.isCollaborationFocusActive"
+          :disabled="store.isSankeyFiltered"
         >
           Focus on Influence
         </button>
@@ -171,8 +172,8 @@ const ALL_NODE_LEGEND_INFO = {
 const getSymbolPath = (symbolType, size = 100) => d3.symbol().type(symbolType).size(size)();
 
 const ALL_EDGE_LEGEND_INFO = {
-  'influence': { name: 'Influence', color: '#9FC1E8', dasharray: '6, 3' },
-  'collaboration': { name: 'Collaboration', color: '#B7D962', dasharray: '0' },
+  'influence': { name: 'Inspiration', color: '#9FC1E8', dasharray: '6, 3' },
+  'collaboration': { name: 'Creation', color: '#B7D962', dasharray: '0' },
   'membership': { name: 'Commercial', color: '#6c757d', dasharray: '2, 2' },
 };
 
@@ -331,7 +332,7 @@ function renderGraph(data) {
 
     let content = `<strong>${d.name}</strong><br/>Type: ${d['Node Type']}`;
     if (d['Node Type'] === 'Person' || d['Node Type'] === 'MusicalGroup' || d['Node Type'] === 'RecordLabel') {
-      if (d.influence_score !== undefined) {
+      if (typeof d.influence_score === 'number') {
         content += `<br/>Notability Score: ${d.influence_score.toFixed(2)}`;
       }
     }
@@ -588,6 +589,14 @@ onMounted(() => {
   border-radius: 8px;
   padding: 4px;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  align-items: center;
+}
+
+.button-separator {
+  width: 1px;
+  height: 20px; /* Adjust height to fit nicely between buttons */
+  background-color: #adb5bd; /* Darker color for more contrast */
+  margin: 0 4px; /* Add horizontal margin for more spacing */
 }
 
 .button-subgroup {
