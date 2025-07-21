@@ -91,7 +91,9 @@
     <div v-if="showGenreLegend" :key="`genre-${legendKey}`" class="legend-container genre-legend-container">
       <h3>Genre Color Legend</h3>
       <div class="legend-section">
-        <div v-for="genre in displayedGenres" :key="genre.name" class="legend-item">
+        <div v-for="genre in displayedGenres" :key="genre.name" class="legend-item"
+             @mouseover="highlightGenre(genre.name)"
+             @mouseout="clearHighlight()">
           <svg width="30" height="30"><rect x="5" y="5" width="20" height="20" :fill="genre.color" stroke="#333" stroke-width="1.5"></rect></svg>
           <span>{{ genre.name }}</span>
         </div>
@@ -132,11 +134,33 @@ const setHopLevel = (level) => {
   store.setHopLevel(level);
 };
 
-let simulation;
-let svg;
-let zoomGroup;
+let simulation, svg, zoomGroup, nodeElements, linkElements;
 let sizeScale = d3.scaleSqrt();
 const linkWidthScale = d3.scaleSqrt().domain([1, 10]).range([2, 10]);
+
+function highlightGenre(genreName) {
+  if (!nodeElements || !linkElements) return;
+  nodeElements.style('opacity', d => {
+    const isTargetNode = (d['Node Type'] === 'Song' || d['Node Type'] === 'Album') && d.genre === genreName;
+    return isTargetNode ? 1 : 0.2;
+  });
+  linkElements.style('opacity', 0.1);
+}
+
+function clearHighlight() {
+  if (!nodeElements || !linkElements) return;
+  const isHighlightActive = displayedGraphData.value.nodes.some(n => n.highlight);
+  
+  nodeElements.style('opacity', d => {
+    if (!isHighlightActive) return 1;
+    return d.highlight ? 1 : 0.2;
+  });
+
+  linkElements.style('opacity', d => {
+    if (!isHighlightActive) return 0.7;
+    return d.highlight ? 1 : 0.15;
+  });
+}
 
 function getNodeRadius(node) {
   if (!node) return 8;
@@ -205,6 +229,8 @@ function clearPreviousRender() {
   if (containerRef.value) d3.select(containerRef.value).selectAll('svg').remove();
   svg = null;
   zoomGroup = null;
+  nodeElements = null;
+  linkElements = null;
   if (tooltipRef.value) d3.select(tooltipRef.value).style('opacity', 0);
 }
 
@@ -263,7 +289,7 @@ function renderGraph(data) {
     .force('collide', d3.forceCollide().radius(d => getNodeRadius(d) + 10))
     .force('center', d3.forceCenter(0, 0));
 
-  const linkElements = zoomGroup.append('g').selectAll('path').data(links).join('path')
+  linkElements = zoomGroup.append('g').selectAll('path').data(links).join('path')
     .attr('class', d => `link link-${getPrimaryLinkClass(d.relations)}`)
     .style('stroke-width', d => d.highlight ? 5 : linkWidthScale(d.count)) // 高亮时宽度为5，否则按比例
     .style('opacity', d => {
@@ -289,7 +315,7 @@ function renderGraph(data) {
         return ALL_EDGE_LEGEND_INFO[primaryClass]?.dasharray || '0';
     });
 
-  const nodeElements = zoomGroup.append('g').selectAll('path.node').data(nodes, d => d.id).join('path')
+  nodeElements = zoomGroup.append('g').selectAll('path.node').data(nodes, d => d.id).join('path')
     .attr('class', 'node')
     .attr('d', d => getSymbolPath(getSymbol(d['Node Type']), Math.PI * Math.pow(getNodeRadius(d), 2)))
     .attr('fill', d => {
@@ -538,11 +564,21 @@ onMounted(() => {
   color: var(--color-text-primary);
 }
 
-.legend-item { 
-  display: flex; 
-  align-items: center; 
-  margin-bottom: 0px; 
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0px;
   line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 4px;
+  margin-left: -5px;
+  margin-right: -5px;
+  padding: 2px 5px;
+}
+
+.legend-item:hover {
+  background-color: #e9ecef;
 }
 
 .legend-item svg { 
