@@ -1483,10 +1483,10 @@ def format_graph_for_d3(graph, highlighted_nodes=None, highlighted_links=None):
 
     # 定义贡献者角色
     CONTRIBUTOR_ROLES = {
-        'PerformerOf': 'Performers',
-        'ComposerOf': 'Composers',
-        'ProducerOf': 'Producers',
-        'LyricistOf': 'Lyricists',
+        'PerformerOf': 'Performer',
+        'ComposerOf': 'Composer',
+        'ProducerOf': 'Producer',
+        'LyricistOf': 'Lyricist',
     }
 
     for node_id in node_ids_in_graph:
@@ -2136,9 +2136,11 @@ def get_collaboration_graph():
             bundled_links[key]["count"] += 1
     
     final_links = list(bundled_links.values())
+    response_json = format_graph_for_d3(subgraph, final_nodes, final_links)
+    return jsonify(response_json)
     
-    app.logger.info(f"为协作图返回 {len(final_nodes)} 个节点和 {len(final_links)} 条边。")
-    return jsonify({"nodes": final_nodes, "links": final_links})
+    #app.logger.info(f"为协作图返回 {len(final_nodes)} 个节点和 {len(final_links)} 条边。")
+    #return jsonify({"nodes": final_nodes, "links": final_links})
 
 if __name__ == '__main__':
     # 在启动时预加载主图数据
