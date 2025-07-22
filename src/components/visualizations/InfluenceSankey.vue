@@ -8,7 +8,7 @@
 <script setup>
 import { ref, onMounted, watch, onUnmounted, defineEmits, computed } from 'vue';
 import * as d3 from 'd3';
-import { sankey, sankeyLinkHorizontal, sankeyLeft, sankeyRight } from 'd3-sankey'; 
+import { sankey, sankeyLinkHorizontal, sankeyLeft, sankeyRight } from 'd3-sankey';
 import { appColors, getSankeyNodeColor } from '@/utils/colors';
 
 const emit = defineEmits(['link-clicked']);
@@ -50,8 +50,8 @@ const filterData = (originalData) => {
   if (props.currentView === 'q2_2') {
     // Outward视图：筛选top N genres，每个genre下的top N artists
     return filterOutwardData(nodes, links);
-  } else if (props.currentView === 'q2_3' || 
-             props.currentView === 'q2_3_pre' || 
+  } else if (props.currentView === 'q2_3' ||
+             props.currentView === 'q2_3_pre' ||
              props.currentView === 'q2_3_post') {
     // Inward视图：筛选top N genres和相关的top N artists
     return filterInwardData(nodes, links);
@@ -63,13 +63,13 @@ const filterData = (originalData) => {
 const filterOutwardData = (nodes, links) => {
   // 1. 计算每个Genre的影响值（从Oceanus Folk到Genre的work_count）
   const genreInfluence = new Map();
-  
+
   links.forEach(link => {
     const sourceNode = nodes.find(n => n.id === link.source);
     const targetNode = nodes.find(n => n.id === link.target);
-    
-    if (sourceNode && targetNode && 
-        sourceNode.name === 'Oceanus Folk' && 
+
+    if (sourceNode && targetNode &&
+        sourceNode.name === 'Oceanus Folk' &&
         (targetNode.type === 'genre' || targetNode.type === 'Genre')) {
       genreInfluence.set(link.target, link.details?.influence_edge_count || link.details?.work_count || link.value);
     }
@@ -85,21 +85,21 @@ const filterOutwardData = (nodes, links) => {
 
   // 3. 对于每个选中的genre，找到top N artists
   const selectedArtistIds = new Set();
-  
+
   topGenreIds.forEach(genreId => {
     const genreToArtistLinks = links.filter(link => {
       const targetNode = nodes.find(n => n.id === link.target);
-      return link.source === genreId && 
-             targetNode && 
+      return link.source === genreId &&
+             targetNode &&
              (targetNode.type === 'artist' || targetNode.type === 'Artist');
     });
-    
+
     const topArtistsForGenre = genreToArtistLinks
-      .sort((a, b) => (b.details?.collaboration_edge_count || b.details?.work_count || b.value) - 
+      .sort((a, b) => (b.details?.collaboration_edge_count || b.details?.work_count || b.value) -
                       (a.details?.collaboration_edge_count || a.details?.work_count || a.value))
       .slice(0, props.topNArtists)
       .map(link => link.target);
-    
+
     topArtistsForGenre.forEach(artistId => selectedArtistIds.add(artistId));
   });
 
@@ -112,7 +112,7 @@ const filterOutwardData = (nodes, links) => {
   });
 
   const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-  const filteredLinks = links.filter(link => 
+  const filteredLinks = links.filter(link =>
     filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
   );
 
@@ -124,28 +124,28 @@ const filterOutwardData = (nodes, links) => {
 };
 
 const filterInwardData = (nodes, links) => {
-  console.log(`filterInwardData called for ${props.currentView} with:`, { 
-    nodes: nodes.length, 
+  console.log(`filterInwardData called for ${props.currentView} with:`, {
+    nodes: nodes.length,
     links: links.length,
     topNGenres: props.topNGenres,
     topNArtists: props.topNArtists
   });
-  
+
   // 如果原始数据太少，降低筛选标准
   const adjustedTopNGenres = Math.min(props.topNGenres, Math.max(1, Math.floor(nodes.length / 10)));
   const adjustedTopNArtists = Math.min(props.topNArtists, Math.max(1, Math.floor(nodes.length / 5)));
-  
+
   console.log('Adjusted filter params:', { adjustedTopNGenres, adjustedTopNArtists });
-  
+
   // 1. 计算每个Genre的影响值（从Oceanus Folk到Genre的work_count）
   const genreInfluence = new Map();
-  
+
   links.forEach(link => {
     const sourceNode = nodes.find(n => n.id === link.source);
     const targetNode = nodes.find(n => n.id === link.target);
-    
-    if (sourceNode && targetNode && 
-        sourceNode.name === 'Oceanus Folk' && 
+
+    if (sourceNode && targetNode &&
+        sourceNode.name === 'Oceanus Folk' &&
         (targetNode.type === 'genre' || targetNode.type === 'Genre')) {
       genreInfluence.set(link.target, link.details?.influence_edge_count || link.details?.work_count || link.value);
     }
@@ -175,24 +175,24 @@ const filterInwardData = (nodes, links) => {
 
   // 3. 对于每个选中的genre，找到相关的artists
   const selectedArtistIds = new Set();
-  
+
   if (topGenreIds.length > 0) {
     topGenreIds.forEach(genreId => {
       const genreToArtistLinks = links.filter(link => {
         const targetNode = nodes.find(n => n.id === link.target);
-        return link.source === genreId && 
-               targetNode && 
+        return link.source === genreId &&
+               targetNode &&
                (targetNode.type === 'artist' || targetNode.type === 'Artist');
       });
-      
+
       console.log(`Genre ${genreId} has ${genreToArtistLinks.length} artist links`);
-      
+
       const topArtistsForGenre = genreToArtistLinks
-        .sort((a, b) => (b.details?.collaboration_edge_count || b.details?.work_count || b.value || 1) - 
+        .sort((a, b) => (b.details?.collaboration_edge_count || b.details?.work_count || b.value || 1) -
                         (a.details?.collaboration_edge_count || a.details?.work_count || a.value || 1))
         .slice(0, adjustedTopNArtists)
         .map(link => link.target);
-      
+
       topArtistsForGenre.forEach(artistId => selectedArtistIds.add(artistId));
     });
   } else {
@@ -214,7 +214,7 @@ const filterInwardData = (nodes, links) => {
   });
 
   const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-  const filteredLinks = links.filter(link => 
+  const filteredLinks = links.filter(link =>
     filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
   );
 
@@ -228,15 +228,15 @@ const filterInwardData = (nodes, links) => {
     const oceanusNode = nodes.find(n => n.name === 'Oceanus Folk');
     const someGenres = nodes.filter(n => n.type === 'genre' || n.type === 'Genre').slice(0, 2);
     const someArtists = nodes.filter(n => n.type === 'artist' || n.type === 'Artist').slice(0, 3);
-    
+
     const minimalNodes = [oceanusNode, ...someGenres, ...someArtists].filter(Boolean);
-    const minimalLinks = links.filter(link => 
-      minimalNodes.some(n => n.id === link.source) && 
+    const minimalLinks = links.filter(link =>
+      minimalNodes.some(n => n.id === link.source) &&
       minimalNodes.some(n => n.id === link.target)
     );
-    
-    return { 
-      nodes: minimalNodes, 
+
+    return {
+      nodes: minimalNodes,
       links: minimalLinks.length > 0 ? minimalLinks : []
     };
   }
@@ -251,15 +251,15 @@ const processedData = computed(() => {
 const getTooltipContent = (link) => {
   const sourceNode = processedData.value.nodes.find(n => n.id === link.source.id);
   const targetNode = processedData.value.nodes.find(n => n.id === link.target.id);
-  
+
   if (!sourceNode || !targetNode) return '';
 
   // Oceanus Folk → Genre: 显示影响力边数量和类型分布
-  if (sourceNode.name === 'Oceanus Folk' && 
+  if (sourceNode.name === 'Oceanus Folk' &&
       (targetNode.type === 'genre' || targetNode.type === 'Genre')) {
     const totalCount = link.details?.influence_edge_count || link.details?.work_count || link.value;
     const influenceTypes = link.details?.influence_types || {};
-    
+
     // 如果没有类型分布，使用collaborations数组
     let typeDistribution = influenceTypes;
     if (Object.keys(typeDistribution).length === 0 && link.details?.collaborations) {
@@ -268,26 +268,26 @@ const getTooltipContent = (link) => {
         typeDistribution[collab.collaboration_type] = collab.count || 1;
       });
     }
-    
+
     const influenceList = Object.entries(typeDistribution)
       .sort((a, b) => b[1] - a[1])
-      .map(([type, count]) => 
+      .map(([type, count]) =>
         `<div style="font-weight: 400; color: #666666;">${type}: ${count}</div>`
       )
       .join('');
-    
+
     // 根据视图类型调整标题
-    const edgeTypeLabel = props.currentView === 'q2_2' ? '影响边' : '受影响边';
-    
-    return `<strong>${targetNode.name}</strong><br/>${edgeTypeLabel}总数: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${influenceList || '<div style="font-weight: 400; color: #666666;">Various Types</div>'}`;
+    const edgeTypeLabel = props.currentView === 'q2_2' ? 'Influencing Edges' : 'Influenced Edges';
+
+    return `<strong>${targetNode.name}</strong><br/>Total ${edgeTypeLabel}: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${influenceList || '<div style="font-weight: 400; color: #666666;">Various Types</div>'}`;
   }
-  
+
   // Genre → Artist: 显示合作边数量和类型分布
-  if ((sourceNode.type === 'genre' || sourceNode.type === 'Genre') && 
+  if ((sourceNode.type === 'genre' || sourceNode.type === 'Genre') &&
       (targetNode.type === 'artist' || targetNode.type === 'Artist')) {
     const totalCount = link.details?.collaboration_edge_count || link.details?.work_count || link.value;
     const collaborationTypes = link.details?.collaboration_types || {};
-    
+
     // 如果没有类型分布，使用collaborations数组
     let typeDistribution = collaborationTypes;
     if (Object.keys(typeDistribution).length === 0 && link.details?.collaborations) {
@@ -296,15 +296,15 @@ const getTooltipContent = (link) => {
         typeDistribution[collab.collaboration_type] = collab.count || 1;
       });
     }
-    
+
     const collaborationList = Object.entries(typeDistribution)
       .sort((a, b) => b[1] - a[1])
-      .map(([type, count]) => 
+      .map(([type, count]) =>
         `<div style="font-weight: 400; color: #666666;">${type}: ${count}</div>`
       )
       .join('');
-    
-    return `<strong>${targetNode.name}</strong><br/>合作边总数: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${collaborationList || '<div style="font-weight: 400; color: #666666;">Various Types</div>'}`;
+
+    return `<strong>${targetNode.name}</strong><br/>Total Collaborative Edges: <strong>${totalCount}</strong><br/><hr style="margin: 5px 0; border-color: #E0E0E0;"/>${collaborationList || '<div style="font-weight: 400; color: #666666;">Various Types</div>'}`;
   }
 
   return `<strong>${targetNode.name}</strong><br/>计数: <strong>${link.value}</strong>`;
@@ -316,20 +316,20 @@ const drawChart = () => {
     d3.select(svgRef.value).selectAll('*').remove();
     return;
   }
-  
+
   if (processedData.value.nodes.length === 0) {
     console.warn('No nodes in processedData:', processedData.value);
     d3.select(svgRef.value).selectAll('*').remove();
     return;
   }
-  
+
   console.log(`Drawing chart for ${props.currentView}:`, {
     nodes: processedData.value.nodes.length,
     links: processedData.value.links.length,
     topNGenres: props.topNGenres,
     topNArtists: props.topNArtists
   });
-  
+
   const containerWidth = containerRef.value.clientWidth;
   const containerHeight = containerRef.value.clientHeight;
 
@@ -365,10 +365,10 @@ const drawChart = () => {
     .nodeWidth(10)
     .nodePadding(paddingPerNode)
     .extent([[8, 8], [width - 8, height - 8]])
-    .iterations(100); 
+    .iterations(100);
 
   const graph = JSON.parse(JSON.stringify(processedData.value));
-  
+
   // 在布局之前调整Oceanus Folk节点的value以增加其高度
   const oceanusNode = graph.nodes.find(n => n.name === 'Oceanus Folk');
   if (oceanusNode) {
@@ -376,16 +376,16 @@ const drawChart = () => {
     const totalOutput = graph.links
       .filter(link => link.source === oceanusNode.id)
       .reduce((sum, link) => sum + (link.value || 0), 0);
-    
+
     // 将Oceanus Folk的值设置为更大的值以增加其高度
     oceanusNode.value = Math.max(totalOutput * 2, totalOutput + 100);
   }
-  
+
   const { nodes, links } = sankeyLayout(graph);
-  
+
   console.log('Sankey layout result:', { nodes: nodes.length, links: links.length });
-  
-  let highlightedNodeIds = new Set(); 
+
+  let highlightedNodeIds = new Set();
   let highlightedLinkIds = new Set();
 
   const linkPaths = svg.append('g')
@@ -397,23 +397,23 @@ const drawChart = () => {
     .attr('class', 'sankey-link')
     .style('cursor', 'pointer')
     .attr('d', sankeyLinkHorizontal())
-    .attr('stroke', appColors.sankeyLinkBase) 
+    .attr('stroke', appColors.sankeyLinkBase)
     .attr('stroke-width', d => Math.max(1.5, d.width * 0.85));
 
   linkPaths
     .on('mouseover', function(event, d) {
         d3.select(this).attr('stroke', appColors.sankeyLinkHighlight).attr('stroke-opacity', 0.9);
-        
+
         highlightedNodeIds.clear();
         highlightedLinkIds.clear();
 
         // 高亮相关的链接和节点
-        if (d.source.name === 'Oceanus Folk' && 
+        if (d.source.name === 'Oceanus Folk' &&
             (d.target.type === 'genre' || d.target.type === 'Genre')) {
             // 当悬浮在 Oceanus Folk → Genre 的链接上时，高亮相关的 Genre → Artist 链接
             highlightedLinkIds.add(d.index);
             links.forEach(link => {
-                if (link.source.id === d.target.id && 
+                if (link.source.id === d.target.id &&
                     (link.target.type === 'artist' || link.target.type === 'Artist')) {
                     highlightedLinkIds.add(link.index);
                     highlightedNodeIds.add(link.target.id);
@@ -434,14 +434,14 @@ const drawChart = () => {
         svg.selectAll('.node-text')
            .attr('opacity', nodeD => {
                // 所有视图中，都只显示高亮的artist标签
-               if (nodeD.layer === 2 && 
+               if (nodeD.layer === 2 &&
                    (nodeD.type === 'artist' || nodeD.type === 'Artist')) {
                    return highlightedNodeIds.has(nodeD.id) ? 1 : 0;
                }
                // Genre标签始终显示，高亮时更明显
                return highlightedNodeIds.has(nodeD.id) ? 1 : 0.8;
            });
-        
+
         svg.selectAll('.sankey-node-rect')
            .attr('fill-opacity', nodeD => highlightedNodeIds.has(nodeD.id) ? 1 : 0.4);
 
@@ -459,7 +459,7 @@ const drawChart = () => {
         svg.selectAll('.node-text')
            .attr('opacity', nodeD => {
                // 所有视图中，artist标签都默认隐藏
-               if (nodeD.layer === 2 && 
+               if (nodeD.layer === 2 &&
                    (nodeD.type === 'artist' || nodeD.type === 'Artist')) {
                    return 0;
                }
@@ -468,15 +468,15 @@ const drawChart = () => {
            });
         svg.selectAll('.sankey-node-rect').attr('fill-opacity', 1);
         d3.select(tooltipRef.value).style('opacity', 0);
-        
+
         highlightedNodeIds.clear();
         highlightedLinkIds.clear();
     })
     .on('click', (event, d) => {
-      emit('link-clicked', { 
-        source: d.source, 
-        target: d.target, 
-        currentView: props.currentView 
+      emit('link-clicked', {
+        source: d.source,
+        target: d.target,
+        currentView: props.currentView
       });
     });
 
@@ -495,12 +495,12 @@ const drawChart = () => {
       // 确保正确传递节点信息给颜色函数，统一类型格式
       const nodeWithType = {
         ...d,
-        type: (d.type === 'genre' || d.type === 'Genre') ? 'Genre' : 
+        type: (d.type === 'genre' || d.type === 'Genre') ? 'Genre' :
               (d.type === 'artist' || d.type === 'Artist') ? 'Artist' : d.type,
         name: d.name
       };
       return getSankeyNodeColor(nodeWithType);
-    }) 
+    })
     .attr('stroke', appColors.textSecondary)
     .attr('stroke-width', 0.5);
 
@@ -519,7 +519,7 @@ const drawChart = () => {
     .attr('fill', appColors.textPrimary)
     .attr('opacity', d => {
         // 所有视图中，artist标签都默认隐藏
-        if (d.layer === 2 && 
+        if (d.layer === 2 &&
             (d.type === 'artist' || d.type === 'Artist')) {
             return 0;
         }
@@ -534,7 +534,7 @@ const drawChart = () => {
         const text = d.name;
         const estimatedCharWidth = 6;
         const minNodeHeight = 8;
-        
+
         if ((d.y1 - d.y0) < minNodeHeight) {
             return '';
         }

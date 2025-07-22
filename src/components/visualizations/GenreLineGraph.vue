@@ -3,16 +3,16 @@
     <div class="chart-header">
       <div class="header-controls">
         <div class="view-controls">
-          <button 
-            :class="{ active: viewMode === 'breakdown' }" 
+          <button
+            :class="{ active: viewMode === 'breakdown' }"
             @click="toggleViewMode">
             Genre Comparison
           </button>
         </div>
         <div class="notable-filter">
           <label class="notable-checkbox">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               v-model="showNotableOnly"
               @change="handleNotableFilterChange"
             />
@@ -22,7 +22,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="chart-body">
       <div v-if="loading" class="loading-text">Loading...</div>
       <VChart
@@ -74,11 +74,11 @@ const determineYearRange = (data) => {
   if (!data || !data.years || data.years.length === 0) {
     return { startYear: 2017, endYear: 2040 };
   }
-  
+
   const years = data.years.map(year => parseInt(year));
   const minYear = Math.min(...years);
   const maxYear = Math.max(...years);
-  
+
   return {
     startYear: minYear,
     endYear: Math.max(maxYear, 2040)
@@ -87,30 +87,30 @@ const determineYearRange = (data) => {
 
 const processDataWithFilter = () => {
   if (!rawDataRef.value) return;
-  
+
   const selectedData = showNotableOnly.value ? rawDataRef.value.notable_data : rawDataRef.value.all_data;
   const { startYear, endYear } = determineYearRange(selectedData);
-  
+
   console.log(`Using dynamic year range: ${startYear} - ${endYear}`);
   console.log(`Filter mode: ${showNotableOnly.value ? 'Notable Only' : 'All Data'}`);
   console.log('Selected data years:', selectedData.years);
-  
+
   processedData.value = processCompleteData(selectedData, startYear, endYear);
 };
 
 const chartOption = computed(() => {
   if (!processedData.value) return {};
   const data = processedData.value;
-  
+
   const barSeries = data.allGenres.map(genre => ({
-    name: genre, 
-    type: 'bar', 
+    name: genre,
+    type: 'bar',
     stack: 'total',
-    itemStyle: { 
+    itemStyle: {
       color: getGenreColor(genre),
       opacity: 0.9,
-      borderColor: appColors.textSecondary, 
-      borderWidth: 0.5, 
+      borderColor: appColors.textSecondary,
+      borderWidth: 0.5,
     },
     emphasis: {
       itemStyle: {
@@ -123,15 +123,15 @@ const chartOption = computed(() => {
     },
     data: data.years.map(year => data.genreBreakdownByYear[data.years.indexOf(year)]?.[genre] || 0)
   }));
-  
+
   const lineSeries = {
-    name: showNotableOnly.value ? 'Notable影响总数' : 'Influence', 
-    type: 'line', 
+    name: showNotableOnly.value ? 'Notable影响总数' : 'Influence',
+    type: 'line',
     smooth: true,
     symbol: 'circle',
     symbolSize: 6,
     z: 10,
-    lineStyle: { 
+    lineStyle: {
       width: 2,
       color: appColors.primaryAccent
     },
@@ -141,13 +141,13 @@ const chartOption = computed(() => {
       borderWidth: 2
     },
     areaStyle: {
-      color: { 
-        type: 'linear', 
-        x: 0, y: 0, x2: 0, y2: 1, 
+      color: {
+        type: 'linear',
+        x: 0, y: 0, x2: 0, y2: 1,
         colorStops: [
           { offset: 0, color: appColors.primaryAccent + '40' },
           { offset: 1, color: appColors.primaryAccent + '00' }
-        ] 
+        ]
       },
       origin: 'start'
     },
@@ -183,7 +183,7 @@ const chartOption = computed(() => {
               return `<div style="${style}">${param.marker}${seriesName}: ${param.value}</div>`;
             })
             .join('');
-        return `<strong>${year} 年${filterText}</strong><br/>影响总数: <strong>${total}</strong><br/><hr style="margin: 5px 0; border-color: ${appColors.border};"/>${breakdownHtml}`;
+        return `<strong>Year ${year}${filterText}</strong><br/>Total Influence: <strong>${total}</strong><br/><hr style="margin: 5px 0; border-color: ${appColors.border};"/>${breakdownHtml}`;
       }
     };
   } else {
@@ -218,25 +218,25 @@ const chartOption = computed(() => {
   return {
     tooltip: tooltipConfig,
     legend: legendConfig,
-    grid: { 
+    grid: {
       top: viewMode.value === 'total' ? '5%' : '10%',
-      left: '3%', 
-      right: '4%', 
+      left: '3%',
+      right: '4%',
       bottom: viewMode.value === 'total' ? '3%' : '15%',
-      containLabel: true 
+      containLabel: true
     },
-    xAxis: { 
-      type: 'category', 
-      boundaryGap: false, 
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
       data: data.years,
       axisLine: { lineStyle: { color: appColors.border } },
-      axisLabel: { 
+      axisLabel: {
         color: appColors.textSecondary,
         interval: 'auto'
       }
     },
-    yAxis: { 
-      type: 'value', 
+    yAxis: {
+      type: 'value',
       splitLine: { lineStyle: { type: 'dashed', color: appColors.border + '80' } },
       axisLine: { lineStyle: { color: appColors.border } },
       axisLabel: { color: appColors.textSecondary }
@@ -268,10 +268,10 @@ onMounted(async () => {
   try {
     const response = await fetch('/mc1_q2_1_data_new.json');
     const rawData = await response.json();
-    
+
     rawDataRef.value = rawData;
     processDataWithFilter();
-    
+
   } catch (error) {
     console.error('Failed to load or process chart data:', error);
   } finally {
