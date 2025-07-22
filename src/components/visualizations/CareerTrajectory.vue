@@ -876,7 +876,7 @@ export default {
 
 /* 主图表包装器 */
 .chart-wrapper {
-  flex: 1;
+  flex: 1.25;
   position: relative;
   min-height: 0;
 }
@@ -884,9 +884,8 @@ export default {
 /* 流派图容器 */
 .genre-charts-container {
   flex: 0 0 auto;
-  height: 150px;
+  height: 110px;
   margin-top: 0px;
-  overflow: auto;
 }
 
 /* 流派图网格布局 */
@@ -894,13 +893,13 @@ export default {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 5px;
-  min-height: 140px;
+  min-height: 130px;
 }
 
 /* 单个流派图容器 */
 .genre-chart-container {
   position: relative;
-  height: 130px;
+  height: 120px;
   min-width: 130px;
   display: flex;
   flex-direction: column;
@@ -912,7 +911,7 @@ export default {
 
 /* 艺术家潜力预测视图 */
 .prediction-view {
-  flex: 2.5;
+  flex: 2.25;
   background-color: white;
   border-radius: 8px;
   padding: 8px;
