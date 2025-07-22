@@ -375,10 +375,12 @@ function renderGraph(data) {
     if (d['Node Type'] === 'Song' || d['Node Type'] === 'Album') {
       if (d.genre) content += `<br/>Genre: ${d.genre}`;
       if (d.release_date) content += `<br/>Release Date: ${d.release_date}`;
+      console.log("Node hovered:", d);
       if (d.contributors) {
         for (const [role, artists] of Object.entries(d.contributors)) {
-          if (artists.length > 0) {
-            const roleName = role.charAt(0).toUpperCase() + role.slice(1, -1);
+          if (artists && artists.length > 0) {
+            const singularRole = role.endsWith('s') ? role.slice(0, -1) : role;
+            const roleName = singularRole.charAt(0).toUpperCase() + singularRole.slice(1);
             const artistLinks = artists.map(a => `${a.name} (${a.id})`).join(', ');
             content += `<br/>${roleName}: ${artistLinks}`;
           }
