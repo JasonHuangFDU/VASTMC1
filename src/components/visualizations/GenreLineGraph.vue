@@ -241,7 +241,7 @@ const chartOption = computed(() => {
               return `<div style="${style}">${param.marker}${seriesName}: ${param.value}</div>`;
             })
             .join('');
-        return `<strong>${year} 年${filterText}</strong><br/>影响总数: <strong>${total}</strong><br/><hr style="margin: 5px 0; border-color: ${appColors.border};"/>${breakdownHtml}`;
+        return `<strong>Year ${year} ${filterText}</strong><br/>Total Influence: <strong>${total}</strong><br/><hr style="margin: 5px 0; border-color: ${appColors.border};"/>${breakdownHtml}`;
       }
     };
   } else {
